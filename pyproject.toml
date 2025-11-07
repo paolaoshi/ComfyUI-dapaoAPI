@@ -1,15 +1,15 @@
 [project]
-name = "comfyui-dapao-tool"
+name = "ComfyUI-dapaoAPI"
 description = "ComfyUI custom nodes collection by PaoLaoShi - including mask enhancement, prompt processing, image layout, Janus and Doubao image-to-prompt, BEN2 background removal"
 version = "1.0.1"
 license = { file = "LICENSE" }
 
 [project.urls]
-Repository = "https://github.com/paolaoshi/dapao_tools"
+Repository = "https://github.com/paolaoshi/ComfyUI-dapaoAPI"
 
 [tool.comfy]
 PublisherId = "paolaoshi"
-DisplayName = "DaPao Tool"
+DisplayName = "ComfyUI-dapaoAPI"
 Icon = ""
 Banner = ""
 
