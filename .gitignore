@@ -1,0 +1,60 @@
+# Python 相关
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 虚拟环境
+venv/
+ENV/
+env/
+
+# IDE 相关
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# API 密钥配置文件（重要！不要提交真实密钥）
+config.json
+glm_config.json
+doubao_config.json
+
+# 但保留示例配置文件
+!config.example.json
+!glm_config.example.json
+!doubao_config.example.json
+
+# 日志文件
+*.log
+
+# 临时文件
+*.tmp
+*.bak
+.cache/
+
+# ComfyUI 相关
+comfy_extras/
+custom_nodes_backup/
+
+# 其他
+.env
+.env.local

@@ -1,0 +1,9 @@
+{
+    "ZHIPUAI_API_KEY": "你的智谱AI密钥",
+    "default_model": "GLM-4.5-Flash",
+    "default_vision_model": "glm-4v-flash",
+    "temperature": 0.9,
+    "top_p": 0.7,
+    "max_tokens": 2048
+}
+

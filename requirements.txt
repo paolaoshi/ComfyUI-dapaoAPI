@@ -1,0 +1,11 @@
+# Seedream API 基础依赖
+requests
+Pillow
+torch
+numpy
+
+# GLM 智谱 AI 依赖（可选）
+# 如果需要使用 GLM 图像反推和提示词润色功能，请取消下面一行的注释
+# zhipuai
+
+
