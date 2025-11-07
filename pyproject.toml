@@ -1,7 +1,7 @@
 [project]
 name = "ComfyUI-dapaoAPI"
 description = "ComfyUI custom nodes collection by PaoLaoShi - including mask enhancement, prompt processing, image layout, Janus and Doubao image-to-prompt, BEN2 background removal"
-version = "1.0.1"
+version = "1.0.3"
 license = { file = "LICENSE" }
 
 [project.urls]
