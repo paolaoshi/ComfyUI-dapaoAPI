@@ -598,8 +598,7 @@ pip install zhipuai
 - **版本**：v1.0.1
 - **更新日期**：2025年
 - **作者微信**：paolaoshiAICG
-![alt text](如有需求可加好友.jpg)
-
+![alt text](效果图/123.png)
 ---
 
 ## 🌟 支持项目
