@@ -205,7 +205,7 @@ class Sora2_VideoGeneration:
     RETURN_TYPES = ("STRING", "STRING", "STRING")
     RETURN_NAMES = ("任务ID", "视频URL", "详细信息")
     FUNCTION = "generate_video"
-    CATEGORY = "dapaoAPI/Sora2"
+    CATEGORY = "dapaoAPI"
     
     def __init__(self):
         self.config = get_config()
