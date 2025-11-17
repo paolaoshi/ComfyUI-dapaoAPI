@@ -189,8 +189,11 @@ class Sora2_VideoGeneration:
                 }),
             },
             "optional": {
-                # === 图生视频选项 ===
-                "🖼️ 输入图像": ("IMAGE",),
+                # === 图生视频选项（最多4张图片）===
+                "🖼️ 输入图像1": ("IMAGE",),
+                "🖼️ 输入图像2": ("IMAGE",),
+                "🖼️ 输入图像3": ("IMAGE",),
+                "🖼️ 输入图像4": ("IMAGE",),
                 
                 "🔔 回调地址": ("STRING", {
                     "default": "",
@@ -199,8 +202,8 @@ class Sora2_VideoGeneration:
             }
         }
     
-    RETURN_TYPES = ("STRING", "STRING")
-    RETURN_NAMES = ("任务ID", "详细信息")
+    RETURN_TYPES = ("STRING", "STRING", "STRING")
+    RETURN_NAMES = ("任务ID", "视频URL", "详细信息")
     FUNCTION = "generate_video"
     CATEGORY = "dapaoAPI/Sora2"
     
@@ -221,14 +224,21 @@ class Sora2_VideoGeneration:
             hd_mode = kwargs.get("🎨 高清模式", True)
             watermark = kwargs.get("💧 水印", True)
             private_mode = kwargs.get("🔒 私密模式", True)
-            input_image = kwargs.get("🖼️ 输入图像", None)
+            
+            # 收集所有输入的图像（最多4张）
+            input_images = []
+            for i in range(1, 5):
+                img = kwargs.get(f"🖼️ 输入图像{i}", None)
+                if img is not None:
+                    input_images.append(img)
+            
             notify_hook = kwargs.get("🔔 回调地址", "").strip()
             
             # === 2. 验证必填参数 ===
             if not prompt:
                 error_msg = "❌ 错误：提示词不能为空"
                 _log_error(error_msg)
-                return ("", error_msg)
+                return ("", "", error_msg)
             
             # 使用配置文件中的 API Key（如果未提供）
             if not api_key:
@@ -237,14 +247,14 @@ class Sora2_VideoGeneration:
             if not api_key:
                 error_msg = "❌ 错误：API密钥未配置\n\n请在节点参数或配置文件中设置 API Key"
                 _log_error(error_msg)
-                return ("", error_msg)
+                return ("", "", error_msg)
             
             # === 3. 构建请求 ===
             start_time = time.time()
             status_info = []
             
             # 判断是文生视频还是图生视频
-            is_image_to_video = input_image is not None
+            is_image_to_video = len(input_images) > 0
             mode_name = "图生视频" if is_image_to_video else "文生视频"
             
             status_info.append("=" * 50)
@@ -259,7 +269,7 @@ class Sora2_VideoGeneration:
             status_info.append(f"🔒 私密模式：{'开启' if private_mode else '关闭'}")
             
             if is_image_to_video:
-                status_info.append(f"🖼️ 输入图像：已提供")
+                status_info.append(f"🖼️ 输入图像：{len(input_images)} 张")
             
             status_info.append("")
             status_info.append("⏳ 正在提交任务...")
@@ -291,15 +301,19 @@ class Sora2_VideoGeneration:
             
             # 如果是图生视频，添加图像数据
             if is_image_to_video:
-                _log_info("正在处理输入图像...")
-                image_base64 = image_to_base64(input_image)
-                if not image_base64:
-                    error_msg = "❌ 错误：图像处理失败"
-                    _log_error(error_msg)
-                    return ("", error_msg)
+                _log_info(f"正在处理 {len(input_images)} 张输入图像...")
+                images_base64 = []
+                for idx, img in enumerate(input_images, 1):
+                    image_base64 = image_to_base64(img)
+                    if not image_base64:
+                        error_msg = f"❌ 错误：第 {idx} 张图像处理失败"
+                        _log_error(error_msg)
+                        return ("", "", error_msg)
+                    images_base64.append(image_base64)
+                    _log_info(f"第 {idx} 张图像处理完成")
                 
-                req_body["images"] = [image_base64]
-                _log_info("图像处理完成")
+                req_body["images"] = images_base64
+                _log_info(f"所有图像处理完成，共 {len(images_base64)} 张")
             
             # 添加回调地址（如果提供）
             if notify_hook:
@@ -323,16 +337,17 @@ class Sora2_VideoGeneration:
                 if response.status_code != 200:
                     error_msg = f"❌ API 请求失败\n\n状态码：{response.status_code}\n响应：{response.text}"
                     _log_error(error_msg)
-                    return ("", error_msg)
+                    return ("", "", error_msg)
                 
                 # 解析响应
                 result = response.json()
                 task_id = result.get("task_id", "")
+                video_url = result.get("video_url", "")  # 获取视频URL（如果API直接返回）
                 
                 if not task_id:
                     error_msg = f"❌ 错误：未返回任务ID\n\n响应：{json.dumps(result, ensure_ascii=False, indent=2)}"
                     _log_error(error_msg)
-                    return ("", error_msg)
+                    return ("", "", error_msg)
                 
                 # === 6. 计算耗时 ===
                 end_time = time.time()
@@ -345,37 +360,45 @@ class Sora2_VideoGeneration:
                 status_info.append("=" * 50)
                 status_info.append("")
                 status_info.append(f"🆔 任务ID：{task_id}")
+                if video_url:
+                    status_info.append(f"🎬 视频URL：{video_url}")
                 status_info.append(f"⏱️ 提交耗时：{elapsed_time:.2f} 秒")
                 status_info.append("")
                 status_info.append("💡 提示：")
-                status_info.append("   1. 请使用任务ID查询视频生成状态")
-                status_info.append("   2. 视频生成通常需要几分钟时间")
-                status_info.append("   3. 可以使用查询节点获取视频下载链接")
+                if video_url:
+                    status_info.append("   1. 视频已生成，可直接使用视频URL")
+                    status_info.append("   2. 视频URL输出端口可连接保存节点")
+                else:
+                    status_info.append("   1. 请使用任务ID查询视频生成状态")
+                    status_info.append("   2. 视频生成通常需要几分钟时间")
+                    status_info.append("   3. 可以使用查询节点获取视频下载链接")
                 
                 if notify_hook:
                     status_info.append("   4. 任务完成后会自动回调指定地址")
                 
                 info = "\n".join(status_info)
                 _log_info(f"🎉 {mode_name}任务提交成功！任务ID: {task_id}")
+                if video_url:
+                    _log_info(f"视频URL: {video_url}")
                 
-                return (task_id, info)
+                return (task_id, video_url, info)
                 
             except requests.exceptions.Timeout:
                 error_msg = f"❌ 错误：请求超时（{timeout}秒）\n\n建议：\n1. 检查网络连接\n2. 增加超时时间\n3. 稍后重试"
                 _log_error(error_msg)
-                return ("", error_msg)
+                return ("", "", error_msg)
             
             except requests.exceptions.RequestException as e:
                 error_msg = f"❌ 错误：网络请求失败\n\n错误详情：{str(e)}\n\n建议：\n1. 检查网络连接\n2. 检查 API 地址是否正确\n3. 检查防火墙设置"
                 _log_error(error_msg)
-                return ("", error_msg)
+                return ("", "", error_msg)
             
         except Exception as e:
             error_msg = f"❌ 错误：视频生成失败\n\n错误详情：{str(e)}\n\n建议：\n1. 检查所有参数是否正确\n2. 查看控制台日志获取详细信息\n3. 联系技术支持"
             _log_error(error_msg)
             import traceback
             _log_error(traceback.format_exc())
-            return ("", error_msg)
+            return ("", "", error_msg)
 
 
 # 节点映射
