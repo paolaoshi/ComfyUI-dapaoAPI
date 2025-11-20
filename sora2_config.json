@@ -1,6 +1,0 @@
-{
-    "api_key": "",
-    "base_url": "https://api.example.com",
-    "timeout": 300,
-    "max_retries": 3
-}

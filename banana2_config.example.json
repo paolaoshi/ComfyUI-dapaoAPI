@@ -1,0 +1,6 @@
+{
+    "api_key": "你的第三方API密钥",
+    "google_api_key": "你的Google官方API密钥",
+    "base_url": "https://api.gptbest.vip",
+    "timeout": 300
+}
