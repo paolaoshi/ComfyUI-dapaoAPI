@@ -8,4 +8,9 @@ numpy
 # 如果需要使用 GLM 图像反推和提示词润色功能，请取消下面一行的注释
 # zhipuai
 
+# Gemini 3 异步依赖
+aiohttp
+nest-asyncio
+scipy  # 音频处理
+
 

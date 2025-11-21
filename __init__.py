@@ -53,6 +53,12 @@ from .banana2_nodes import (
     NODE_DISPLAY_NAME_MAPPINGS as BANANA2_DISPLAY_MAPPINGS
 )
 
+# 加载Gemini 3多功能节点
+from .gemini3_nodes import (
+    NODE_CLASS_MAPPINGS as GEMINI3_MAPPINGS,
+    NODE_DISPLAY_NAME_MAPPINGS as GEMINI3_DISPLAY_MAPPINGS
+)
+
 # 合并所有节点映射
 NODE_CLASS_MAPPINGS = {
     **SEEDREAM_MAPPINGS,
@@ -60,6 +66,7 @@ NODE_CLASS_MAPPINGS = {
     **DOUBAO_CHAT_MAPPINGS,
     **ZHIPU_CHAT_MAPPINGS,
     **BANANA2_MAPPINGS,
+    **GEMINI3_MAPPINGS,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -68,6 +75,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     **DOUBAO_CHAT_DISPLAY_MAPPINGS,
     **ZHIPU_CHAT_DISPLAY_MAPPINGS,
     **BANANA2_DISPLAY_MAPPINGS,
+    **GEMINI3_DISPLAY_MAPPINGS,
 }
 
 # 声明 Web 目录，用于加载 JavaScript 扩展（节点颜色设置）
@@ -87,6 +95,7 @@ else:
 print(f"  💬 豆包LLM对话：{len(DOUBAO_CHAT_MAPPINGS)} 个")
 print(f"  💬 智谱LLM对话：{len(ZHIPU_CHAT_MAPPINGS)} 个")
 print(f"  🍌 Nano Banana 2多模态：{len(BANANA2_MAPPINGS)} 个")
+print(f"  💎 Gemini 3多功能：{len(GEMINI3_MAPPINGS)} 个")
 print(f"  ✅ 总计：{len(NODE_CLASS_MAPPINGS)} 个节点")
 print(f"  👨‍🏫 作者：@炮老师的小课堂")
 print(f"  🎨 主题：紫色标题栏 + 橙棕色背景")

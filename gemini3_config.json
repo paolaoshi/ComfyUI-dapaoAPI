@@ -1,0 +1,35 @@
+{
+  "api_providers": {
+    "comfly": {
+      "api_key": "",
+      "base_url": "https://ai.comfly.chat/v1",
+      "models": [
+        "gemini-3-pro-preview",
+        "gemini-3-flash",
+        "gemini-2.5-flash",
+        "gemini-2.5-pro"
+      ]
+    },
+    "hk": {
+      "api_key": "",
+      "base_url": "https://hk-api.gptbest.vip/v1",
+      "models": [
+        "gemini-3-pro-preview",
+        "gemini-3-flash",
+        "gemini-2.5-flash",
+        "gemini-2.5-pro"
+      ]
+    },
+    "us": {
+      "api_key": "",
+      "base_url": "https://api.gptbest.vip/v1",
+      "models": [
+        "gemini-3-pro-preview",
+        "gemini-3-flash",
+        "gemini-2.5-flash",
+        "gemini-2.5-pro"
+      ]
+    }
+  },
+  "default_provider": "comfly"
+}

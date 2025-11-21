@@ -1,0 +1,198 @@
+{
+  "id": "a291d94f-885b-48a9-b093-abdf46f9a08f",
+  "revision": 0,
+  "last_node_id": 3,
+  "last_link_id": 2,
+  "nodes": [
+    {
+      "id": 2,
+      "type": "Gemini3_Multimodal",
+      "pos": [
+        2819.3670082961494,
+        412.2002688116885
+      ],
+      "size": [
+        400,
+        410
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🖼️ 图像1",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 1
+        },
+        {
+          "name": "🖼️ 图像2",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像3",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像4",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🎬 视频",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🎵 音频",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "response",
+          "type": "STRING",
+          "links": [
+            2
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Gemini3_Multimodal"
+      },
+      "widgets_values": [
+        "你是一个专业的AI助手，擅长分析图像、视频和音频内容，并提供详细的描述。",
+        "请详细分析这个内容，包括所有细节",
+        "gemini-3-pro-preview-T8",
+        "comfly",
+        "",
+        "中文",
+        0.7,
+        0.9,
+        2048
+      ]
+    },
+    {
+      "id": 3,
+      "type": "easy showAnything",
+      "pos": [
+        3253.3019901779167,
+        410.1101104337876
+      ],
+      "size": [
+        459.8547713135122,
+        481.8026770959692
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "输入任何",
+          "name": "anything",
+          "shape": 7,
+          "type": "*",
+          "link": 2
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "*",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "easy showAnything"
+      },
+      "widgets_values": [
+        "这是一张非常精致的人物肖像图片，内容展示了一位身着二次元风格Cosplay（角色扮演）服装的年轻女性。以下是对图像内容的详细分析：\n\n**1. 人物外貌特征：**\n*   **发色与发型：** 角色拥有一头醒目的樱花粉色长发，发质看起来非常柔顺。头发带有自然的微卷，刘海散落在额前，两侧的鬓发垂在脸颊旁，修饰了脸型。\n*   **面部特征：** 肤色白皙透亮，呈现出一种近乎完美的“瓷娃娃”质感。五官非常精致，眼睛大而有神，瞳孔呈现灰蓝色或淡紫色，眼妆突出了睫毛的纤长。嘴唇涂有红润的唇彩，微微抿起，带有一种温婉或略带俏皮的神情。\n*   **神态：** 她正视镜头，眼神柔和且专注，给人一种与其对视的亲近感。\n\n**2. 服饰与装扮（Cosplay细节）：**\n*   **头部配饰：** 头顶后方悬浮着一个金色的光环状头饰，设计带有翼状或火焰状的几何线条，这通常是特定动漫或游戏角色（如《蔚蓝档案》或《原神》中神性角色）的特征。\n*   **服装风格：** 穿着一套改良式的日式巫女服（Miko outfit）。\n    *   **上衣：** 白色为主的无袖挂脖式上衣，剪裁贴身，露出了肩膀和锁骨线条。\n    *   **胸前装饰：** 胸口正中央有一个显著的金色徽章，中间镶嵌着一朵紫色的四瓣花朵图案，这是该角色服装的重要识别标志。\n    *   **袖套：** 手臂上戴着分离式的袖套，红白相间，袖口宽大，符合传统和服的袖型设计。\n    *   **下装/腰部：** 腰部系着红色的宽腰封或裙装，侧面有白色的缝线装饰，经典的红白配色强化了巫女的既视感。\n\n**3. 姿态与动作：**\n*   **手部动作：** 她的左手轻轻抬起，手指纤细，指尖轻触或悬停在左脸颊/下巴附近。这是一个非常经典的摄影姿势，既能引导观众的视线集中在面部，又增加了一丝妩媚或思考的韵味。\n*   **身体角度：** 身体微微前倾，构图上拉近了与观众的距离。\n\n**4. 背景与环境：**\n*   **场景：** 背景比较模糊，但可以看出是传统的日式木质建筑结构。可以看到深红色的立柱和复杂的屋顶横梁，暗示拍摄地点可能是在神社、寺庙或具有古风特色的摄影棚内。\n*   **光影：** 光线处理非常柔和。人物面部受光均匀，显得皮肤通透。背景较暗，但上方"
+      ]
+    },
+    {
+      "id": 1,
+      "type": "LoadImage",
+      "pos": [
+        2536.0573917487973,
+        416.4730635237887
+      ],
+      "size": [
+        238.98242871108368,
+        397.9298680752182
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            1
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "a040837b79b095504c4b3135f9efd757972d7d9f1deed56db850e39a3837aeb7.png",
+        "image"
+      ]
+    }
+  ],
+  "links": [
+    [
+      1,
+      1,
+      0,
+      2,
+      0,
+      "IMAGE"
+    ],
+    [
+      2,
+      2,
+      0,
+      3,
+      0,
+      "*"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.7247295000000084,
+      "offset": [
+        -1973.918837329884,
+        42.634712856059316
+      ]
+    },
+    "node_versions": {
+      "ComfyUI-dapaoAPI": "af627424c3b88c833725d55a68579ee9b1e7c969",
+      "comfyui-easy-use": "499ed4eafc3ad9d0f26e2cad40219a9e0d613fe5",
+      "comfy-core": "0.3.67"
+    },
+    "frontendVersion": "1.28.8",
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4
+}
