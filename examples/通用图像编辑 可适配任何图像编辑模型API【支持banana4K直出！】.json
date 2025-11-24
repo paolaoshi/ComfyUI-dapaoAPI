@@ -1,0 +1,511 @@
+{
+  "id": "06d87908-69dd-43b5-aeaa-66816073ac1e",
+  "revision": 0,
+  "last_node_id": 174,
+  "last_link_id": 329,
+  "nodes": [
+    {
+      "id": 150,
+      "type": "MarkdownNote",
+      "pos": [
+        -3087.1192904003306,
+        678.1886757650359
+      ],
+      "size": [
+        512.5709228515625,
+        774.7727661132812
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "title": "大炮工作流使用说明",
+      "properties": {
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "# 🌈              资源说明            🌈\n---\n# ⭐所有免费资源⭐\n## 👉[免费资源](https://wxuyk58beb5.feishu.cn/docx/TJF1dpepNoHtsMxP5MfcNJhnnSf) 👈点击跳转（整合包/公开课/云端）\n\n---\n\n## [工作流和资料免费分享](https://pan.quark.cn/s/d588a76afc19)👈点击跳转\n（可按日期和名称寻找所需工作流或者模型）\n\n---\n\n# 🦁大炮满血整合包下载地址🦁\n## 👉[满血整合包](https://wxuyk58beb5.feishu.cn/docx/TJF1dpepNoHtsMxP5MfcNJhnnSf) 👈点击跳转\n（含模型和环境包 300+工作流一键直出）\n\n---\n\n# 🌈跑不动的可以考虑用我的云端🌈\n\n## 👉[仙宫满血云端](https://www.xiangongyun.com/image/detail/5b5aa403-8e9c-4a81-94a3-ce9a13febb47)👈点击跳转\n\n## ⭐RH平台也有我大部分工作流：\n\n## 👉[RH最新工作流](https://www.runninghub.cn/user-center/1843821604546498561/userPost?inviteCode=kol01-rh138)👈点击跳转\n\n\n---\n\n## ⭐如果需要VIP云端也可联系我\n## 👉[所有工作流展示效果](https://wxuyk58beb5.feishu.cn/docx/IZSadNNb0oqF9rxGw97cQQSgnUo)👈点击查看\n\n---\n\n# 🎥我的所有视频🎥\n## -- 💻[bilibili](https://space.bilibili.com/397686377?spm_id_from=333.33.0.0)👈点击跳转 -- 💻[抖音](https://www.douyin.com/user/MS4wLjABAAAAHSDoiXKglmJvAqDOrjZONAx42I_BGnbcHX51hStBIw_LJILooUMeI2Had3Xp5xW2?from_tab_name=main&vid=7517850368684903717)👈点击跳转\n\n---\n\n# 🥩我的B站comfyui免费课🥩\n## -- 🍱[保姆级comfyui入门公开课](https://www.bilibili.com/video/BV1rP7uzpEvC/?vd_source=2102d46b60c3ac89745322229c864c92)👈点击跳转\n# 🥘本工作流演示说明🥘\n\n## -- 🥨[大炮B站主页](https://space.bilibili.com/397686377)👈点击跳转\n\n## 💫需要VIP永久报错服务或购买专属课可以私我💫\n\n---\n\n## 🐧请联系VX：paolaoshiAICG🐧\n---\n"
+      ],
+      "color": "#2a363b",
+      "bgcolor": "#3f5159"
+    },
+    {
+      "id": 128,
+      "type": "LoadImage",
+      "pos": [
+        -2463.461513970515,
+        688.5437574309694
+      ],
+      "size": [
+        329.090909090909,
+        592.181818181818
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            325
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.68",
+        "Node name for S&R": "LoadImage",
+        "widget_ue_connectable": {
+          "image": true,
+          "upload": true
+        }
+      },
+      "widgets_values": [
+        "001 (1) (1).jpeg",
+        "image"
+      ]
+    },
+    {
+      "id": 133,
+      "type": "LoadImage",
+      "pos": [
+        -2148.3578801275385,
+        748.2360835384077
+      ],
+      "size": [
+        329.090909090909,
+        592.181818181818
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            326
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.68",
+        "Node name for S&R": "LoadImage",
+        "widget_ue_connectable": {
+          "image": true,
+          "upload": true
+        }
+      },
+      "widgets_values": [
+        "001 (1).jpeg",
+        "image"
+      ]
+    },
+    {
+      "id": 134,
+      "type": "LoadImage",
+      "pos": [
+        -1757.7112272349764,
+        733.3831083317957
+      ],
+      "size": [
+        329.090909090909,
+        592.181818181818
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            327
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.68",
+        "Node name for S&R": "LoadImage",
+        "widget_ue_connectable": {
+          "image": true,
+          "upload": true
+        }
+      },
+      "widgets_values": [
+        "6b96020f7d2f6c3e05f791a373a70e50.jpg",
+        "image"
+      ]
+    },
+    {
+      "id": 168,
+      "type": "Note",
+      "pos": [
+        -1654.4549850737878,
+        1430.8644962218996
+      ],
+      "size": [
+        805.3620412688267,
+        404.9327296096185
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "title": "官方调用示意",
+      "properties": {
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "官方调用示意：\n\n🌐 API地址: https://generativelanguage.googleapis.com\n\n🔑 API密钥: 你的 Gemini API Key\n(从 https://aistudio.google.com/apikey 获取)\n\n🤖 模型名称: gemini-3-pro-image-preview\n\n📡 请求方法: POST\n\n🔐 密钥位置: Header\n\n📝 密钥字段名: x-goog-api-key"
+      ],
+      "color": "#c09430",
+      "bgcolor": "rgba(24,24,27,.9)"
+    },
+    {
+      "id": 164,
+      "type": "SaveImage",
+      "pos": [
+        -975.084523165748,
+        699.6465259983376
+      ],
+      "size": [
+        342.0958647329792,
+        661.3285522391434
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 328
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.68",
+        "Node name for S&R": "SaveImage",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "ComfyUI"
+      ]
+    },
+    {
+      "id": 152,
+      "type": "Note",
+      "pos": [
+        -2474.0447660226564,
+        1376.428183724142
+      ],
+      "size": [
+        732.982714399926,
+        448.28964279456704
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "title": "第三方调用示意",
+      "properties": {
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "## 注意！这个需要你对API有很深的了解，知道怎么去设置API地址和名称，具体方法要在你购买的API网站自己查看\n## 以下是兔子API填写示意，其他API需要自己去网站看文档\n ---------------\nAPI注册地址：https://api.tu-zi.com/register?aff=IudR\n ------------\n\n## 对话模型：chatgpt-4o-latest\nAPI地址：https://api.tu-zi.com/v1/chat/completions\n ------------\n## 图像生成模型：gemini-3-pro-image-preview\n ----------\nAPI地址：https://api.tu-zi.com/v1/images/generations\n ------------\n## 图像编辑模型：gemini-3-pro-image-preview\n ----------\nAPI地址：https://api.tu-zi.com/v1/images/edits（单图 ）\nhttps://api.tu-zi.com/v1/chat/completions（多图）"
+      ],
+      "color": "#c09430",
+      "bgcolor": "rgba(24,24,27,.9)"
+    },
+    {
+      "id": 171,
+      "type": "easy showAnything",
+      "pos": [
+        -588.5947228227975,
+        712.3403684349895
+      ],
+      "size": [
+        535.2354193443564,
+        540.9523556090329
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "输入任何",
+          "name": "anything",
+          "shape": 7,
+          "type": "*",
+          "link": 329
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "*",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-easy-use",
+        "ver": "76b5896f089d5b4f7619559cf5f7fc0560e3dc40",
+        "Node name for S&R": "easy showAnything",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "\n【多图编辑任务】\n我上传了 3 张图片（第1张图片、第2张图片、第3张图片），请务必综合参考所有图片进行编辑。\n\n用户指令：\n第一张图片中的女士，完全模仿第二张图片中人物的姿势和动作，放置在第三张图片的环境背景中，保持第一张图片女士的服装和外貌特征\n\n重要要求：\n1. 必须同时参考所有 3 张图片的内容\n2. 风格: natural, 画质: hd\n3. 仔细分析每张图片的特征，并按照用户指令进行精确组合\n4. 确保生成的图片融合了所有输入图片的关键元素\n5. 保持自然真实的视觉效果\n  \n ![image1](https://webstatic.aiproxy.vip/output/20251124/cd0e8803-8aef-42c6-b311-65e5df83504e.jpg) [下载1](https://webstatic.aiproxy.vip/output/20251124/cd0e8803-8aef-42c6-b311-65e5df83504e.jpg)  \n"
+      ]
+    },
+    {
+      "id": 174,
+      "type": "ImageEditAPINode",
+      "pos": [
+        -1397.3398314180954,
+        685.488462561357
+      ],
+      "size": [
+        400,
+        670
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🖼️ 图像1",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 325
+        },
+        {
+          "name": "🖼️ 图像2",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 326
+        },
+        {
+          "name": "🖼️ 图像3",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 327
+        },
+        {
+          "name": "🖼️ 图像4",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            328
+          ]
+        },
+        {
+          "name": "response",
+          "type": "STRING",
+          "links": [
+            329
+          ]
+        },
+        {
+          "name": "image_url",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "raw_json",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "ComfyUI-dapaoAPI",
+        "ver": "74867a5e4688274bd5b2199cb959f7243522dcbf",
+        "widget_ue_connectable": {},
+        "Node name for S&R": "ImageEditAPINode"
+      },
+      "widgets_values": [
+        "请根据这些图片进行专业的图像编辑",
+        "https://api.tu-zi.com/v1/chat/completions",
+        "",
+        "gemini-3-pro-image-preview",
+        "POST",
+        "Header",
+        "Authorization",
+        "Auto",
+        "TEXT_AND_IMAGE",
+        "Auto (Model Default)",
+        "hd",
+        "natural",
+        "1x (不放大)",
+        "High Fidelity",
+        "",
+        "",
+        180,
+        "{}",
+        "{}",
+        [
+          false,
+          true
+        ],
+        [
+          false,
+          true
+        ],
+        [
+          false,
+          true
+        ],
+        [
+          false,
+          true
+        ]
+      ]
+    }
+  ],
+  "links": [
+    [
+      325,
+      128,
+      0,
+      174,
+      0,
+      "IMAGE"
+    ],
+    [
+      326,
+      133,
+      0,
+      174,
+      1,
+      "IMAGE"
+    ],
+    [
+      327,
+      134,
+      0,
+      174,
+      2,
+      "IMAGE"
+    ],
+    [
+      328,
+      174,
+      0,
+      164,
+      0,
+      "IMAGE"
+    ],
+    [
+      329,
+      174,
+      1,
+      171,
+      0,
+      "*"
+    ]
+  ],
+  "groups": [
+    {
+      "id": 1,
+      "title": "通用图像编辑 可适配任何图像编辑模型API【支持banana4K直出！】",
+      "bounding": [
+        -2428.2704477425013,
+        301.6083089230069,
+        2406.6194082250286,
+        107.59650324707354
+      ],
+      "color": "#e68442",
+      "font_size": 80,
+      "flags": {}
+    },
+    {
+      "id": 2,
+      "title": "支持官方或任意第三方API节点 填好API和API地址",
+      "bounding": [
+        -2430.585758730518,
+        443.7710222206432,
+        2367.7904439455715,
+        113.24124254761125
+      ],
+      "color": "#9c6353",
+      "font_size": 100,
+      "flags": {}
+    },
+    {
+      "id": 3,
+      "title": "🐝跟着炮老师 学会泡老师🙈",
+      "bounding": [
+        -3103.4063997753306,
+        568.0131386556609,
+        544.6113891601562,
+        1000.2642822265625
+      ],
+      "color": "#14b7cc",
+      "font_size": 40,
+      "flags": {}
+    },
+    {
+      "id": 4,
+      "title": "🐧微信：paolaoshiAICG🐧",
+      "bounding": [
+        -3090.8551302440806,
+        1468.0230263509739,
+        518.6842651367188,
+        80
+      ],
+      "color": "#df6c20",
+      "font_size": 42,
+      "flags": {}
+    }
+  ],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.7247295000000024,
+      "offset": [
+        2855.945719552771,
+        -420.7720561367356
+      ]
+    },
+    "ue_links": [],
+    "links_added_by_ue": [],
+    "frontendVersion": "1.28.8",
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4
+}

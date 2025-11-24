@@ -1,0 +1,420 @@
+{
+  "id": "eb11cd26-d0fd-47ca-9886-5bb8f34a2787",
+  "revision": 0,
+  "last_node_id": 15,
+  "last_link_id": 11,
+  "nodes": [
+    {
+      "id": 10,
+      "type": "MarkdownNote",
+      "pos": [
+        -3487.302143510026,
+        1064.9942177437445
+      ],
+      "size": [
+        512.5709228515625,
+        774.7727661132812
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "title": "大炮工作流使用说明",
+      "properties": {
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "# 🌈              资源说明            🌈\n---\n# ⭐所有免费资源⭐\n## 👉[免费资源](https://wxuyk58beb5.feishu.cn/docx/TJF1dpepNoHtsMxP5MfcNJhnnSf) 👈点击跳转（整合包/公开课/云端）\n\n---\n\n## [工作流和资料免费分享](https://pan.quark.cn/s/d588a76afc19)👈点击跳转\n（可按日期和名称寻找所需工作流或者模型）\n\n---\n\n# 🦁大炮满血整合包下载地址🦁\n## 👉[满血整合包](https://wxuyk58beb5.feishu.cn/docx/TJF1dpepNoHtsMxP5MfcNJhnnSf) 👈点击跳转\n（含模型和环境包 300+工作流一键直出）\n\n---\n\n# 🌈跑不动的可以考虑用我的云端🌈\n\n## 👉[仙宫满血云端](https://www.xiangongyun.com/image/detail/5b5aa403-8e9c-4a81-94a3-ce9a13febb47)👈点击跳转\n\n## ⭐RH平台也有我大部分工作流：\n\n## 👉[RH最新工作流](https://www.runninghub.cn/user-center/1843821604546498561/userPost?inviteCode=kol01-rh138)👈点击跳转\n\n\n---\n\n## ⭐如果需要VIP云端也可联系我\n## 👉[所有工作流展示效果](https://wxuyk58beb5.feishu.cn/docx/IZSadNNb0oqF9rxGw97cQQSgnUo)👈点击查看\n\n---\n\n# 🎥我的所有视频🎥\n## -- 💻[bilibili](https://space.bilibili.com/397686377?spm_id_from=333.33.0.0)👈点击跳转 -- 💻[抖音](https://www.douyin.com/user/MS4wLjABAAAAHSDoiXKglmJvAqDOrjZONAx42I_BGnbcHX51hStBIw_LJILooUMeI2Had3Xp5xW2?from_tab_name=main&vid=7517850368684903717)👈点击跳转\n\n---\n\n# 🥩我的B站comfyui免费课🥩\n## -- 🍱[保姆级comfyui入门公开课](https://www.bilibili.com/video/BV1rP7uzpEvC/?vd_source=2102d46b60c3ac89745322229c864c92)👈点击跳转\n# 🥘本工作流演示说明🥘\n\n## -- 🥨[大炮B站主页](https://space.bilibili.com/397686377)👈点击跳转\n\n## 💫需要VIP永久报错服务或购买专属课可以私我💫\n\n---\n\n## 🐧请联系VX：paolaoshiAICG🐧\n---\n"
+      ],
+      "color": "#2a363b",
+      "bgcolor": "#3f5159"
+    },
+    {
+      "id": 3,
+      "type": "Note",
+      "pos": [
+        -2834.50474031948,
+        1858.5558851455507
+      ],
+      "size": [
+        732.982714399926,
+        448.28964279456704
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "title": "第三方调用示意",
+      "properties": {
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "## 注意！这个需要你对API有很深的了解，知道怎么去设置API地址和名称，具体方法要在你购买的API网站自己查看\n## 以下是兔子API填写示意，其他API需要自己去网站看文档\n ---------------\nAPI注册地址：https://api.tu-zi.com/register?aff=IudR\n ------------\n\n## 对话模型：gemini-3-pro\nAPI地址：https://api.tu-zi.com/v1/chat/completions\n ------------\n## 图像生成模型：gemini-3-pro-image-preview\n ----------\nAPI地址：https://api.tu-zi.com/v1/images/generations\n ------------\n## 图像编辑模型：gemini-3-pro-image-preview\n ----------\nAPI地址：https://api.tu-zi.com/v1/images/edits（单图 ）\nhttps://api.tu-zi.com/v1/chat/completions（多图）"
+      ],
+      "color": "#c09430",
+      "bgcolor": "rgba(24,24,27,.9)"
+    },
+    {
+      "id": 6,
+      "type": "easy showAnything",
+      "pos": [
+        -1922.9839372916842,
+        1066.236924206228
+      ],
+      "size": [
+        498.013785038532,
+        674.6938956606764
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "输入任何",
+          "name": "anything",
+          "shape": 7,
+          "type": "*",
+          "link": 11
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "*",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-easy-use",
+        "ver": "76b5896f089d5b4f7619559cf5f7fc0560e3dc40",
+        "Node name for S&R": "easy showAnything",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "这是一组非常可爱且充满想象力的图片内容。经过分析，这一系列图片展示了高度一致的视觉主题。以下是从不同维度对该内容的详细分析：\n\n### 1. 视觉内容描述 (Visual Description)\n*   **主体 (Subject)：** 画面中有两只毛茸茸的小猫（看起来像是有斑纹的英国短毛猫或田园猫），它们体型娇小，神态专注且呆萌。\n*   **行为 (Action)：** 这两只小猫呈现出拟人化的姿态，前爪握着特制的迷你木浆，正在奋力划水。\n*   **载具 (Vehicle)：** 它们乘坐的不是普通的船，而是一片巨大的、卷曲成船状的绿色树叶。叶脉清晰可见，充满了自然的气息。\n*   **环境 (Environment)：** 场景设定在波光粼粼的水面上（可能是大海或湖泊），背景有模糊的岛屿或礁石。阳光从侧后方照射过来，在水面上形成了美丽的光斑（Bokeh效果）。\n\n### 2. 技术与风格分析 (Technical & Stylistic Analysis)\n*   **AI生成图像 (AI Generation)：** 从光影的质感、毛发的细节、物理逻辑（树叶的承重、猫握桨的方式）以及整体的“超现实写实主义”风格来看，这极有可能是通过高端AI绘图工具（如Midjourney, Stable Diffusion, DALL-E 3）生成的图像。\n*   **光影运用 (Lighting)：** 采用了经典的“黄金时刻”（Golden Hour）布光，温暖的逆光勾勒出小猫的轮廓，使画面看起来非常温馨、梦幻。\n*   **构图与视角 (Composition)：** 采用低角度平视拍摄，让观者仿佛与小猫处于同一水平面，增强了代入感和亲近感。\n*   **连续性 (Consistency)：** 你提供的9张图片构图几乎完全一致，仅在水波纹、光影反射或小猫的微表情上有极细微的差别。这表明这可能是一个**视频片段的连续帧截取**，或者是一个极其稳定的AI视频生成模型（如Sora, Runway Gen-2等）生成的片段。\n\n### 3. 主题与情感色彩 (Themes & Mood)\n*   **治愈系 (Healing)：** 图片传达的核心情感是“治愈”和“放松”。毛绒绒的小动物加上宁静的自然风光，能有效缓解观众的压力。\n*   **童话与奇幻 (Fairy Tale/Fantasy)：** “一叶扁舟”的概念本身就具有强烈的童话色彩，让人联想到《拇指姑娘》或类似的微观世界冒险故事。\n*   **冒险与友谊 (Adventure & Friendship)：** 两只小猫并肩作战、共同划船，象征着伙伴情谊和共同探索未知的勇气。\n\n### 4. 潜在用途 (Potential Use Cases)\n*   **社交媒体素材：** 这类图片非常容易在Instagram、小红书或TikTok上获得高点赞，适合作为早安/晚安问候图，或配上励志/治愈的文案。\n*   **壁纸与屏保：** 由于画质细腻、色彩舒适，非常适合用作手机壁纸。\n*   **故事插图：** 可以作为儿童绘本或幻想小说中的插图概念。\n\n**总结：**\n这是一组**高质量的、AI生成的、具有强烈治愈风格的奇幻生物艺术作品**。它通过拟人化的小猫和超现实的自然场景，构建了一个温馨、梦幻的微观冒险世界。"
+      ]
+    },
+    {
+      "id": 12,
+      "type": "VHS_LoadVideo",
+      "pos": [
+        -2638.9116720427924,
+        1087.2283649142125
+      ],
+      "size": [
+        210,
+        663
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "批次管理",
+          "name": "meta_batch",
+          "shape": 7,
+          "type": "VHS_BatchManager",
+          "link": null
+        },
+        {
+          "name": "vae",
+          "shape": 7,
+          "type": "VAE",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "label": "图像",
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            10
+          ]
+        },
+        {
+          "label": "帧计数",
+          "name": "frame_count",
+          "type": "INT",
+          "links": null
+        },
+        {
+          "label": "音频",
+          "name": "audio",
+          "type": "AUDIO",
+          "links": null
+        },
+        {
+          "label": "视频信息",
+          "name": "video_info",
+          "type": "VHS_VIDEOINFO",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-videohelpersuite",
+        "ver": "8923bd836bdab8b7bbdf4ed104b7d045e70c66e2",
+        "Node name for S&R": "VHS_LoadVideo",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": {
+        "video": "002.mp4",
+        "force_rate": 0,
+        "custom_width": 0,
+        "custom_height": 0,
+        "frame_load_cap": 0,
+        "skip_first_frames": 0,
+        "select_every_nth": 1,
+        "format": "AnimateDiff",
+        "choose video to upload": "image",
+        "videopreview": {
+          "hidden": false,
+          "paused": false,
+          "params": {
+            "filename": "002.mp4",
+            "type": "input",
+            "format": "video/mp4",
+            "force_rate": 0,
+            "custom_width": 0,
+            "custom_height": 0,
+            "frame_load_cap": 0,
+            "skip_first_frames": 0,
+            "select_every_nth": 1
+          },
+          "muted": true
+        }
+      }
+    },
+    {
+      "id": 1,
+      "type": "Note",
+      "pos": [
+        -1959.842687578169,
+        1900.8758274540303
+      ],
+      "size": [
+        805.3620412688267,
+        404.9327296096185
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "title": "官方调用示意",
+      "properties": {
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "官方调用示意：\n\n🌐 API地址: https://generativelanguage.googleapis.com\n\n模型名称：Gemini 3 Pro Preview\n\n🔑 API密钥: 你的 Gemini API Key\n(从 https://aistudio.google.com/apikey 获取)\n\n🤖 模型名称: gemini-3-pro-image-preview\n\n📡 请求方法: POST\n\n🔐 密钥位置: Header\n\n📝 密钥字段名: x-goog-api-key\n\n\n"
+      ],
+      "color": "#c09430",
+      "bgcolor": "rgba(24,24,27,.9)"
+    },
+    {
+      "id": 15,
+      "type": "UniversalAPINode",
+      "pos": [
+        -2339.368279883747,
+        1081.6215101195048
+      ],
+      "size": [
+        400,
+        542
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🖼️ 图像1",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像2",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像3",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像4",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🎬 视频",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 10
+        },
+        {
+          "name": "🎵 音频",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "AI回复",
+          "type": "STRING",
+          "links": [
+            11
+          ]
+        },
+        {
+          "name": "response",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "raw_json",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "ComfyUI-dapaoAPI",
+        "ver": "74867a5e4688274bd5b2199cb959f7243522dcbf",
+        "Node name for S&R": "UniversalAPINode",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "你是一个专业的AI助手",
+        "请分析这个内容",
+        "gpt-4-vision-preview",
+        "https://api.openai.com/v1/chat/completions",
+        "",
+        "POST",
+        "Header",
+        "Authorization",
+        "",
+        180,
+        "{}",
+        "{}",
+        [
+          false,
+          true
+        ],
+        [
+          false,
+          true
+        ],
+        [
+          false,
+          true
+        ],
+        [
+          false,
+          true
+        ]
+      ]
+    }
+  ],
+  "links": [
+    [
+      10,
+      12,
+      0,
+      15,
+      4,
+      "IMAGE"
+    ],
+    [
+      11,
+      15,
+      0,
+      6,
+      0,
+      "*"
+    ]
+  ],
+  "groups": [
+    {
+      "id": 1,
+      "title": "🌐 通用API调用（测试）适合多模特智能对话{反推视频图片智能问答等}",
+      "bounding": [
+        -2745.897175420891,
+        678.8292980126779,
+        2735.7395765655224,
+        150.21039636794853
+      ],
+      "color": "#e68442",
+      "font_size": 80,
+      "flags": {}
+    },
+    {
+      "id": 2,
+      "title": "支持第三方和官方API，具体需要自己查看API文档，注释里有示意",
+      "bounding": [
+        -2741.229289615976,
+        848.6295162633862,
+        2735.7395765655224,
+        150.21039636794853
+      ],
+      "color": "#4a7b4a",
+      "font_size": 80,
+      "flags": {}
+    },
+    {
+      "id": 3,
+      "title": "🐝跟着炮老师 学会泡老师🙈",
+      "bounding": [
+        -3503.589252885026,
+        954.8186806343693,
+        544.6113891601562,
+        1000.2642822265625
+      ],
+      "color": "#14b7cc",
+      "font_size": 40,
+      "flags": {}
+    },
+    {
+      "id": 4,
+      "title": "🐧微信：paolaoshiAICG🐧",
+      "bounding": [
+        -3491.037983353776,
+        1854.828568329682,
+        518.6842651367188,
+        80
+      ],
+      "color": "#df6c20",
+      "font_size": 42,
+      "flags": {}
+    }
+  ],
+  "config": {},
+  "extra": {
+    "ue_links": [],
+    "ds": {
+      "scale": 0.658845000000002,
+      "offset": [
+        3344.850587874142,
+        -679.907620315668
+      ]
+    },
+    "links_added_by_ue": [],
+    "frontendVersion": "1.28.8",
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4
+}

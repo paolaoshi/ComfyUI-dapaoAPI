@@ -1,0 +1,241 @@
+{
+  "id": "c9d3097f-0fcb-4b50-a0e5-4ed040b3689a",
+  "revision": 0,
+  "last_node_id": 11,
+  "last_link_id": 2,
+  "nodes": [
+    {
+      "id": 7,
+      "type": "SaveVideo",
+      "pos": [
+        -2683.7199831338407,
+        922.9004747486858
+      ],
+      "size": [
+        626.8417334386659,
+        1237.712242615756
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "video",
+          "type": "VIDEO",
+          "link": 2
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.68",
+        "widget_ue_connectable": {},
+        "Node name for S&R": "SaveVideo"
+      },
+      "widgets_values": [
+        "video/ComfyUI",
+        "mp4",
+        "h264"
+      ]
+    },
+    {
+      "id": 10,
+      "type": "MarkdownNote",
+      "pos": [
+        -3689.414339140022,
+        978.0410227811566
+      ],
+      "size": [
+        512.5709228515625,
+        774.7727661132812
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "title": "大炮工作流使用说明",
+      "properties": {
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "# 🌈              资源说明            🌈\n---\n# ⭐所有免费资源⭐\n## 👉[免费资源](https://wxuyk58beb5.feishu.cn/docx/TJF1dpepNoHtsMxP5MfcNJhnnSf) 👈点击跳转（整合包/公开课/云端）\n\n---\n\n## [工作流和资料免费分享](https://pan.quark.cn/s/d588a76afc19)👈点击跳转\n（可按日期和名称寻找所需工作流或者模型）\n\n---\n\n# 🦁大炮满血整合包下载地址🦁\n## 👉[满血整合包](https://wxuyk58beb5.feishu.cn/docx/TJF1dpepNoHtsMxP5MfcNJhnnSf) 👈点击跳转\n（含模型和环境包 300+工作流一键直出）\n\n---\n\n# 🌈跑不动的可以考虑用我的云端🌈\n\n## 👉[仙宫满血云端](https://www.xiangongyun.com/image/detail/5b5aa403-8e9c-4a81-94a3-ce9a13febb47)👈点击跳转\n\n## ⭐RH平台也有我大部分工作流：\n\n## 👉[RH最新工作流](https://www.runninghub.cn/user-center/1843821604546498561/userPost?inviteCode=kol01-rh138)👈点击跳转\n\n\n---\n\n## ⭐如果需要VIP云端也可联系我\n## 👉[所有工作流展示效果](https://wxuyk58beb5.feishu.cn/docx/IZSadNNb0oqF9rxGw97cQQSgnUo)👈点击查看\n\n---\n\n# 🎥我的所有视频🎥\n## -- 💻[bilibili](https://space.bilibili.com/397686377?spm_id_from=333.33.0.0)👈点击跳转 -- 💻[抖音](https://www.douyin.com/user/MS4wLjABAAAAHSDoiXKglmJvAqDOrjZONAx42I_BGnbcHX51hStBIw_LJILooUMeI2Had3Xp5xW2?from_tab_name=main&vid=7517850368684903717)👈点击跳转\n\n---\n\n# 🥩我的B站comfyui免费课🥩\n## -- 🍱[保姆级comfyui入门公开课](https://www.bilibili.com/video/BV1rP7uzpEvC/?vd_source=2102d46b60c3ac89745322229c864c92)👈点击跳转\n# 🥘本工作流演示说明🥘\n\n## -- 🥨[大炮B站主页](https://space.bilibili.com/397686377)👈点击跳转\n\n## 💫需要VIP永久报错服务或购买专属课可以私我💫\n\n---\n\n## 🐧请联系VX：paolaoshiAICG🐧\n---\n"
+      ],
+      "color": "#2a363b",
+      "bgcolor": "#3f5159"
+    },
+    {
+      "id": 6,
+      "type": "Sora2VideoGenNode",
+      "pos": [
+        -3156.0951205944184,
+        924.690425838038
+      ],
+      "size": [
+        415.8306973089942,
+        416.16088262197945
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🖼️ 图像1",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像2",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像3",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像4",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "🎬 视频",
+          "type": "VIDEO",
+          "links": [
+            2
+          ]
+        },
+        {
+          "name": "🎥 视频URL",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "📋 响应信息",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "ComfyUI-dapaoAPI",
+        "ver": "74867a5e4688274bd5b2199cb959f7243522dcbf",
+        "widget_ue_connectable": {},
+        "Node name for S&R": "Sora2VideoGenNode"
+      },
+      "widgets_values": [
+        "超现实转场。雨天阳台木桌上放着一杯热咖啡。咖啡升起的蒸汽变成了洁白的云朵，杯中的液体变成了风暴中的深色海洋，一艘微小的木船在波浪中颠簸。镜头微距推入杯中，无缝地从阳台场景过渡到风暴海洋的中心。杯中电闪雷鸣。8k分辨率，照片级真实，流体动力学模拟，魔幻现实主义。",
+        "sora-2",
+        "9:16",
+        "15",
+        false,
+        "",
+        0,
+        "randomize",
+        true,
+        [
+          false,
+          true
+        ]
+      ]
+    },
+    {
+      "id": 11,
+      "type": "MarkdownNote",
+      "pos": [
+        -3144.0712590945036,
+        1387.1321964050458
+      ],
+      "size": [
+        407.81152014773625,
+        123.34651881714603
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "properties": {},
+      "widgets_values": [
+        "API注册地址：https://ai.t8star.cn/register?aff=92bf3542729"
+      ],
+      "color": "#c09430",
+      "bgcolor": "rgba(24,24,27,.9)"
+    }
+  ],
+  "links": [
+    [
+      2,
+      6,
+      0,
+      7,
+      0,
+      "VIDEO"
+    ]
+  ],
+  "groups": [
+    {
+      "id": 1,
+      "title": "SORA2文生视频+图生视频（贞贞API）",
+      "bounding": [
+        -3683.067797552209,
+        716.2324092807098,
+        1546.248814212749,
+        112.63286508966416
+      ],
+      "color": "#b1571b",
+      "font_size": 80,
+      "flags": {}
+    },
+    {
+      "id": 2,
+      "title": "🐝跟着炮老师 学会泡老师🙈",
+      "bounding": [
+        -3705.701448515022,
+        867.8654856717816,
+        544.6113891601562,
+        1000.2642822265625
+      ],
+      "color": "#14b7cc",
+      "font_size": 40,
+      "flags": {}
+    },
+    {
+      "id": 3,
+      "title": "🐧微信：paolaoshiAICG🐧",
+      "bounding": [
+        -3693.150178983772,
+        1767.8753733670942,
+        518.6842651367188,
+        80
+      ],
+      "color": "#df6c20",
+      "font_size": 42,
+      "flags": {}
+    }
+  ],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.6588450000000011,
+      "offset": [
+        4111.101152191294,
+        -610.4841818386092
+      ]
+    },
+    "ue_links": [],
+    "links_added_by_ue": [],
+    "frontendVersion": "1.28.8",
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4
+}
