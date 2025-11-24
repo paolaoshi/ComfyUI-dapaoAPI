@@ -18,7 +18,7 @@
    - 智能适配第三方和官方API
 
 👨‍🏫 作者：@炮老师的小课堂
-📦 版本：v2.0.0 (测试版)
+📦 版本：v2.1.0 (测试版)
 🎨 主题：蓝色 (#4A90E2)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -666,6 +666,7 @@ class UniversalAPINode:
         2. {"images": ["base64..."]}
         3. {"image": "base64..."}
         4. {"result": {"image": "base64..."}}
+        5. Gemini: {"candidates": [{"content": {"parts": [{"inlineData": {"data": "..."}}]}}]}
         """
         try:
             print(f"[dapaoAPI-Universal] 开始提取图像...")
@@ -674,8 +675,24 @@ class UniversalAPINode:
             # 尝试多种可能的路径
             image_data = None
             
+            # Gemini 格式: candidates[0].content.parts[0].inlineData.data
+            if isinstance(data, dict) and "candidates" in data:
+                print(f"[dapaoAPI-Universal] 检测到 Gemini 'candidates' 字段")
+                if isinstance(data["candidates"], list) and len(data["candidates"]) > 0:
+                    candidate = data["candidates"][0]
+                    if "content" in candidate and isinstance(candidate["content"], dict):
+                        content = candidate["content"]
+                        if "parts" in content and isinstance(content["parts"], list):
+                            for part in content["parts"]:
+                                if isinstance(part, dict) and "inlineData" in part:
+                                    inline_data = part["inlineData"]
+                                    if "data" in inline_data:
+                                        image_data = inline_data["data"]
+                                        print(f"[dapaoAPI-Universal] 找到 Gemini inlineData.data 字段")
+                                        break
+            
             # OpenAI DALL-E 格式: data[0].b64_json
-            if isinstance(data, dict) and "data" in data:
+            if not image_data and isinstance(data, dict) and "data" in data:
                 print(f"[dapaoAPI-Universal] 检测到 'data' 字段")
                 if isinstance(data["data"], list) and len(data["data"]) > 0:
                     first_item = data["data"][0]
@@ -835,19 +852,33 @@ class UniversalAPINode:
                             ai_reply += part.text
                         # 提取图像
                         elif hasattr(part, 'inline_data') and part.inline_data:
-                            if hasattr(part.inline_data, 'data'):
-                                data = part.inline_data.data
-                                if hasattr(data, 'decode'):
-                                    data = base64.b64encode(data).decode('utf-8')
-                                
-                                # 解码图像
-                                image_bytes = base64.b64decode(data)
-                                pil_image = Image.open(io.BytesIO(image_bytes))
-                                if pil_image.mode != "RGB":
-                                    pil_image = pil_image.convert("RGB")
-                                image_np = np.array(pil_image).astype(np.float32) / 255.0
-                                image_tensor = torch.from_numpy(image_np).unsqueeze(0)
-                                print(f"[dapaoAPI-Universal] ✅ 成功提取图像")
+                            try:
+                                print(f"[dapaoAPI-Universal] 检测到 inline_data")
+                                if hasattr(part.inline_data, 'data'):
+                                    data = part.inline_data.data
+                                    print(f"[dapaoAPI-Universal] inline_data.data 类型: {type(data)}")
+                                    
+                                    # 如果是 bytes 类型,直接使用
+                                    if isinstance(data, bytes):
+                                        image_bytes = data
+                                    # 如果是 str 类型,需要 base64 解码
+                                    elif isinstance(data, str):
+                                        image_bytes = base64.b64decode(data)
+                                    else:
+                                        print(f"[dapaoAPI-Universal] 未知的 data 类型: {type(data)}")
+                                        continue
+                                    
+                                    # 解码图像
+                                    pil_image = Image.open(io.BytesIO(image_bytes))
+                                    if pil_image.mode != "RGB":
+                                        pil_image = pil_image.convert("RGB")
+                                    image_np = np.array(pil_image).astype(np.float32) / 255.0
+                                    image_tensor = torch.from_numpy(image_np).unsqueeze(0)
+                                    print(f"[dapaoAPI-Universal] ✅ 成功提取图像: {image_tensor.shape}")
+                            except Exception as e:
+                                print(f"[dapaoAPI-Universal] 图像提取失败: {e}")
+                                import traceback
+                                traceback.print_exc()
         
         if image_tensor is None:
             image_tensor = self._create_placeholder_image()
