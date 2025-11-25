@@ -30,6 +30,7 @@ from typing import Tuple
 from .gemini3_client import (
     GeminiClient, get_api_key, encode_image_tensor, run_async
 )
+from .gemini3_file_client import GeminiFileClient, save_audio_to_file
 
 # 统一节点颜色 (紫色)
 NODE_COLOR = "#8B4789"
@@ -229,20 +230,34 @@ class Gemini3_Multimodal:
                     }
                 })
         
-        # 添加音频
+        # 添加音频（使用 File API 上传）
         if audio is not None:
             try:
-                from .gemini3_client import encode_audio_tensor
-                audio_base64 = encode_audio_tensor(audio)
+                print(f"[dapaoAPI-Gemini3] 开始处理音频...")
+                # 保存音频到临时文件
+                temp_audio_path = save_audio_to_file(audio)
+                print(f"[dapaoAPI-Gemini3] 音频保存到: {temp_audio_path}")
+                
+                # 使用 File API 上传
+                file_client = GeminiFileClient(api_key, mirror_site)
+                file_uri = await file_client.upload_file(temp_audio_path)
+                
                 parts.append({
-                    "inline_data": {
+                    "file_data": {
                         "mime_type": "audio/wav",
-                        "data": audio_base64
+                        "file_uri": file_uri
                     }
                 })
-                print(f"[dapaoAPI-Gemini3] 音频已编码")
+                print(f"[dapaoAPI-Gemini3] 音频上传成功: {file_uri}")
+                
+                # 清理临时文件
+                try:
+                    import os
+                    os.remove(temp_audio_path)
+                except:
+                    pass
             except Exception as e:
-                print(f"[dapaoAPI-Gemini3] 音频编码失败: {e}")
+                print(f"[dapaoAPI-Gemini3] 音频处理失败: {e}")
         
         # 添加用户输入文本
         parts.append({"text": user_input})

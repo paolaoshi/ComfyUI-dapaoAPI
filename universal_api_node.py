@@ -24,6 +24,7 @@
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """
 
+import os
 import json
 import requests
 import base64
@@ -34,6 +35,7 @@ from PIL import Image
 from typing import Tuple, Optional
 
 from .gemini3_client import encode_image_tensor
+from .gemini3_file_client import GeminiFileClient, save_audio_to_file
 
 # 尝试导入 Google 官方 SDK（可选）
 try:
@@ -115,6 +117,15 @@ class UniversalAPINode:
                 "🎬 视频": ("IMAGE",),
                 "🎵 音频": ("AUDIO",),
                 
+                "🎬 视频文件路径": ("STRING", {
+                    "default": "",
+                    "placeholder": "输入视频文件完整路径 (mp4/mov/avi等)"
+                }),
+                "🎵 音频文件路径": ("STRING", {
+                    "default": "",
+                    "placeholder": "输入音频文件完整路径 (mp3/wav/m4a等)"
+                }),
+                
                 "🎯 响应提取路径": ("STRING", {
                     "default": "",
                     "placeholder": "如: data.result.text (留空返回完整响应)"
@@ -178,6 +189,8 @@ class UniversalAPINode:
         image4 = kwargs.get("🖼️ 图像4")
         video = kwargs.get("🎬 视频")
         audio = kwargs.get("🎵 音频")
+        video_path = kwargs.get("🎬 视频文件路径", "").strip()
+        audio_path = kwargs.get("🎵 音频文件路径", "").strip()
         
         print(f"[dapaoAPI-Universal] API地址: {api_url}")
         print(f"[dapaoAPI-Universal] 模型名称: {model_name}")
@@ -282,9 +295,43 @@ class UniversalAPINode:
                             }
                         })
             
-            # 添加视频帧（采样最多10帧）
-            if video is not None:
-                print(f"[dapaoAPI-Universal] 处理视频")
+            # 添加视频（优先使用文件路径）
+            if video_path and os.path.exists(video_path):
+                print(f"[dapaoAPI-Universal] 读取视频文件: {video_path}")
+                try:
+                    import cv2
+                    # 读取视频并采样关键帧
+                    cap = cv2.VideoCapture(video_path)
+                    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                    step = max(1, total_frames // 10)
+                    
+                    for i in range(0, total_frames, step):
+                        cap.set(cv2.CAP_PROP_POS_FRAMES, i)
+                        ret, frame = cap.read()
+                        if ret:
+                            # 转换为 RGB
+                            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                            pil_image = Image.fromarray(frame_rgb)
+                            
+                            buffered = io.BytesIO()
+                            pil_image.save(buffered, format="JPEG", quality=85)
+                            base64_str = base64.b64encode(buffered.getvalue()).decode('utf-8')
+                            
+                            user_content.append({
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{base64_str}"
+                                }
+                            })
+                    cap.release()
+                    print(f"[dapaoAPI-Universal] 视频帧处理完成")
+                except ImportError:
+                    print(f"[dapaoAPI-Universal] 需要安装 opencv-python: pip install opencv-python")
+                except Exception as e:
+                    print(f"[dapaoAPI-Universal] 视频处理失败: {e}")
+            elif video is not None:
+                # 回退到视频帧处理
+                print(f"[dapaoAPI-Universal] 处理视频帧")
                 batch_size = video.shape[0]
                 step = max(1, batch_size // 10)
                 for i in range(0, batch_size, step):
@@ -297,15 +344,45 @@ class UniversalAPINode:
                         }
                     })
             
-            # 添加音频
-            if audio is not None:
-                print(f"[dapaoAPI-Universal] 处理音频")
+            # 添加音频（优先使用文件路径）
+            if audio_path and os.path.exists(audio_path):
+                print(f"[dapaoAPI-Universal] 读取音频文件: {audio_path}")
+                try:
+                    # 直接读取文件并编码为 base64
+                    with open(audio_path, 'rb') as f:
+                        audio_data = f.read()
+                    audio_base64 = base64.b64encode(audio_data).decode('utf-8')
+                    
+                    # 获取文件扩展名
+                    ext = os.path.splitext(audio_path)[1].lower()
+                    format_map = {
+                        '.mp3': 'mp3',
+                        '.wav': 'wav',
+                        '.m4a': 'm4a',
+                        '.ogg': 'ogg',
+                        '.flac': 'flac'
+                    }
+                    audio_format = format_map.get(ext, 'mp3')
+                    
+                    user_content.append({
+                        "type": "input_audio",
+                        "input_audio": {
+                            "data": audio_base64,
+                            "format": audio_format
+                        }
+                    })
+                    print(f"[dapaoAPI-Universal] 音频文件处理完成 ({audio_format})")
+                except Exception as e:
+                    print(f"[dapaoAPI-Universal] 音频文件读取失败: {e}")
+            elif audio is not None:
+                # 回退到 tensor 处理
+                print(f"[dapaoAPI-Universal] 处理音频 tensor")
                 try:
                     from .gemini3_client import encode_audio_tensor
                     audio_base64 = encode_audio_tensor(audio)
                     user_content.append({
-                        "type": "audio",
-                        "audio": {
+                        "type": "input_audio",
+                        "input_audio": {
                             "data": audio_base64,
                             "format": "wav"
                         }
@@ -795,7 +872,7 @@ class UniversalAPINode:
         
         # 添加视频帧
         if video is not None:
-            print(f"[dapaoAPI-Universal] 处理视频")
+            print(f"[dapaoAPI-Universal] 处理视频帧")
             batch_size = video.shape[0]
             step = max(1, batch_size // 10)
             for i in range(0, batch_size, step):
@@ -813,6 +890,40 @@ class UniversalAPINode:
                         "data": base64_str
                     }
                 })
+        
+        # 添加音频（使用 File API）
+        if audio is not None:
+            print(f"[dapaoAPI-Universal] 处理音频")
+            try:
+                import asyncio
+                # 保存音频为临时文件
+                temp_audio_path = save_audio_to_file(audio)
+                print(f"[dapaoAPI-Universal] 音频保存到: {temp_audio_path}")
+                
+                # 使用 File API 上传
+                file_client = GeminiFileClient(api_key, "google")
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    file_uri = loop.run_until_complete(file_client.upload_file(temp_audio_path))
+                    parts.append({
+                        "file_data": {
+                            "mime_type": "audio/wav",
+                            "file_uri": file_uri
+                        }
+                    })
+                    print(f"[dapaoAPI-Universal] 音频上传成功: {file_uri}")
+                finally:
+                    loop.close()
+                
+                # 清理临时文件
+                try:
+                    import os
+                    os.remove(temp_audio_path)
+                except:
+                    pass
+            except Exception as e:
+                print(f"[dapaoAPI-Universal] 音频处理失败: {e}")
         
         # 添加文本
         parts.append({"text": user_input})

@@ -18,7 +18,9 @@ dapaoAPI 是一套为 ComfyUI 设计的高质量自定义节点集合，整合�
 
 ---
 ## 🎉 效果演示
+### 🚀 2025-11-25 增加视频/音频反推功能
 
+![alt text](效果图/音频+视频反推.png)
 ### 🚀 2025-11-24 重大更新！通用 API 节点发布
 
 **新增两大核心节点，支持任意第三方和官方 API 调用！**
@@ -110,7 +112,8 @@ pip install -r requirements.txt
 | **智谱 LLM 对话** | 智谱 AI 大语言模型 | 深度中文理解、专业内容 | [📖 使用说明](docs/6-智谱LLM对话使用说明.md) |
 | **豆包视频反推** | 豆包 Vision 视频内容分析 | VIDEO/图像批次双输入、4种模板、中英文切换 | [📖 使用说明](docs/8-豆包视频反推使用说明.md) |
 | **🍌 Nano Banana 2** | Google 多模态图像生成 | 文生图+多图编辑、13种模板、专业控制 | [📖 使用说明](docs/banana2_usage.md) |
-| **💎 Gemini 3 多功能** | Google Gemini 3 多模态 | LLM对话+图像反推+视频反推+音频分析、T8第三方API | [📖 使用说明](docs/gemini3_usage.md) |
+| **💎 Gemini 3 多功能** | Google Gemini 3 多模态 | LLM对话+图像反推+视频批次分析+音频分析、T8第三方API | [📖 使用说明](docs/gemini3_usage.md) |
+| **🎬 Gemini 3 视频音频** | Gemini 3 视频音频分析 | 真实视频文件上传+音频文件上传+混合分析、File API | [📖 使用说明](docs/gemini3_video_audio_guide.md) |
 
 ## 🌐 通用 API 节点使用指南
 
