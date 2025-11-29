@@ -15,7 +15,7 @@
 - 统一的紫色+橙棕色节点主题
 
 作者：@炮老师的小课堂
-版本：v1.1.2
+版本：v1.1.4
 """
 
 # 加载 Seedream 节点
@@ -80,6 +80,9 @@ from .sora2_node import (
     NODE_DISPLAY_NAME_MAPPINGS as SORA2_DISPLAY_MAPPINGS
 )
 
+# 加载 Comfly v2 中的新节点 (从 banana2_nodes 加载，不再依赖 Comfyui_Comfly_v2 文件夹)
+# from .Comfyui_Comfly_v2.Comfly import Comfly_NanoBanana2_ZhenZhen
+
 # 合并所有节点映射
 NODE_CLASS_MAPPINGS = {
     **SEEDREAM_MAPPINGS,
@@ -91,6 +94,7 @@ NODE_CLASS_MAPPINGS = {
     **UNIVERSAL_MAPPINGS,
     **IMAGE_EDIT_MAPPINGS,
     **SORA2_MAPPINGS,
+    # "Comfly_NanoBanana2_ZhenZhen": Comfly_NanoBanana2_ZhenZhen, # 已在 BANANA2_MAPPINGS 中包含
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -103,6 +107,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     **UNIVERSAL_DISPLAY_MAPPINGS,
     **IMAGE_EDIT_DISPLAY_MAPPINGS,
     **SORA2_DISPLAY_MAPPINGS,
+    # "Comfly_NanoBanana2_ZhenZhen": "🍌 Nano Banana 2【贞贞】 @炮老师的小课堂", # 已在 BANANA2_DISPLAY_MAPPINGS 中包含
 }
 
 # 声明 Web 目录，用于加载 JavaScript 扩展（节点颜色设置）

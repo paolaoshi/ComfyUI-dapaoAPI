@@ -34,6 +34,7 @@ from io import BytesIO
 from PIL import Image
 import torch
 import numpy as np
+import comfy.utils
 
 # 获取当前目录
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -78,6 +79,14 @@ def get_banana2_config():
     except Exception as e:
         _log_error(f"读取配置文件失败: {e}")
         return default_config
+
+def save_banana2_config(config):
+    """保存配置文件"""
+    try:
+        with open(BANANA2_CONFIG_FILE, 'w', encoding='utf-8') as f:
+            json.dump(config, f, indent=4, ensure_ascii=False)
+    except Exception as e:
+        _log_error(f"保存配置文件失败: {e}")
 
 
 def pil2tensor(image: Image.Image) -> torch.Tensor:
@@ -571,14 +580,288 @@ class Nano_Banana_2:
             return (default_image, response_text, "")
 
 
+class Dapao_NanoBanana2:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "🎨 提示词": ("STRING", {
+                    "multiline": True, 
+                    "default": "",
+                    "placeholder": "输入你的提示词..."
+                }),
+                "🤖 模式": (["图像编辑", "文生图"], {"default": "图像编辑"}),
+                "🌐 API来源": (["comfly【默认】", "手动输入IP", "香港节点", "高速美国节点"], {"default": "comfly【默认】"}),
+                "� 自定义IP": ("STRING", {
+                    "default": "", 
+                    "placeholder": "选择'手动输入IP'选项时输入 (例如 http://104.194.8.112:9088)"
+                }),
+                "🔑 API密钥": ("STRING", {
+                    "default": "",
+                    "placeholder": "请输入API Key"
+                }),
+                "🎭 模型": (["nano-banana-2"], {"default": "nano-banana-2"}),
+                "📐 宽高比": (["auto", "16:9", "4:3", "4:5", "3:2", "1:1", "2:3", "3:4", "5:4", "9:16", "21:9"], {"default": "auto"}),
+                "📏 图像尺寸": (["1K", "2K", "4K"], {"default": "2K"}),
+            },
+            "optional": {
+                "🖼️ 图像1": ("IMAGE",),
+                "🖼️ 图像2": ("IMAGE",),
+                "🖼️ 图像3": ("IMAGE",),
+                "🖼️ 图像4": ("IMAGE",),
+                "🖼️ 图像5": ("IMAGE",),
+                "🖼️ 图像6": ("IMAGE",),
+                "🖼️ 图像7": ("IMAGE",),
+                "🖼️ 图像8": ("IMAGE",),
+                "🖼️ 图像9": ("IMAGE",),
+                "🖼️ 图像10": ("IMAGE",),
+                "🖼️ 图像11": ("IMAGE",),
+                "🖼️ 图像12": ("IMAGE",),
+                "🖼️ 图像13": ("IMAGE",),
+                "🖼️ 图像14": ("IMAGE",),
+                "🖼️ 图像15": ("IMAGE",),
+                "🖼️ 图像16": ("IMAGE",),
+                "🖼️ 图像17": ("IMAGE",),
+                "🖼️ 图像18": ("IMAGE",),
+                "🖼️ 图像19": ("IMAGE",),
+                "🖼️ 图像20": ("IMAGE",),
+                "📤 响应格式": (["url", "b64_json"], {"default": "url"}),
+                "🎲 随机种子": ("INT", {"default": 0, "min": 0, "max": 2147483647})  
+            }
+        }
+    
+    RETURN_TYPES = ("IMAGE", "STRING", "STRING")
+    RETURN_NAMES = ("image", "response", "image_url")
+    FUNCTION = "generate_image_with_api_set"
+    CATEGORY = "🤖dapaoAPI/Nano Banana 2"
+
+    def __init__(self):
+        self.config = get_banana2_config()
+        self.api_key = self.config.get('api_key', '')
+        self.timeout = 600
+
+    def get_headers(self):
+        return {
+            "Authorization": f"Bearer {self.api_key}"
+        }
+    
+    def image_to_base64(self, image_tensor):
+        """Convert tensor to base64 string"""
+        if image_tensor is None:
+            return None
+            
+        pil_image = tensor2pil(image_tensor)[0]
+        buffered = BytesIO()
+        pil_image.save(buffered, format="PNG")
+        return base64.b64encode(buffered.getvalue()).decode('utf-8')
+    
+    def generate_image_with_api_set(self, **kwargs):
+        # 提取参数
+        prompt = kwargs.get("🎨 提示词", "")
+        api_base = kwargs.get("🌐 API来源", "comfly【默认】")
+        apikey = kwargs.get("🔑 API密钥", "")
+        mode_cn = kwargs.get("🤖 模式", "图像编辑")
+        model = kwargs.get("🎭 模型", "nano-banana-2")
+        aspect_ratio = kwargs.get("📐 宽高比", "auto")
+        image_size = kwargs.get("📏 图像尺寸", "2K")
+        custom_ip = kwargs.get("🔗 自定义IP", "")
+        response_format = kwargs.get("📤 响应格式", "url")
+        seed = kwargs.get("🎲 随机种子", 0)
+        
+        # 模式映射
+        mode_map = {"文生图": "text2img", "图像编辑": "img2img"}
+        mode = mode_map.get(mode_cn, "text2img")
+        
+        # 提取图像
+        image_list = []
+        for i in range(1, 21):
+            key = f"🖼️ 图像{i}"
+            if key in kwargs:
+                image_list.append(kwargs[key])
+            else:
+                image_list.append(None)
+        
+        all_images = image_list
+
+        baseurl = "https://ai.comfly.chat"
+        base_url_mapping = {
+            "comfly【默认】": "https://ai.comfly.chat",
+            "手动输入IP": custom_ip,
+            "香港节点": "https://hk-api.gptbest.vip",
+            "高速美国节点": "https://api.gptbest.vip"
+        }
+        
+        if api_base == "手动输入IP" and not custom_ip.strip():
+            raise ValueError("选择'手动输入IP'选项时，必须在'自定义IP'字段中提供自定义IP地址")
+        
+        if api_base in base_url_mapping:
+            baseurl = base_url_mapping[api_base]
+            
+        if apikey.strip():
+            self.api_key = apikey
+            # Update local config file
+            config = get_banana2_config()
+            config['api_key'] = apikey
+            save_banana2_config(config)
+            
+        if not self.api_key:
+            error_message = "API key not found in banana2_config.json"
+            print(error_message)
+            blank_image = Image.new('RGB', (1024, 1024), color='white')
+            blank_tensor = pil2tensor(blank_image)
+            return (blank_tensor, error_message, "")
+            
+        try:
+            pbar = comfy.utils.ProgressBar(100)
+            pbar.update_absolute(10)
+
+            final_prompt = prompt
+            
+            if mode == "text2img":
+                headers = self.get_headers()
+                headers["Content-Type"] = "application/json"
+                
+                payload = {
+                    "prompt": final_prompt,
+                    "model": model,
+                    "aspect_ratio": aspect_ratio,
+                    "image_size": image_size
+                }
+                    
+                if response_format:
+                    payload["response_format"] = response_format
+
+                if seed > 0:
+                    payload["seed"] = seed
+                           
+                response = requests.post(
+                    f"{baseurl}/v1/images/generations",
+                    headers=headers,
+                    json=payload,
+                    timeout=self.timeout
+                )
+            else:
+                headers = self.get_headers()
+                
+                files = []
+                image_count = 0
+                for img in all_images:
+                    if img is not None:
+                        pil_img = tensor2pil(img)[0]
+                        buffered = BytesIO()
+                        pil_img.save(buffered, format="PNG")
+                        buffered.seek(0)
+                        files.append(('image', (f'image_{image_count}.png', buffered, 'image/png')))
+                        image_count += 1
+                
+                print(f"处理 {image_count} 张输入图像")
+                
+                data = {
+                    "prompt": final_prompt,
+                    "model": model,
+                    "aspect_ratio": aspect_ratio,
+                    "image_size": image_size
+                }
+                
+                if response_format:
+                    data["response_format"] = response_format
+
+                if seed > 0:
+                    data["seed"] = str(seed)
+               
+                response = requests.post(
+                    f"{baseurl}/v1/images/edits",
+                    headers=headers,
+                    data=data,
+                    files=files,
+                    timeout=self.timeout
+                )
+            
+            pbar.update_absolute(50)
+            
+            if response.status_code != 200:
+                error_message = f"API 错误: {response.status_code} - {response.text}"
+                print(error_message)
+                blank_image = Image.new('RGB', (1024, 1024), color='white')
+                blank_tensor = pil2tensor(blank_image)
+                return (blank_tensor, error_message, "")
+                
+            result = response.json()
+            
+            if "data" not in result or not result["data"]:
+                error_message = "响应中无图像数据"
+                print(error_message)
+                blank_image = Image.new('RGB', (1024, 1024), color='white')
+                blank_tensor = pil2tensor(blank_image)
+                return (blank_tensor, error_message, "")
+            
+            generated_tensors = []
+            image_urls = []
+            response_info = f"使用 {model} 生成了 {len(result['data'])} 张图像\n"
+            response_info += f"图像尺寸: {image_size}\n"
+            response_info += f"宽高比: {aspect_ratio}\n"
+            
+            if mode == "img2img":
+                response_info += f"输入图像数: {image_count}\n"
+
+            if seed > 0:
+                response_info += f"种子: {seed}\n"
+            
+            for i, item in enumerate(result["data"]):
+                pbar.update_absolute(50 + (i+1) * 40 // len(result['data']))
+                
+                if "b64_json" in item:
+                    image_data = base64.b64decode(item["b64_json"])
+                    generated_image = Image.open(BytesIO(image_data))
+                    generated_tensor = pil2tensor(generated_image)
+                    generated_tensors.append(generated_tensor)
+                    response_info += f"图像 {i+1}: Base64 数据\n"
+                elif "url" in item:
+                    image_url = item["url"]
+                    image_urls.append(image_url)
+                    response_info += f"图像 {i+1}: {image_url}\n"
+                    try:
+                        img_response = requests.get(image_url, timeout=self.timeout)
+                        img_response.raise_for_status()
+                        generated_image = Image.open(BytesIO(img_response.content))
+                        generated_tensor = pil2tensor(generated_image)
+                        generated_tensors.append(generated_tensor)
+                    except Exception as e:
+                        print(f"从 URL 下载图像错误: {str(e)}")
+            
+            pbar.update_absolute(100)
+            
+            if generated_tensors:
+                combined_tensor = torch.cat(generated_tensors, dim=0)
+                first_image_url = image_urls[0] if image_urls else ""
+                return (combined_tensor, response_info, first_image_url)
+            else:
+                error_message = "处理图像失败"
+                print(error_message)
+                blank_image = Image.new('RGB', (1024, 1024), color='white')
+                blank_tensor = pil2tensor(blank_image)
+                return (blank_tensor, error_message, "")
+            
+        except Exception as e:
+            error_message = f"图像生成错误: {str(e)}"
+            print(error_message)
+            import traceback
+            traceback.print_exc()
+            blank_image = Image.new('RGB', (1024, 1024), color='white')
+            blank_tensor = pil2tensor(blank_image)
+            return (blank_tensor, error_message, "")
+
+
 # ==================== 节点注册 ====================
 
 NODE_CLASS_MAPPINGS = {
     "Nano_Banana_2": Nano_Banana_2,
+    "Dapao_NanoBanana2": Dapao_NanoBanana2,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "Nano_Banana_2": "🍌 Nano Banana 2 @炮老师的小课堂",
+    "Dapao_NanoBanana2": "🍌 Nano Banana 2 (Dapao) @炮老师的小课堂",
 }
 
 __all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']
