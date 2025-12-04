@@ -1,0 +1,558 @@
+{
+  "id": "7d227862-edb3-4823-bb69-aac0ba01c7cd",
+  "revision": 0,
+  "last_node_id": 30,
+  "last_link_id": 35,
+  "nodes": [
+    {
+      "id": 9,
+      "type": "LoadImage",
+      "pos": [
+        5593.908432011068,
+        2394.4633457653176
+      ],
+      "size": [
+        270.570175686923,
+        616.1931140691936
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 4,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            17
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.75",
+        "Node name for S&R": "LoadImage",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "001 (1).jpeg",
+        "image"
+      ]
+    },
+    {
+      "id": 4,
+      "type": "SaveImage",
+      "pos": [
+        6499.808661078582,
+        2296.5122655677633
+      ],
+      "size": [
+        473.8378080749753,
+        714.6800182312536
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 20
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.75",
+        "Node name for S&R": "SaveImage",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "ComfyUI"
+      ]
+    },
+    {
+      "id": 2,
+      "type": "LoadImage",
+      "pos": [
+        5272.585098099779,
+        2397.0898195212762
+      ],
+      "size": [
+        270.570175686923,
+        616.1931140691936
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 4,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            16
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.75",
+        "Node name for S&R": "LoadImage",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "3fca5c492d79ffde2e54a870a04dba02.jpg",
+        "image"
+      ]
+    },
+    {
+      "id": 3,
+      "type": "CR Text",
+      "pos": [
+        4752.626404919421,
+        2497.096288334085
+      ],
+      "size": [
+        400,
+        200
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 4,
+      "inputs": [],
+      "outputs": [
+        {
+          "label": "文本",
+          "name": "text",
+          "type": "*",
+          "links": []
+        },
+        {
+          "label": "显示帮助",
+          "name": "show_help",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "ComfyUI_Comfyroll_CustomNodes",
+        "ver": "d78b780ae43fcf8c6b7c6505e6ffb4584281ceca",
+        "Node name for S&R": "CR Text",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "让两个女人拥抱在一起，背景是沙滩",
+        [
+          false,
+          true
+        ]
+      ]
+    },
+    {
+      "id": 13,
+      "type": "BananaIntegratedNode",
+      "pos": [
+        6055.666970528976,
+        2330.3957787580043
+      ],
+      "size": [
+        387.7203125,
+        650
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🎨 提示词",
+          "type": "STRING",
+          "link": 34
+        },
+        {
+          "name": "🖼️ 图像1",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 16
+        },
+        {
+          "name": "🖼️ 图像2",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 17
+        },
+        {
+          "name": "🖼️ 图像3",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像4",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像5",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像6",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像7",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像8",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像9",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像10",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像11",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像12",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像13",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像14",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像15",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像16",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像17",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像18",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像19",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像20",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🔑 Google API Key",
+          "type": "STRING",
+          "widget": {
+            "name": "🔑 Google API Key"
+          },
+          "link": 18
+        },
+        {
+          "name": "🔑 T8Star API Key",
+          "type": "STRING",
+          "widget": {
+            "name": "🔑 T8Star API Key"
+          },
+          "link": 19
+        }
+      ],
+      "outputs": [
+        {
+          "name": "generated_image",
+          "type": "IMAGE",
+          "links": [
+            20
+          ]
+        },
+        {
+          "name": "response",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "ComfyUI-dapaoAPI",
+        "ver": "9d305972d046f75f1ec30fcb7651aafeaf5dbeac",
+        "Node name for S&R": "BananaIntegratedNode",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "Google官方",
+        "3:4",
+        "4K",
+        "",
+        "",
+        -1,
+        "随机",
+        300,
+        false
+      ]
+    },
+    {
+      "id": 29,
+      "type": "DapaoPromptNode",
+      "pos": [
+        5387.338507946204,
+        1780.1403109088822
+      ],
+      "size": [
+        334.03876274930553,
+        418.91907791997073
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "final_prompt",
+          "type": "STRING",
+          "links": [
+            34
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "ComfyUI-dapaoAPI",
+        "ver": "9d305972d046f75f1ec30fcb7651aafeaf5dbeac",
+        "widget_ue_connectable": {},
+        "Node name for S&R": "DapaoPromptNode"
+      },
+      "widgets_values": [
+        "[SUBJECT] in a Surrealist Vaporwave collage. Combine elements of classical sculpture, 80s retrofuturism, and Japanese cityscapes. Use pastel shades of [COLOR1] and [COLOR2] with hints of neon",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        [
+          false,
+          true
+        ]
+      ]
+    },
+    {
+      "id": 5,
+      "type": "String",
+      "pos": [
+        4761.213185222124,
+        2342.2600042301606
+      ],
+      "size": [
+        440.98080732190374,
+        99.82469321312283
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "label": "字符串",
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            18
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "ComfyLiterals",
+        "ver": "bdddb08ca82d90d75d97b1d437a652e0284a32ac",
+        "Node name for S&R": "String",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "",
+        [
+          false,
+          true
+        ]
+      ]
+    },
+    {
+      "id": 8,
+      "type": "String",
+      "pos": [
+        4727.307528267785,
+        2830.7258603305263
+      ],
+      "size": [
+        432.63286508966394,
+        197.723288482116
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 4,
+      "inputs": [],
+      "outputs": [
+        {
+          "label": "字符串",
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            19
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "ComfyLiterals",
+        "ver": "bdddb08ca82d90d75d97b1d437a652e0284a32ac",
+        "Node name for S&R": "String",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "",
+        [
+          false,
+          true
+        ]
+      ]
+    }
+  ],
+  "links": [
+    [
+      16,
+      2,
+      0,
+      13,
+      1,
+      "IMAGE"
+    ],
+    [
+      17,
+      9,
+      0,
+      13,
+      2,
+      "IMAGE"
+    ],
+    [
+      18,
+      5,
+      0,
+      13,
+      21,
+      "STRING"
+    ],
+    [
+      19,
+      8,
+      0,
+      13,
+      22,
+      "STRING"
+    ],
+    [
+      20,
+      13,
+      0,
+      4,
+      0,
+      "IMAGE"
+    ],
+    [
+      34,
+      29,
+      0,
+      13,
+      0,
+      "STRING"
+    ]
+  ],
+  "groups": [
+    {
+      "id": 1,
+      "title": "官方+贞贞API 直出4K版",
+      "bounding": [
+        6050.129345653598,
+        2172.0328989085087,
+        692.619977522646,
+        80
+      ],
+      "color": "#3f789e",
+      "font_size": 45,
+      "flags": {}
+    }
+  ],
+  "config": {},
+  "extra": {
+    "workflowRendererVersion": "LG",
+    "ue_links": [],
+    "links_added_by_ue": [],
+    "ds": {
+      "scale": 0.6588450000000031,
+      "offset": [
+        -4046.8155776549693,
+        -1836.0480015630437
+      ]
+    },
+    "frontendVersion": "1.32.9",
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4
+}
