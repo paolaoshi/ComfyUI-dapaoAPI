@@ -28,3 +28,5 @@ alwaysApply: true
 - 配置文件统一使用 `config.json`
 - 支持在节点参数中覆盖配置文件的值
 - 配置文件必须包含：`api_key`、`endpoint_id`、`base_url`、`timeout`
+### 6.重要说明
+所有节点现在都不要将 API 密钥保存到本地配置文件中 ，确保隐私安全。
