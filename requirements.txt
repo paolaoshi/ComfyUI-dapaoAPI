@@ -6,7 +6,7 @@ numpy
 
 # GLM 智谱 AI 依赖（可选）
 # 如果需要使用 GLM 图像反推和提示词润色功能，请取消下面一行的注释
-# zhipuai
+zhipuai
 
 # Gemini 3 异步依赖
 aiohttp

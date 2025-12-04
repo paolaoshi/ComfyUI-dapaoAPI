@@ -1,5 +1,7 @@
 {
     "api_key": "sk-Jlzc4b7ZTxeG3Th1aaWBdCQuOkQJP3EZbJ9gSQ7Ow1M313UO",
     "base_url": "https://api.gptbest.vip",
-    "timeout": 300
+    "timeout": 300,
+    "t8star_api_key": "sk-Jlzc4b7ZTxeG3Th1aaWBdCQuOkQJP3EZbJ9gSQ7Ow1M313UO",
+    "google_api_key": "AIzaSyCts_PLK_J5i0QUcgbTBaYeOAGzrmvLE-k"
 }
