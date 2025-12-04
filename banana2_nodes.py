@@ -81,12 +81,13 @@ def get_banana2_config():
         return default_config
 
 def save_banana2_config(config):
-    """保存配置文件"""
-    try:
-        with open(BANANA2_CONFIG_FILE, 'w', encoding='utf-8') as f:
-            json.dump(config, f, indent=4, ensure_ascii=False)
-    except Exception as e:
-        _log_error(f"保存配置文件失败: {e}")
+    """保存配置文件 - 已禁用"""
+    # try:
+    #     with open(BANANA2_CONFIG_FILE, 'w', encoding='utf-8') as f:
+    #         json.dump(config, f, indent=4, ensure_ascii=False)
+    # except Exception as e:
+    #     _log_error(f"保存配置文件失败: {e}")
+    pass
 
 
 def pil2tensor(image: Image.Image) -> torch.Tensor:

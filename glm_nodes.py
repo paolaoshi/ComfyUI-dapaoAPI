@@ -72,10 +72,6 @@ def get_glm_config():
                 config = json.load(f)
                 return {**default_config, **config}
         else:
-            # 创建默认配置文件
-            with open(GLM_CONFIG_FILE, 'w', encoding='utf-8') as f:
-                json.dump(default_config, f, indent=4, ensure_ascii=False)
-            _log_info(f"已创建默认 GLM 配置文件: {GLM_CONFIG_FILE}")
             return default_config
     except Exception as e:
         _log_error(f"读取 GLM 配置文件失败: {e}")

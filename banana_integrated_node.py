@@ -26,12 +26,9 @@ def get_config():
         return {}
 
 def save_config(config):
-    """保存配置文件"""
-    try:
-        with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
-            json.dump(config, f, indent=4, ensure_ascii=False)
-    except Exception as e:
-        print(f"[BananaIntegrated] 保存配置文件失败: {e}")
+    """保存配置文件 - 已禁用"""
+    # print(f"[BananaIntegrated] 提示：配置文件保存功能已禁用，API密钥不会保存到本地")
+    pass
 
 def pil2tensor(image: Image.Image) -> torch.Tensor:
     """将PIL图像转换为ComfyUI tensor格式 [1, H, W, 3]"""

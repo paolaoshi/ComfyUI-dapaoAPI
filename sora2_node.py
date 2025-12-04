@@ -75,13 +75,14 @@ def get_sora2_config():
 
 
 def save_sora2_config(config):
-    """保存配置文件"""
-    try:
-        with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
-            json.dump(config, f, indent=4, ensure_ascii=False)
-        _log_info("配置已保存")
-    except Exception as e:
-        _log_error(f"保存配置失败: {e}")
+    """保存配置文件 - 已禁用"""
+    # try:
+    #     with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+    #         json.dump(config, f, indent=4, ensure_ascii=False)
+    #     _log_info("配置已保存")
+    # except Exception as e:
+    #     _log_error(f"保存配置失败: {e}")
+    pass
 
 
 def tensor2pil(image_tensor):
