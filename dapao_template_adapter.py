@@ -15,8 +15,11 @@ class DapaoPromptTemplateAdapter:
         # Paths
         self.internal_json = self.base_dir / "bananapro-image-prompts-master/gpt4o-image-prompts-master/data/prompts.json"
         # External paths provided by user
-        self.external_json = Path(r"C:\Users\upboy\Desktop\参考提示词\gpt4o-image-prompts\data\prompts.json")
-        self.zho_readme = Path(r"C:\Users\upboy\Desktop\参考提示词\ZHO-nano-banana-Creation\README.md")
+        # self.external_json = Path(r"C:\Users\upboy\Desktop\参考提示词\gpt4o-image-prompts\data\prompts.json")
+        self.external_json = self.base_dir / "external_prompts.json" # 默认指向项目内的一个不存在的文件，避免报错
+        
+        # ZHO模板路径修正为相对路径
+        self.zho_readme = self.base_dir / "bananapro-image-prompts-master/README.md"
         
         self.templates = []
         

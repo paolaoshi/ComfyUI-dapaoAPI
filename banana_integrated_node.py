@@ -146,9 +146,9 @@ class BananaIntegratedNode:
     CATEGORY = "🤖dapaoAPI/Nano Banana 2"
     
     def __init__(self):
-        config = get_config()
-        self.google_api_key = config.get('google_api_key', '')
-        self.t8star_api_key = config.get('t8star_api_key', '')
+        # 不再从配置文件加载API密钥，确保安全性
+        self.google_api_key = ''
+        self.t8star_api_key = ''
         self.last_seed = -1
     
     def get_api_config(self, api_provider):
@@ -167,21 +167,11 @@ class BananaIntegratedNode:
             }
     
     def save_api_key(self, google_key=None, t8star_key=None):
-        """保存API密钥到配置文件"""
-        config = get_config()
-        updated = False
+        """仅更新内存中的API密钥，不保存到文件"""
         if google_key and google_key.strip():
-            config['google_api_key'] = google_key.strip()
             self.google_api_key = google_key.strip()
-            updated = True
         if t8star_key and t8star_key.strip():
-            config['t8star_api_key'] = t8star_key.strip()
             self.t8star_api_key = t8star_key.strip()
-            updated = True
-        
-        if updated:
-            save_config(config)
-            print(f"[BananaIntegrated] API密钥已保存")
     
     def add_random_variation(self, prompt, seed=0):
         """
