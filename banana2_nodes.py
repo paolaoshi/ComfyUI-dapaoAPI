@@ -241,7 +241,7 @@ class Nano_Banana_2:
         self.color = NODE_COLOR
         self.bgcolor = NODE_COLOR
         self.config = get_banana2_config()
-        self.api_key = self.config.get("api_key", "")
+        self.api_key = "" # 不再从配置文件加载API密钥
         self.timeout = 300
     
     def get_headers(self):

@@ -219,7 +219,7 @@ class Sora2VideoGenNode:
     
     def __init__(self):
         self.config = get_sora2_config()
-        self.api_key = self.config.get("api_key", "")
+        self.api_key = "" # 不再从配置文件加载API密钥
         self.base_url = self.config.get("base_url", "https://ai.t8star.cn")
         self.timeout = self.config.get("timeout", 900)
         
@@ -274,9 +274,9 @@ class Sora2VideoGenNode:
         # 更新 API 密钥
         if api_key.strip():
             self.api_key = api_key
-            config = get_sora2_config()
-            config['api_key'] = api_key
-            save_sora2_config(config)
+            # config = get_sora2_config()
+            # config['api_key'] = api_key
+            # save_sora2_config(config)
         
         if not self.api_key:
             error_msg = "❌ 错误：请配置 API 密钥"
