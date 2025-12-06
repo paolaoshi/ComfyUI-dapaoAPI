@@ -1,0 +1,575 @@
+{
+  "id": "a1f0d803-1117-4717-878d-55e54d37f948",
+  "revision": 0,
+  "last_node_id": 10,
+  "last_link_id": 5,
+  "nodes": [
+    {
+      "id": 3,
+      "type": "SaveImage",
+      "pos": [
+        559.6478635073696,
+        1928.8723040017103
+      ],
+      "size": [
+        455.04792748319414,
+        620.398876690866
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 2
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.76",
+        "widget_ue_connectable": {},
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "ComfyUI"
+      ]
+    },
+    {
+      "id": 2,
+      "type": "DapaoPromptNode",
+      "pos": [
+        -877.7776247882085,
+        1893.3752862219771
+      ],
+      "size": [
+        480,
+        500
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "final_prompt",
+          "type": "STRING",
+          "links": [
+            1
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "ComfyUI-dapaoAPI",
+        "ver": "ffe6ddaf50fe9e8b5daafb24c604aaa288e41396",
+        "widget_ue_connectable": {},
+        "Node name for S&R": "DapaoPromptNode"
+      },
+      "widgets_values": [
+        "保持图片中人物形象不变，做个9宫格展示，展示人物不同姿态不同表情，白色背景",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        [
+          false,
+          true
+        ]
+      ]
+    },
+    {
+      "id": 4,
+      "type": "LoadImage",
+      "pos": [
+        -339.47409905679365,
+        1967.542561527981
+      ],
+      "size": [
+        360.7097683741147,
+        466.39241086851234
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            3
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.76",
+        "widget_ue_connectable": {},
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "圆边logo.png",
+        "image"
+      ]
+    },
+    {
+      "id": 1,
+      "type": "BananaIntegratedNode",
+      "pos": [
+        86.31202142221926,
+        1906.7887075589806
+      ],
+      "size": [
+        387.7203125,
+        650
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🎨 提示词",
+          "type": "STRING",
+          "link": 1
+        },
+        {
+          "name": "🖼️ 图像1",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 3
+        },
+        {
+          "name": "🖼️ 图像2",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像3",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像4",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像5",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像6",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像7",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像8",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像9",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像10",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像11",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像12",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像13",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像14",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像15",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像16",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像17",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像18",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像19",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像20",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🔑 Google API Key",
+          "type": "STRING",
+          "widget": {
+            "name": "🔑 Google API Key"
+          },
+          "link": 4
+        },
+        {
+          "name": "🔑 T8Star API Key",
+          "type": "STRING",
+          "widget": {
+            "name": "🔑 T8Star API Key"
+          },
+          "link": 5
+        }
+      ],
+      "outputs": [
+        {
+          "name": "generated_image",
+          "type": "IMAGE",
+          "links": [
+            2
+          ]
+        },
+        {
+          "name": "response",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "ComfyUI-dapaoAPI",
+        "ver": "ffe6ddaf50fe9e8b5daafb24c604aaa288e41396",
+        "widget_ue_connectable": {},
+        "Node name for S&R": "BananaIntegratedNode"
+      },
+      "widgets_values": [
+        "Google官方",
+        "1:1",
+        "4K",
+        "",
+        "",
+        -1,
+        "随机",
+        180,
+        false
+      ]
+    },
+    {
+      "id": 5,
+      "type": "PrimitiveString",
+      "pos": [
+        -952.8516768433163,
+        2553.697625126168
+      ],
+      "size": [
+        270,
+        58
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            4
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.76",
+        "widget_ue_connectable": {},
+        "Node name for S&R": "PrimitiveString"
+      },
+      "widgets_values": [
+        ""
+      ]
+    },
+    {
+      "id": 8,
+      "type": "MarkdownNote",
+      "pos": [
+        -622.7522188872848,
+        2726.488449160769
+      ],
+      "size": [
+        481.72914033530515,
+        206.5170150353174
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "properties": {
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "## 从下面地址注册一个API令牌，复制到上面紫色节点内\n## 👉[大炮API节点地址（一键直达）](https://github.com/paolaoshi/ComfyUI-dapaoAPI)👈\n\n-------------------\n## 推理一次0.02元（2分钱） banana一次出图大约0.2元（2毛）\n-------------------\n## 🎿贞贞API注册地址：👉[贞贞API官方注册地址（一键直达）](https://ai.t8star.cn/register?aff=92bf3542729)👈"
+      ],
+      "color": "#c09430",
+      "bgcolor": "rgba(24,24,27,.9)"
+    },
+    {
+      "id": 6,
+      "type": "PrimitiveString",
+      "pos": [
+        -551.5422371647139,
+        2556.199801074564
+      ],
+      "size": [
+        270,
+        58
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            5
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.76",
+        "widget_ue_connectable": {},
+        "Node name for S&R": "PrimitiveString"
+      },
+      "widgets_values": [
+        ""
+      ],
+      "color": "#cd3bd8",
+      "bgcolor": "#881d90"
+    },
+    {
+      "id": 10,
+      "type": "MarkdownNote",
+      "pos": [
+        -1569.5348667045055,
+        1881.7787524160933
+      ],
+      "size": [
+        512.5709228515625,
+        774.7727661132812
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "title": "大炮工作流使用说明",
+      "properties": {
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "# 🌈              资源说明            🌈\n---\n# ⭐所有免费资源⭐\n## 👉[免费资源](https://wxuyk58beb5.feishu.cn/docx/TJF1dpepNoHtsMxP5MfcNJhnnSf) 👈点击跳转（整合包/公开课/云端）\n\n---\n\n## [工作流和资料免费分享](https://pan.quark.cn/s/d588a76afc19)👈点击跳转\n（可按日期和名称寻找所需工作流或者模型）\n\n---\n\n# 🦁大炮满血整合包下载地址🦁\n## 👉[满血整合包](https://wxuyk58beb5.feishu.cn/docx/TJF1dpepNoHtsMxP5MfcNJhnnSf) 👈点击跳转\n（含模型和环境包 300+工作流一键直出）\n\n---\n\n# 🌈跑不动的可以考虑用我的云端🌈\n\n## 👉[仙宫满血云端](https://www.xiangongyun.com/image/detail/5b5aa403-8e9c-4a81-94a3-ce9a13febb47)👈点击跳转\n\n## ⭐RH平台也有我大部分工作流：\n\n## 👉[RH最新工作流](https://www.runninghub.cn/user-center/1843821604546498561/userPost?inviteCode=kol01-rh138)👈点击跳转\n\n\n---\n\n## ⭐如果需要VIP云端也可联系我\n## 👉[所有工作流展示效果](https://wxuyk58beb5.feishu.cn/docx/IZSadNNb0oqF9rxGw97cQQSgnUo)👈点击查看\n\n---\n\n# 🎥我的所有视频🎥\n## -- 💻[bilibili](https://space.bilibili.com/397686377?spm_id_from=333.33.0.0)👈点击跳转 -- 💻[抖音](https://www.douyin.com/user/MS4wLjABAAAAHSDoiXKglmJvAqDOrjZONAx42I_BGnbcHX51hStBIw_LJILooUMeI2Had3Xp5xW2?from_tab_name=main&vid=7517850368684903717)👈点击跳转\n\n---\n\n# 🥩我的B站comfyui免费课🥩\n## -- 🍱[保姆级comfyui入门公开课](https://www.bilibili.com/video/BV1rP7uzpEvC/?vd_source=2102d46b60c3ac89745322229c864c92)👈点击跳转\n# 🥘本工作流演示说明🥘\n\n## -- 🥨[大炮B站主页](https://space.bilibili.com/397686377)👈点击跳转\n\n## 💫需要VIP永久报错服务或购买专属课可以私我💫\n\n---\n\n## 🐧请联系VX：paolaoshiAICG🐧\n---\n"
+      ],
+      "color": "#2a363b",
+      "bgcolor": "#3f5159"
+    }
+  ],
+  "links": [
+    [
+      1,
+      2,
+      0,
+      1,
+      0,
+      "STRING"
+    ],
+    [
+      2,
+      1,
+      0,
+      3,
+      0,
+      "IMAGE"
+    ],
+    [
+      3,
+      4,
+      0,
+      1,
+      1,
+      "IMAGE"
+    ],
+    [
+      4,
+      5,
+      0,
+      1,
+      21,
+      "STRING"
+    ],
+    [
+      5,
+      6,
+      0,
+      1,
+      22,
+      "STRING"
+    ]
+  ],
+  "groups": [
+    {
+      "id": 1,
+      "title": "谷歌API",
+      "bounding": [
+        -962.8516768433163,
+        2480.097625126168,
+        290,
+        141.6
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 2,
+      "title": "贞贞API",
+      "bounding": [
+        -561.5422371647139,
+        2482.5998010745643,
+        290,
+        141.6
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 3,
+      "title": "API填写",
+      "bounding": [
+        -631.6118675134392,
+        2661.550361674048,
+        508.7969317871871,
+        300.12592298823483
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 4,
+      "title": "谷歌+贞贞 大香蕉banana最完美融合节点",
+      "bounding": [
+        -897.9515361429527,
+        1679.7758507520816,
+        1958.181818181813,
+        94.19150179480744
+      ],
+      "color": "#3f789e",
+      "font_size": 80,
+      "flags": {}
+    },
+    {
+      "id": 5,
+      "title": "🐝跟着炮老师 学会泡老师🙈",
+      "bounding": [
+        -1585.8219760795055,
+        1771.6032153067183,
+        544.6113891601562,
+        1000.2642822265625
+      ],
+      "color": "#14b7cc",
+      "font_size": 40,
+      "flags": {}
+    },
+    {
+      "id": 6,
+      "title": "🐧微信：paolaoshiAICG🐧",
+      "bounding": [
+        -1573.2707065482555,
+        2671.61310300203,
+        518.6842651367188,
+        80
+      ],
+      "color": "#df6c20",
+      "font_size": 42,
+      "flags": {}
+    }
+  ],
+  "config": {},
+  "extra": {
+    "workflowRendererVersion": "LG",
+    "ue_links": [],
+    "links_added_by_ue": [],
+    "ds": {
+      "scale": 0.4500000000000011,
+      "offset": [
+        3045.5323024840436,
+        -1127.7322744936305
+      ]
+    },
+    "frontendVersion": "1.33.10",
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4
+}
