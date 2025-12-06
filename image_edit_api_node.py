@@ -61,7 +61,7 @@ except ImportError:
         print("⚠️ 未找到 ComfyUI_LLM_Banana.banana_upscale 模块，智能放大功能将不可用")
 
 # 节点颜色 (紫色)
-NODE_COLOR = "#9B59B6"
+
 
 class ImageEditAPINode:
     """
@@ -174,8 +174,7 @@ class ImageEditAPINode:
     OUTPUT_NODE = False
     
     def __init__(self):
-        self.color = NODE_COLOR
-        self.bgcolor = NODE_COLOR
+        pass
     
     def call_api(
         self,

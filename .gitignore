@@ -37,6 +37,7 @@ env/
 config.json
 glm_config.json
 doubao_config.json
+banana2_config.json
 
 # 但保留示例配置文件
 !config.example.json

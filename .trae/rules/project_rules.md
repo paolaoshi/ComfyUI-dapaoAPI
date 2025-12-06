@@ -73,3 +73,63 @@ Config 加载器：
 如果在 config.json 中找不到 Key，不要自动写入，而是抛出友好的错误提示用户：“请在 config.json 中配置您的 API Key 或在节点输入框中填写”。
 参数覆盖：
 逻辑顺序：节点Widget输入 > config.json > 环境变量。
+
+### 随机种子实现规范 (核心功能)
+所有涉及随机性的节点必须遵循以下标准实现，以确保 ComfyUI 的复现性和随机性控制：
+
+1.  **INPUT_TYPES 定义**：
+    必须包含以下两个参数：
+    ```python
+    "🎲 随机种子": ("INT", {
+        "default": -1,
+        "min": -1,
+        "max": 0xffffffffffffffff,
+        "tooltip": "随机种子，-1为随机"
+    }),
+    "🎯 种子控制": (["随机", "固定", "递增"], {"default": "随机"}),
+    ```
+
+2.  **IS_CHANGED 强制更新逻辑**：
+    必须实现 `IS_CHANGED` 类方法，以处理 ComfyUI 的缓存机制：
+    ```python
+    @classmethod
+    def IS_CHANGED(cls, **kwargs):
+        seed_control = kwargs.get("🎯 种子控制", "随机")
+        seed = kwargs.get("🎲 随机种子", -1)
+        
+        # 随机和递增模式下，强制更新 (返回 NaN)
+        if seed_control in ["随机", "递增"]:
+            return float("nan")
+        
+        # 固定模式下，仅当种子值变化时更新
+        return seed
+    ```
+
+3.  **初始化与状态追踪**：
+    在 `__init__` 中初始化 `last_seed`：
+    ```python
+    def __init__(self):
+        self.last_seed = -1
+    ```
+
+4.  **执行逻辑 (FUNCTION)**：
+    在主执行函数中处理种子逻辑：
+    ```python
+    seed = kwargs.get("🎲 随机种子", -1)
+    seed_control = kwargs.get("🎯 种子控制", "随机")
+
+    if seed_control == "固定":
+        effective_seed = seed if seed != -1 else random.randint(0, 2147483647)
+    elif seed_control == "随机":
+        effective_seed = random.randint(0, 2147483647)
+    elif seed_control == "递增":
+        if self.last_seed == -1:
+            effective_seed = seed if seed != -1 else random.randint(0, 2147483647)
+        else:
+            effective_seed = self.last_seed + 1
+    else:
+        effective_seed = random.randint(0, 2147483647)
+    
+    self.last_seed = effective_seed
+    # 后续使用 effective_seed 进行随机操作或传给 API
+    ```

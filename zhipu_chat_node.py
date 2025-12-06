@@ -24,7 +24,7 @@ CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 GLM_CONFIG_FILE = os.path.join(CURRENT_DIR, 'glm_config.json')
 
 # 统一节点颜色 (橙棕色)
-NODE_COLOR = "#773508"
+
 
 
 # ==================== 辅助函数 ====================
@@ -149,15 +149,25 @@ class Zhipu_Chat:
     RETURN_TYPES = ("STRING", "STRING", "STRING")
     RETURN_NAMES = ("💭 AI回复", "📄 完整响应", "ℹ️ 处理信息")
     FUNCTION = "chat"
-    CATEGORY = "🤖dapaoAPI"
+    CATEGORY = "🤖dapaoAPI/GLM"
     DESCRIPTION = "智谱 GLM-4 大语言模型对话 | 作者: @炮老师的小课堂"
     OUTPUT_NODE = False
     
     def __init__(self):
-        self.color = NODE_COLOR
-        self.bgcolor = NODE_COLOR
         self.config = get_zhipu_config()
-        self.last_seed = 0
+        self.last_seed = -1
+
+    @classmethod
+    def IS_CHANGED(cls, **kwargs):
+        seed_control = kwargs.get("🎛️ 种子控制", "随机")
+        seed = kwargs.get("🎲 随机种子", -1)
+        
+        # 随机和递增模式下，强制更新 (返回 NaN)
+        if seed_control in ["随机", "递增"]:
+            return float("nan")
+        
+        # 固定模式下，仅当种子值变化时更新
+        return seed
     
     def chat(self, **kwargs):
         """主函数：智谱对话"""
@@ -200,14 +210,14 @@ class Zhipu_Chat:
         try:
             # === 种子处理（智谱API限制：1-2147483647）===
             if seed_control == "固定":
-                effective_seed = max(1, min(seed, 2147483647)) if seed != 0 else 0
+                effective_seed = max(1, min(seed, 2147483647)) if seed != -1 else random.randint(1, 2147483647)
                 seed_mode = "固定"
             elif seed_control == "随机":
                 effective_seed = random.randint(1, 2147483647)
                 seed_mode = "随机"
             elif seed_control == "递增":
-                if self.last_seed == 0:
-                    effective_seed = max(1, min(seed, 2147483647)) if seed != 0 else random.randint(1, 2147483647)
+                if self.last_seed == -1:
+                    effective_seed = max(1, min(seed, 2147483647)) if seed != -1 else random.randint(1, 2147483647)
                 else:
                     effective_seed = self.last_seed + 1
                     if effective_seed > 2147483647:

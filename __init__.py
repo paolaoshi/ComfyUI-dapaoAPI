@@ -16,7 +16,7 @@
 - 大炮提示词模板管理
 
 作者：@炮老师的小课堂
-版本：v1.2.3
+版本：v1.2.4
 """
 
 import aiohttp.web
@@ -54,12 +54,6 @@ from .doubao_chat_node import (
 from .zhipu_chat_node import (
     NODE_CLASS_MAPPINGS as ZHIPU_CHAT_MAPPINGS,
     NODE_DISPLAY_NAME_MAPPINGS as ZHIPU_CHAT_DISPLAY_MAPPINGS
-)
-
-# 加载Nano Banana 2多模态节点
-from .banana2_nodes import (
-    NODE_CLASS_MAPPINGS as BANANA2_MAPPINGS,
-    NODE_DISPLAY_NAME_MAPPINGS as BANANA2_DISPLAY_MAPPINGS
 )
 
 # 加载Gemini 3多功能节点
@@ -106,7 +100,7 @@ NODE_CLASS_MAPPINGS = {
     **GLM_MAPPINGS,
     **DOUBAO_CHAT_MAPPINGS,
     **ZHIPU_CHAT_MAPPINGS,
-    **BANANA2_MAPPINGS,
+
     **GEMINI3_MAPPINGS,
     **UNIVERSAL_MAPPINGS,
     **IMAGE_EDIT_MAPPINGS,
@@ -120,7 +114,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     **GLM_DISPLAY_MAPPINGS,
     **DOUBAO_CHAT_DISPLAY_MAPPINGS,
     **ZHIPU_CHAT_DISPLAY_MAPPINGS,
-    **BANANA2_DISPLAY_MAPPINGS,
+
     **GEMINI3_DISPLAY_MAPPINGS,
     **UNIVERSAL_DISPLAY_MAPPINGS,
     **IMAGE_EDIT_DISPLAY_MAPPINGS,
@@ -395,7 +389,7 @@ else:
     print("  ⚠️  GLM 节点未启用（需要安装 zhipuai）")
 print(f"  💬 豆包LLM对话：{len(DOUBAO_CHAT_MAPPINGS)} 个")
 print(f"  💬 智谱LLM对话：{len(ZHIPU_CHAT_MAPPINGS)} 个")
-print(f"  🍌 Nano Banana 2多模态：{len(BANANA2_MAPPINGS)} 个")
+
 print(f"  💎 Gemini 3多功能：{len(GEMINI3_MAPPINGS)} 个")
 print(f"  🌐 通用API调用：{len(UNIVERSAL_MAPPINGS)} 个")
 print(f"  🎨 图像编辑API：{len(IMAGE_EDIT_MAPPINGS)} 个")

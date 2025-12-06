@@ -48,7 +48,7 @@ except ImportError:
     print("[dapaoAPI-Universal] ⚠️ Google Genai SDK 未安装，将使用 REST API")
 
 # 节点颜色 (蓝色)
-NODE_COLOR = "#4A90E2"
+
 
 
 class UniversalAPINode:
@@ -160,8 +160,7 @@ class UniversalAPINode:
     OUTPUT_NODE = False
     
     def __init__(self):
-        self.color = NODE_COLOR
-        self.bgcolor = NODE_COLOR
+        pass
     
     def call_api(
         self,

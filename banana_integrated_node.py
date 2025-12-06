@@ -151,7 +151,7 @@ class BananaIntegratedNode:
         self.t8star_api_key = ''
         self.last_seed = -1
     
-    def get_api_config(self, api_provider):
+    def get_api_config(self, api_provider, image_size="2K", is_image_edit=False):
         """获取API配置"""
         if api_provider == "Google官方":
             return {
@@ -160,9 +160,18 @@ class BananaIntegratedNode:
                 "provider": "google"
             }
         else:  # T8Star
+            # T8Star 统一使用 generations 接口 (支持多模态)
+            # 参考官方Comfly节点，使用 gptbest.vip 域名以获得更快的速度
+            endpoint = "https://api.gptbest.vip/v1/images/generations"
+
+            # 根据尺寸选择模型
+            model = "nano-banana-2"
+            if image_size == "4K":
+                model = "nano-banana-2-4k"
+
             return {
-                "endpoint": "https://ai.t8star.cn/v1/images/generations",
-                "model": "nano-banana-2",
+                "endpoint": endpoint,
+                "model": model,
                 "provider": "t8star"
             }
     
@@ -189,12 +198,12 @@ class BananaIntegratedNode:
         
         return f"{prompt} [variation-{random_id}]"
     
-    def build_request_payload(self, prompt, input_images, enable_google_search, aspect_ratio, image_size, seed, provider):
+    def build_request_payload(self, prompt, input_images, enable_google_search, aspect_ratio, image_size, seed, provider, model_name=None):
         """构建API请求 - 根据provider选择格式"""
         if provider == "google":
             return self.build_google_payload(prompt, input_images, enable_google_search, aspect_ratio, image_size, seed)
         else:  # t8star
-            return self.build_t8star_payload(prompt, input_images, aspect_ratio, image_size, seed)
+            return self.build_t8star_payload(prompt, input_images, aspect_ratio, image_size, seed, model_name)
     
     def build_google_payload(self, prompt, input_images, enable_google_search, aspect_ratio, image_size, seed):
         """构建谷歌官方 Gemini API 格式的请求"""
@@ -285,7 +294,7 @@ class BananaIntegratedNode:
         
         return payload
     
-    def build_t8star_payload(self, prompt, input_images, aspect_ratio, image_size, seed):
+    def build_t8star_payload(self, prompt, input_images, aspect_ratio, image_size, seed, model_name="nano-banana-2"):
         """构建T8Star API格式的请求 (OpenAI Dall-e 格式)"""
         # 添加随机变化因子
         varied_prompt = self.add_random_variation(prompt, seed)
@@ -311,14 +320,20 @@ class BananaIntegratedNode:
             for pattern, replacement in patterns:
                 varied_prompt = re.sub(pattern, replacement, varied_prompt)
         
-        # 构建payload - T8Star固定使用 nano-banana-2 (香蕉2/gemini-3-pro-image-preview)
+        # 构建payload
+        width, height = self.calculate_dimensions(aspect_ratio, image_size)
+        
         payload = {
-            "model": "nano-banana-2",
+            "model": model_name,
             "prompt": varied_prompt,
-            "aspect_ratio": aspect_ratio,
-            "image_size": image_size,
+            "size": f"{width}x{height}",  # 使用标准OpenAI格式的尺寸
+            "aspect_ratio": aspect_ratio, # 保留以兼容可能的自定义参数
+            "image_size": image_size,     # 保留以兼容可能的自定义参数
             "response_format": "url"  # 使用URL格式返回
         }
+        
+        # 调试输出
+        print(f"[BananaIntegrated] 图像配置: {aspect_ratio} @ {image_size} -> {width}x{height}")
         
         # 添加参考图片（如果有）
         image_array = []
@@ -342,7 +357,6 @@ class BananaIntegratedNode:
         if image_array:
             payload["image"] = image_array
         
-        print(f"[BananaIntegrated] 图像配置: {aspect_ratio} @ {image_size}")
         print(f"[BananaIntegrated] 输入图片数: {len(image_array)}")
         
         # 添加图片索引映射提示
@@ -465,8 +479,8 @@ class BananaIntegratedNode:
             print(f"[BananaIntegrated] 图片解码失败: {str(e)}")
             raise
     
-    def create_default_image(self, aspect_ratio, image_size):
-        """创建默认占位图"""
+    def calculate_dimensions(self, aspect_ratio, image_size):
+        """计算图像尺寸"""
         # 宽高比映射
         ratio_map = {
             "1:1": (1, 1), "2:3": (2, 3), "3:2": (3, 2),
@@ -488,6 +502,12 @@ class BananaIntegratedNode:
         else:
             height = base_size
             width = int(base_size * w_ratio / h_ratio)
+            
+        return width, height
+
+    def create_default_image(self, aspect_ratio, image_size):
+        """创建默认占位图"""
+        width, height = self.calculate_dimensions(aspect_ratio, image_size)
         
         # 创建白色图片
         img = Image.new('RGB', (width, height), color='white')
@@ -549,7 +569,8 @@ class BananaIntegratedNode:
         self.save_api_key(google_api_key, t8star_api_key)
         
         # 获取API配置
-        api_config = self.get_api_config(api_provider)
+        is_image_edit = valid_image_count > 0
+        api_config = self.get_api_config(api_provider, image_size, is_image_edit)
         
         # 检查API密钥
         if api_provider == "Google官方" and not self.google_api_key:
@@ -560,7 +581,7 @@ class BananaIntegratedNode:
         try:
             # 构建请求
             payload = self.build_request_payload(
-                prompt, input_images, enable_google_search, aspect_ratio, image_size, effective_seed, api_config["provider"]
+                prompt, input_images, enable_google_search, aspect_ratio, image_size, effective_seed, api_config["provider"], api_config["model"]
             )
             
             # 发送请求
@@ -573,8 +594,20 @@ class BananaIntegratedNode:
                 url = f"{url}?key={self.google_api_key}"
             
             print(f"[BananaIntegrated] 正在发送请求到 {api_provider}...")
+            
+            # 创建Session对象
+            session = requests.Session()
+            
+            # 如果是T8Star，强制不使用代理，并增加超时
+            if api_provider == "T8Star":
+                session.trust_env = False  # 禁用环境变量中的代理设置
+                # 4K模型生成较慢，自动增加超时时间
+                if image_size == "4K":
+                    timeout = max(timeout, 300)  # 至少5分钟
+                    print(f"[BananaIntegrated] 4K模式: 自动将超时延长至 {timeout} 秒")
+            
             # 使用用户设置的超时时间
-            response = requests.post(url, headers=headers, json=payload, timeout=timeout)
+            response = session.post(url, headers=headers, json=payload, timeout=timeout)
             
             # 检查响应状态
             if response.status_code != 200:

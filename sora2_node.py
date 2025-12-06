@@ -16,7 +16,7 @@
    - 视频 URL 输出
 
 👨‍🏫 作者：@炮老师的小课堂
-📦 版本：v1.0.0
+📦 版本：v1.0.1
 🎨 主题：紫色 (#631E77)
 🌐 API：贞贞 API (https://ai.t8star.cn)
 
@@ -25,6 +25,7 @@
 
 import os
 import json
+import random
 import time
 import base64
 import requests
@@ -36,9 +37,6 @@ from PIL import Image
 from typing import Tuple, Optional
 import comfy.utils
 from comfy.comfy_types import IO
-
-# 节点颜色（紫色主题）
-NODE_COLOR = "#631E77"
 
 # 配置文件路径
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), "sora2_config.json")
@@ -102,6 +100,12 @@ def tensor2pil(image_tensor):
 class ComflyVideoAdapter:
     """视频适配器，兼容 ComfyUI 的 VIDEO 类型"""
     def __init__(self, video_path_or_url):
+        if not video_path_or_url:
+             self.is_url = False
+             self.video_path = ""
+             self.video_url = None
+             return
+
         if video_path_or_url.startswith('http'):
             self.is_url = True
             self.video_url = video_path_or_url
@@ -117,10 +121,14 @@ class ComflyVideoAdapter:
             return 1280, 720
         else:
             try: 
+                if not self.video_path:
+                    return 1280, 720
                 cap = cv2.VideoCapture(self.video_path)
                 width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
                 height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
                 cap.release()
+                if width == 0 or height == 0:
+                     return 1280, 720
                 return width, height
             except Exception as e:
                 _log_error(f"获取视频尺寸失败: {e}")
@@ -142,6 +150,8 @@ class ComflyVideoAdapter:
                 return False
         else:
             try:
+                if not self.video_path:
+                    return False
                 shutil.copyfile(self.video_path, output_path)
                 return True
             except Exception as e:
@@ -194,14 +204,14 @@ class Sora2VideoGenNode:
                 "🖼️ 图像4": ("IMAGE",),
                 
                 "🎰 随机种子": ("INT", {
-                    "default": 0,
-                    "min": 0,
+                    "default": -1,
+                    "min": -1,
                     "max": 2147483647,
                     "step": 1
                 }),
                 
-                "🔒 生成后控制": (["randomize", "fixed"], {
-                    "default": "randomize"
+                "🎯 种子控制": (["随机", "固定", "递增"], {
+                    "default": "随机"
                 }),
                 
                 "🔐 隐私模式": ("BOOLEAN", {
@@ -223,10 +233,20 @@ class Sora2VideoGenNode:
         self.base_url = self.config.get("base_url", "https://ai.t8star.cn")
         self.timeout = self.config.get("timeout", 900)
         
-        # 设置节点颜色
-        self.color = NODE_COLOR
-        self.bgcolor = NODE_COLOR
+        self.last_seed = -1
     
+    @classmethod
+    def IS_CHANGED(cls, **kwargs):
+        seed_control = kwargs.get("🎯 种子控制", "随机")
+        seed = kwargs.get("🎰 随机种子", -1)
+        
+        # 随机和递增模式下，强制更新 (返回 NaN)
+        if seed_control in ["随机", "递增"]:
+            return float("nan")
+        
+        # 固定模式下，仅当种子值变化时更新
+        return seed
+
     def get_headers(self):
         """获取请求头"""
         return {
@@ -267,37 +287,50 @@ class Sora2VideoGenNode:
         image2 = kwargs.get("🖼️ 图像2")
         image3 = kwargs.get("🖼️ 图像3")
         image4 = kwargs.get("🖼️ 图像4")
-        seed = kwargs.get("🎰 随机种子", 0)
-        seed_control = kwargs.get("🔒 生成后控制", "randomize")
+        seed = kwargs.get("🎰 随机种子", -1)
+        seed_control = kwargs.get("🎯 种子控制", "随机")
         private = kwargs.get("🔐 隐私模式", True)
+        
+        # === 种子处理逻辑 ===
+        if seed_control == "固定":
+            effective_seed = seed if seed != -1 else random.randint(0, 2147483647)
+        elif seed_control == "随机":
+            effective_seed = random.randint(0, 2147483647)
+        elif seed_control == "递增":
+            if self.last_seed == -1:
+                effective_seed = seed if seed != -1 else random.randint(0, 2147483647)
+            else:
+                effective_seed = self.last_seed + 1
+        else:
+            effective_seed = random.randint(0, 2147483647)
+        
+        # 更新 last_seed
+        self.last_seed = effective_seed
         
         # 更新 API 密钥
         if api_key.strip():
             self.api_key = api_key
-            # config = get_sora2_config()
-            # config['api_key'] = api_key
-            # save_sora2_config(config)
         
         if not self.api_key:
             error_msg = "❌ 错误：请配置 API 密钥"
             _log_error(error_msg)
-            return ("", "", json.dumps({"status": "error", "message": error_msg}))
+            raise ValueError(error_msg)
         
         # 参数验证
         if duration == "25" and hd:
             error_msg = "25秒视频和高清模式不能同时使用，请只选择其中一个"
             _log_error(error_msg)
-            return ("", "", json.dumps({"status": "error", "message": error_msg}))
+            raise ValueError(error_msg)
         
         if model == "sora-2":
             if duration == "25":
                 error_msg = "sora-2 模型不支持 25 秒视频，请使用 sora-2-pro"
                 _log_error(error_msg)
-                return ("", "", json.dumps({"status": "error", "message": error_msg}))
+                raise ValueError(error_msg)
             if hd:
                 error_msg = "sora-2 模型不支持高清模式，请使用 sora-2-pro 或关闭高清"
                 _log_error(error_msg)
-                return ("", "", json.dumps({"status": "error", "message": error_msg}))
+                raise ValueError(error_msg)
         
         # 创建进度条
         pbar = comfy.utils.ProgressBar(100)
@@ -320,7 +353,7 @@ class Sora2VideoGenNode:
                 if not images:
                     error_msg = "所有输入图像处理失败"
                     _log_error(error_msg)
-                    return ("", "", json.dumps({"status": "error", "message": error_msg}))
+                    raise ValueError(error_msg)
                 
                 _log_info(f"共处理 {len(images)} 张图像")
             
@@ -337,8 +370,8 @@ class Sora2VideoGenNode:
             if has_image:
                 payload["images"] = images
             
-            if seed > 0:
-                payload["seed"] = seed
+            if effective_seed >= 0:
+                payload["seed"] = effective_seed
             
             _log_info(f"开始生成视频...")
             _log_info(f"  - 模型: {model}")
@@ -361,14 +394,14 @@ class Sora2VideoGenNode:
             if response.status_code != 200:
                 error_msg = f"API 错误: {response.status_code} - {response.text}"
                 _log_error(error_msg)
-                return ("", "", json.dumps({"status": "error", "message": error_msg}))
+                raise ValueError(error_msg)
             
             result = response.json()
             
             if "task_id" not in result:
                 error_msg = "API 响应中没有任务 ID"
                 _log_error(error_msg)
-                return ("", "", json.dumps({"status": "error", "message": error_msg}))
+                raise ValueError(error_msg)
             
             task_id = result["task_id"]
             _log_info(f"✅ 任务创建成功，任务 ID: {task_id}")
@@ -422,23 +455,21 @@ class Sora2VideoGenNode:
                         fail_reason = status_data.get("fail_reason", "未知错误")
                         error_msg = f"视频生成失败: {fail_reason}"
                         _log_error(error_msg)
-                        return ("", "", json.dumps({
-                            "status": "error",
-                            "message": error_msg,
-                            "task_id": task_id
-                        }))
+                        raise ValueError(error_msg)
                 
+                except requests.RequestException as e:
+                     _log_error(f"请求异常: {str(e)}")
+                     # 继续尝试，不立即失败
+                except ValueError as e:
+                     # 重新抛出已知的错误
+                     raise e
                 except Exception as e:
                     _log_error(f"检查任务状态时出错: {str(e)}")
             
             if not video_url:
                 error_msg = f"等待超时：在 {max_attempts} 次尝试后仍未获取到视频 URL"
                 _log_error(error_msg)
-                return ("", "", json.dumps({
-                    "status": "error",
-                    "message": error_msg,
-                    "task_id": task_id
-                }))
+                raise TimeoutError(error_msg)
             
             # 创建视频适配器
             video_adapter = ComflyVideoAdapter(video_url)
@@ -473,7 +504,7 @@ class Sora2VideoGenNode:
             _log_error(error_msg)
             import traceback
             traceback.print_exc()
-            return ("", "", json.dumps({"status": "error", "message": error_msg}))
+            raise ValueError(error_msg)  # 抛出异常以便 ComfyUI 显示错误
 
 
 # ==================== 节点注册 ====================

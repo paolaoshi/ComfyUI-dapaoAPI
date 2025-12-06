@@ -22,7 +22,7 @@ CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 DOUBAO_CONFIG_FILE = os.path.join(CURRENT_DIR, 'doubao_config.json')
 
 # 统一节点颜色 (橙棕色)
-NODE_COLOR = "#773508"
+
 
 
 # ==================== 辅助函数 ====================
@@ -164,15 +164,25 @@ class Doubao_Chat:
     RETURN_TYPES = ("STRING", "STRING", "STRING")
     RETURN_NAMES = ("💭 AI回复", "📄 完整响应", "ℹ️ 处理信息")
     FUNCTION = "chat"
-    CATEGORY = "🤖dapaoAPI"
+    CATEGORY = "🤖dapaoAPI/豆包"
     DESCRIPTION = "豆包 Seed-1.6 大语言模型对话 | 作者: @炮老师的小课堂"
     OUTPUT_NODE = False
     
     def __init__(self):
-        self.color = NODE_COLOR
-        self.bgcolor = NODE_COLOR
         self.config = get_doubao_config()
-        self.last_seed = 0
+        self.last_seed = -1
+
+    @classmethod
+    def IS_CHANGED(cls, **kwargs):
+        seed_control = kwargs.get("🎛️ 种子控制", "随机")
+        seed = kwargs.get("🎲 随机种子", -1)
+        
+        # 随机和递增模式下，强制更新 (返回 NaN)
+        if seed_control in ["随机", "递增"]:
+            return float("nan")
+        
+        # 固定模式下，仅当种子值变化时更新
+        return seed
     
     def chat(self, **kwargs):
         """主函数：豆包对话"""
@@ -214,8 +224,8 @@ class Doubao_Chat:
                 effective_seed = random.randint(0, 0xffffffffffffffff)
                 seed_mode = "随机"
             elif seed_control == "递增":
-                if self.last_seed == 0:
-                    effective_seed = seed if seed != 0 else random.randint(0, 0xffffffffffffffff)
+                if self.last_seed == -1:
+                    effective_seed = seed if seed != -1 else random.randint(0, 0xffffffffffffffff)
                 else:
                     effective_seed = self.last_seed + 1
                 seed_mode = "递增"
@@ -406,17 +416,26 @@ class Doubao_ImageToPrompt:
     RETURN_TYPES = ("STRING", "STRING")
     RETURN_NAMES = ("🎨 图像描述", "ℹ️ 处理信息")
     FUNCTION = "analyze_image"
-    CATEGORY = "🤖dapaoAPI"
+    CATEGORY = "🤖dapaoAPI/豆包"
     DESCRIPTION = "使用豆包 AI 分析图像，支持多图输入、生成详细的英文提示词 | 作者: @炮老师的小课堂"
     OUTPUT_NODE = False
     
     def __init__(self):
-        # 设置节点颜色
-        self.color = NODE_COLOR
-        self.bgcolor = NODE_COLOR
         self.config = get_doubao_config()
         # 保存上一次使用的种子（用于递增模式）
-        self.last_seed = 0
+        self.last_seed = -1
+
+    @classmethod
+    def IS_CHANGED(cls, **kwargs):
+        seed_control = kwargs.get("🎛️ 种子控制", "随机")
+        seed = kwargs.get("🎲 随机种子", -1)
+        
+        # 随机和递增模式下，强制更新 (返回 NaN)
+        if seed_control in ["随机", "递增"]:
+            return float("nan")
+        
+        # 固定模式下，仅当种子值变化时更新
+        return seed
     
     def analyze_image(self, **kwargs):
         """分析图像，生成提示词（支持多图）"""
@@ -486,8 +505,8 @@ class Doubao_ImageToPrompt:
                 effective_seed = random.randint(0, 0xffffffffffffffff)
                 seed_mode = "随机"
             elif seed_control == "递增":
-                if self.last_seed == 0:
-                    effective_seed = seed if seed != 0 else random.randint(0, 0xffffffffffffffff)
+                if self.last_seed == -1:
+                    effective_seed = seed if seed != -1 else random.randint(0, 0xffffffffffffffff)
                 else:
                     effective_seed = self.last_seed + 1
                 seed_mode = "递增"
@@ -718,15 +737,25 @@ class Doubao_VideoToPrompt:
     RETURN_TYPES = ("STRING", "STRING")
     RETURN_NAMES = ("🎨 视频描述", "ℹ️ 处理信息")
     FUNCTION = "analyze_video"
-    CATEGORY = "🤖dapaoAPI"
+    CATEGORY = "🤖dapaoAPI/豆包"
     DESCRIPTION = "使用豆包 AI 分析视频内容，支持 VIDEO 和图像批次两种输入格式 | 作者: @炮老师的小课堂"
     OUTPUT_NODE = False
     
     def __init__(self):
-        self.color = NODE_COLOR
-        self.bgcolor = NODE_COLOR
         self.config = get_doubao_config()
-        self.last_seed = 0
+        self.last_seed = -1
+
+    @classmethod
+    def IS_CHANGED(cls, **kwargs):
+        seed_control = kwargs.get("🎛️ 种子控制", "随机")
+        seed = kwargs.get("🎲 随机种子", -1)
+        
+        # 随机和递增模式下，强制更新 (返回 NaN)
+        if seed_control in ["随机", "递增"]:
+            return float("nan")
+        
+        # 固定模式下，仅当种子值变化时更新
+        return seed
     
     def analyze_video(self, **kwargs):
         """分析视频或图像批次，生成提示词"""

@@ -30,7 +30,7 @@ GLM_CONFIG_FILE = os.path.join(CURRENT_DIR, 'glm_config.json')
 GLM_TEMPLATES_DIR = os.path.join(CURRENT_DIR, 'glm_optimization_templates')
 
 # 统一节点颜色 (橙棕色)
-NODE_COLOR = "#773508"  # RGB(119, 53, 8)
+
 
 
 # ==================== 辅助函数 ====================
@@ -119,12 +119,17 @@ def tensor_to_base64(image_tensor: torch.Tensor) -> str:
         i = 255. * image_tensor.cpu().numpy()
         img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8)[0])  # 取第一个 batch
         
-        # 转换为 base64
+        # 调整图像大小，限制最大边长为 1024，防止 base64 过大导致 API 报错
+        max_size = 1024
+        if img.width > max_size or img.height > max_size:
+            img.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
+        
+        # 转换为 base64 (使用 JPEG 格式减小体积)
         buffered = io.BytesIO()
-        img.save(buffered, format="PNG")
+        img.save(buffered, format="JPEG", quality=80)
         image_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
         
-        return f"data:image/png;base64,{image_base64}"
+        return f"data:image/jpeg;base64,{image_base64}"
     except Exception as e:
         _log_error(f"图像转 base64 失败: {e}")
         return None
@@ -304,16 +309,25 @@ class GLM_ImageToPrompt:
     RETURN_TYPES = ("STRING", "STRING")
     RETURN_NAMES = ("🎨 图像描述", "ℹ️ 处理信息")
     FUNCTION = "analyze_image"
-    CATEGORY = "🤖dapaoAPI"
+    CATEGORY = "🤖dapaoAPI/GLM"
     DESCRIPTION = "使用智谱 AI 分析图像，支持多图输入、生成详细的英文提示词 | 作者: @炮老师的小课堂"
     OUTPUT_NODE = False
     
     def __init__(self):
-        # 设置节点颜色
-        self.color = NODE_COLOR
-        self.bgcolor = NODE_COLOR
         # 保存上一次使用的种子（用于递增模式）
-        self.last_seed = 0
+        self.last_seed = -1
+
+    @classmethod
+    def IS_CHANGED(cls, **kwargs):
+        seed_control = kwargs.get("🎛️ 种子控制", "随机")
+        seed = kwargs.get("🎲 随机种子", -1)
+        
+        # 随机和递增模式下，强制更新 (返回 NaN)
+        if seed_control in ["随机", "递增"]:
+            return float("nan")
+        
+        # 固定模式下，仅当种子值变化时更新
+        return seed
     
     def analyze_image(self, **kwargs):
         """分析图像，生成提示词（支持多图）"""
@@ -404,8 +418,8 @@ class GLM_ImageToPrompt:
                 effective_seed = random.randint(0, 0xffffffffffffffff)
                 seed_mode = "随机"
             elif seed_control == "递增":
-                if self.last_seed == 0:
-                    effective_seed = seed if seed != 0 else random.randint(0, 0xffffffffffffffff)
+                if self.last_seed == -1:
+                    effective_seed = seed if seed != -1 else random.randint(0, 0xffffffffffffffff)
                 else:
                     effective_seed = self.last_seed + 1
                 seed_mode = "递增"
@@ -427,10 +441,12 @@ class GLM_ImageToPrompt:
                 _log_info(f"种子值转换: {effective_seed} -> {zhipu_seed} (智谱API限制)")
             
             # 调用 API
+            # 注意：GLM-4V 模型目前似乎不支持 seed 参数，会导致 1210 错误
+            # 因此暂时移除 seed 参数以修复报错
             response = client.chat.completions.create(
                 model=model_name,
-                messages=[{"role": "user", "content": content_parts}],
-                seed=zhipu_seed if zhipu_seed != 0 else None
+                messages=[{"role": "user", "content": content_parts}]
+                # seed=zhipu_seed if zhipu_seed != 0 else None
             )
             
             result_text = str(response.choices[0].message.content)
@@ -563,16 +579,25 @@ class GLM_PromptPolish:
     RETURN_TYPES = ("STRING", "STRING", "STRING")
     RETURN_NAMES = ("✨ 优化后提示词", "📝 原始提示词", "ℹ️ 处理信息")
     FUNCTION = "polish_prompt"
-    CATEGORY = "🤖dapaoAPI"
+    CATEGORY = "🤖dapaoAPI/GLM"
     DESCRIPTION = "使用智谱 AI 优化和润色提示词，支持模板选择、智能长度控制、3种种子模式、详细错误提示 | 作者: @炮老师的小课堂"
     OUTPUT_NODE = False
     
     def __init__(self):
-        # 设置节点颜色
-        self.color = NODE_COLOR
-        self.bgcolor = NODE_COLOR
         # 保存上一次使用的种子（用于递增模式）
-        self.last_seed = 0
+        self.last_seed = -1
+
+    @classmethod
+    def IS_CHANGED(cls, **kwargs):
+        seed_control = kwargs.get("🎛️ 种子控制", "随机")
+        seed = kwargs.get("🎲 随机种子", -1)
+        
+        # 随机和递增模式下，强制更新 (返回 NaN)
+        if seed_control in ["随机", "递增"]:
+            return float("nan")
+        
+        # 固定模式下，仅当种子值变化时更新
+        return seed
     
     def polish_prompt(self, **kwargs):
         """润色提示词"""
@@ -671,8 +696,8 @@ class GLM_PromptPolish:
                 seed_mode = "随机"
             elif seed_control == "递增":
                 # 递增模式：在上一次种子基础上+1
-                if self.last_seed == 0:
-                    effective_seed = seed if seed != 0 else random.randint(0, 0xffffffffffffffff)
+                if self.last_seed == -1:
+                    effective_seed = seed if seed != -1 else random.randint(0, 0xffffffffffffffff)
                 else:
                     effective_seed = self.last_seed + 1
                 seed_mode = "递增"

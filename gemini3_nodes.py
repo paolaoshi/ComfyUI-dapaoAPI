@@ -33,7 +33,7 @@ from .gemini3_client import (
 from .gemini3_file_client import GeminiFileClient, save_audio_to_file
 
 # 统一节点颜色 (紫色)
-NODE_COLOR = "#8B4789"
+
 
 # 配置文件路径
 CONFIG_FILE_PATH = os.path.join(os.path.dirname(__file__), 'gemini3_config.json')
@@ -160,8 +160,7 @@ class Gemini3_Multimodal:
     OUTPUT_NODE = False
     
     def __init__(self):
-        self.color = NODE_COLOR
-        self.bgcolor = NODE_COLOR
+        self.config = self.load_config()
     
     async def generate_async(
         self,

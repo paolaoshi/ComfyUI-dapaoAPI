@@ -26,7 +26,7 @@ __version__ = "3.0.0"
 __author__ = "@炮老师的小课堂"
 
 # 统一节点颜色 (橙棕色)
-NODE_COLOR = "#773508"  # RGB(119, 53, 8)
+
 
 # 日志函数
 def _log_info(message):
@@ -267,15 +267,12 @@ class Seedream_Text2Image:
     RETURN_TYPES = ("IMAGE", "STRING")
     RETURN_NAMES = ("🖼️ 图像", "ℹ️ 信息")
     FUNCTION = "generate_image"
-    CATEGORY = "🤖dapaoAPI"
+    CATEGORY = "🤖dapaoAPI/Seedream 4.0"
     DESCRIPTION = "使用 Seedream 4.0 API 根据文本生成图像，支持批量生成、风格预设、种子控制 | 作者: @炮老师的小课堂"
     OUTPUT_NODE = False
     
     def __init__(self):
         self.config = get_config()
-        # 设置节点颜色
-        self.color = NODE_COLOR
-        self.bgcolor = NODE_COLOR
         # 保存上一次使用的种子（用于递增模式）
         self.last_seed = -1
         
@@ -331,7 +328,15 @@ class Seedream_Text2Image:
     
     @classmethod
     def IS_CHANGED(cls, **kwargs):
-        return float("nan")
+        seed_control = kwargs.get("🎛️ 种子控制", "随机")
+        seed = kwargs.get("🎲 随机种子", -1)
+        
+        # 随机和递增模式下，强制更新 (返回 NaN)
+        if seed_control in ["随机", "递增"]:
+            return float("nan")
+        
+        # 固定模式下，仅当种子值变化时更新
+        return seed
     
     def generate_image(self, **kwargs):
         """调用 Seedream 4.0 API 生成图像（支持批量生成、风格预设、种子控制）"""
@@ -715,15 +720,12 @@ class Seedream_MultiImage:
     RETURN_TYPES = ("IMAGE", "STRING")
     RETURN_NAMES = ("🎨 生成图像", "ℹ️ 处理信息")
     FUNCTION = "generate_image"
-    CATEGORY = "🤖dapaoAPI"
+    CATEGORY = "🤖dapaoAPI/Seedream 4.0"
     DESCRIPTION = "多图编辑和融合，支持批量生成、8种编辑模式、智能融合 | 作者: @炮老师的小课堂"
     OUTPUT_NODE = False
     
     def __init__(self):
         self.config = get_config()
-        # 设置节点颜色
-        self.color = NODE_COLOR
-        self.bgcolor = NODE_COLOR
         # 保存上一次使用的种子（用于递增模式）
         self.last_seed = -1
         
@@ -777,7 +779,15 @@ class Seedream_MultiImage:
     
     @classmethod
     def IS_CHANGED(cls, **kwargs):
-        return float("nan")
+        seed_control = kwargs.get("🎛️ 种子控制", "随机")
+        seed = kwargs.get("🎲 随机种子", -1)
+        
+        # 随机和递增模式下，强制更新 (返回 NaN)
+        if seed_control in ["随机", "递增"]:
+            return float("nan")
+        
+        # 固定模式下，仅当种子值变化时更新
+        return seed
     
     def generate_image(self, **kwargs):
         """调用 Seedream 4.0 API 进行多图编辑（支持批量生成、智能编辑、多种融合模式）"""
