@@ -16,6 +16,7 @@ from PIL import Image
 import numpy as np
 import torch
 import urllib3
+from io import BytesIO
 
 # 禁用 SSL 警告
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -41,12 +42,37 @@ def _log_error(message):
     print(f"[dapaoAPI-Grok] 错误：{message}")
 
 
+def encode_image_tensor(image_tensor) -> str:
+    """将ComfyUI tensor转换为base64 PNG"""
+    # Convert tensor to numpy array
+    if hasattr(image_tensor, 'cpu'):
+        image_np = image_tensor.cpu().numpy()
+    else:
+        image_np = np.array(image_tensor)
+    
+    # Convert to 0-255 range
+    if image_np.max() <= 1.0:
+        image_np = (image_np * 255).astype(np.uint8)
+    
+    # Handle batch dimension if present (take first image)
+    if len(image_np.shape) == 4:
+        image_np = image_np[0]
+        
+    # Create PIL Image
+    img = Image.fromarray(image_np)
+    
+    # Encode to PNG
+    buffer = BytesIO()
+    img.save(buffer, format='PNG')
+    return base64.b64encode(buffer.getvalue()).decode('utf-8')
+
+
 def get_grok_config():
     """读取 Grok 配置文件"""
     default_config = {
         "grok_api_key": "",
-        "grok_base_url": "https://api.x.ai/v1",
-        "grok_model": "grok-beta",
+        "grok_base_url": "https://api.t8star.cn/v1",
+        "grok_model": "grok-4-fast-reasoning",
         "timeout": 120
     }
     
@@ -78,16 +104,20 @@ class Grok_Chat:
         config = get_grok_config()
         return {
             "required": {
-                "💬 用户消息": ("STRING", {
+                "🎯 系统角色": ("STRING", {
+                    "multiline": True,
+                    "default": "你是一个幽默、机智且直率的AI助手，深受《银河系漫游指南》的启发。",
+                    "placeholder": "定义AI的角色和行为方式..."
+                }),
+                
+                "💬 用户输入": ("STRING", {
                     "multiline": True,
                     "default": "你好，请介绍一下你自己。",
                     "placeholder": "输入你想要发送的消息..."
                 }),
                 
-                "🎯 系统提示词": ("STRING", {
-                    "multiline": True,
-                    "default": "你是一个幽默、机智且直率的AI助手，深受《银河系漫游指南》的启发。",
-                    "placeholder": "定义AI的角色和行为方式..."
+                "🤖 模型选择": (["grok-beta", "grok-vision-beta", "grok-4-fast-reasoning"], {
+                    "default": config.get("grok_model", "grok-4-fast-reasoning")
                 }),
                 
                 "🔑 API密钥": ("STRING", {
@@ -95,9 +125,8 @@ class Grok_Chat:
                     "placeholder": "留空则从配置文件读取"
                 }),
                 
-                "🤖 模型": ("STRING", {
-                    "default": config.get("grok_model", "grok-beta"),
-                    "placeholder": "如: grok-beta, grok-vision-beta"
+                "📊 输出语言": (["中文", "英文"], {
+                    "default": "中文"
                 }),
                 
                 "🌡️ 温度": ("FLOAT", {
@@ -108,7 +137,7 @@ class Grok_Chat:
                     "tooltip": "控制生成的随机性，越高越有创造性"
                 }),
                 
-                "🎯 Top-P": ("FLOAT", {
+                "🎲 top_p": ("FLOAT", {
                     "default": 0.9,
                     "min": 0.0,
                     "max": 1.0,
@@ -116,7 +145,7 @@ class Grok_Chat:
                     "tooltip": "Top-p 核采样参数"
                 }),
                 
-                "📏 最大长度": ("INT", {
+                "📝 最大令牌": ("INT", {
                     "default": 4096,
                     "min": 256,
                     "max": 128000,
@@ -135,6 +164,12 @@ class Grok_Chat:
                     "default": "随机",
                     "tooltip": "固定: 使用上方种子值; 随机: 每次生成新种子; 递增: 种子值+1"
                 }),
+            },
+            "optional": {
+                "🖼️ 图像1": ("IMAGE",),
+                "🖼️ 图像2": ("IMAGE",),
+                "🖼️ 图像3": ("IMAGE",),
+                "🖼️ 图像4": ("IMAGE",),
             }
         }
     
@@ -165,15 +200,25 @@ class Grok_Chat:
         """主函数：Grok对话"""
         
         # === 参数解析 ===
-        user_message = kwargs.get("💬 用户消息", "")
-        system_prompt = kwargs.get("🎯 系统提示词", "")
+        user_message = kwargs.get("💬 用户输入", "")
+        system_prompt = kwargs.get("🎯 系统角色", "")
         api_key = kwargs.get("🔑 API密钥", "")
-        model_name = kwargs.get("🤖 模型", "grok-beta")
+        model_name = kwargs.get("🤖 模型选择", "grok-4-fast-reasoning")
+        output_lang = kwargs.get("📊 输出语言", "中文")
         temperature = kwargs.get("🌡️ 温度", 0.7)
-        top_p = kwargs.get("🎯 Top-P", 0.9)
-        max_tokens = kwargs.get("📏 最大长度", 4096)
+        top_p = kwargs.get("🎲 top_p", 0.9)
+        max_tokens = kwargs.get("📝 最大令牌", 4096)
         seed = kwargs.get("🎲 随机种子", 0)
         seed_control = kwargs.get("🎛️ 种子控制", "随机")
+        
+        # 图像输入
+        image1 = kwargs.get("🖼️ 图像1")
+        image2 = kwargs.get("🖼️ 图像2")
+        image3 = kwargs.get("🖼️ 图像3")
+        image4 = kwargs.get("🖼️ 图像4")
+        
+        # 收集所有图像
+        images = [img for img in [image1, image2, image3, image4] if img is not None]
         
         # === 状态信息 ===
         status_info = []
@@ -216,6 +261,8 @@ class Grok_Chat:
             
             status_info.append(f"🤖 模型：{model_name} (xAI)")
             status_info.append(f"🎲 种子：{effective_seed} (模式: {seed_mode})")
+            if images:
+                status_info.append(f"🖼️ 图像输入：{len(images)} 张")
             _log_info(f"使用种子：{effective_seed}，模式：{seed_mode}")
             
             # === 调用 API ===
@@ -230,9 +277,52 @@ class Grok_Chat:
             }
             
             messages = []
-            if system_prompt.strip():
-                messages.append({"role": "system", "content": system_prompt})
-            messages.append({"role": "user", "content": user_message})
+            
+            # 处理系统提示词和语言设置
+            final_system_prompt = system_prompt
+            if output_lang == "中文":
+                lang_instruction = "请用中文详细回答，提供尽可能完整和详细的描述。"
+            else:
+                lang_instruction = "Please answer in English with detailed and comprehensive description."
+            
+            if final_system_prompt.strip():
+                final_system_prompt = f"{final_system_prompt}\n\n{lang_instruction}"
+            else:
+                final_system_prompt = lang_instruction
+                
+            messages.append({"role": "system", "content": final_system_prompt})
+            
+            # 构建用户消息内容
+            user_content = []
+            
+            # 1. 添加文本
+            if user_message.strip():
+                user_content.append({"type": "text", "text": user_message})
+            
+            # 2. 添加图像
+            if images:
+                for img_tensor in images:
+                    try:
+                        # 处理批次中的每一张图片
+                        batch_size = img_tensor.shape[0]
+                        for i in range(batch_size):
+                            single_image = img_tensor[i]
+                            base64_image = encode_image_tensor(single_image)
+                            user_content.append({
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/png;base64,{base64_image}"
+                                }
+                            })
+                    except Exception as e:
+                        _log_error(f"处理图像失败: {e}")
+            
+            # 如果没有图像，可以使用简化的文本格式（虽然OpenAI格式也支持content为字符串，但列表更通用）
+            # 但为了兼容性，如果只有文本且没有图像，有些API可能更喜欢纯字符串
+            if not images and len(user_content) == 1 and user_content[0]["type"] == "text":
+                 messages.append({"role": "user", "content": user_message})
+            else:
+                 messages.append({"role": "user", "content": user_content})
             
             payload = {
                 "model": model_name,
@@ -243,7 +333,7 @@ class Grok_Chat:
                 "stream": False
             }
             
-            # Grok API 可能不完全支持 seed 参数，但我们尝试传递
+            # Grok API (OpenAI兼容) 种子参数为 seed
             if effective_seed != 0:
                 payload["seed"] = effective_seed
             
