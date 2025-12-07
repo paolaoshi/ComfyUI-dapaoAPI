@@ -17,7 +17,7 @@
 - 大炮提示词模板管理
 
 作者：@炮老师的小课堂
-版本：v1.3.1
+版本：v1.3.2
 """
 
 import aiohttp.web
@@ -61,6 +61,12 @@ from .zhipu_chat_node import (
 from .grok_node import (
     NODE_CLASS_MAPPINGS as GROK_MAPPINGS,
     NODE_DISPLAY_NAME_MAPPINGS as GROK_DISPLAY_MAPPINGS
+)
+
+# 加载 GPT 多模态对话节点
+from .gpt_multimodal_node import (
+    NODE_CLASS_MAPPINGS as GPT_MAPPINGS,
+    NODE_DISPLAY_NAME_MAPPINGS as GPT_DISPLAY_MAPPINGS
 )
 
 # 加载Gemini 3多功能节点
@@ -108,6 +114,7 @@ NODE_CLASS_MAPPINGS = {
     **DOUBAO_CHAT_MAPPINGS,
     **ZHIPU_CHAT_MAPPINGS,
     **GROK_MAPPINGS,
+    **GPT_MAPPINGS,
 
     **GEMINI3_MAPPINGS,
     **UNIVERSAL_MAPPINGS,
@@ -123,6 +130,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     **DOUBAO_CHAT_DISPLAY_MAPPINGS,
     **ZHIPU_CHAT_DISPLAY_MAPPINGS,
     **GROK_DISPLAY_MAPPINGS,
+    **GPT_DISPLAY_MAPPINGS,
 
     **GEMINI3_DISPLAY_MAPPINGS,
     **UNIVERSAL_DISPLAY_MAPPINGS,

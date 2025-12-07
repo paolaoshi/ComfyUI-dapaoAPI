@@ -1,0 +1,6 @@
+{
+    "gpt_api_key": "sk-xxxxxxxx",
+    "gpt_base_url": "https://ai.t8star.cn/v1",
+    "gpt_model": "gpt-5.1-thinking",
+    "timeout": 120
+}

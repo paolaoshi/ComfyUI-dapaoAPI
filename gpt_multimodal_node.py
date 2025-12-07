@@ -1,6 +1,6 @@
 """
-大炮 API - Grok (xAI) 对话节点
-提供 xAI Grok 大语言模型对话功能
+大炮 API - GPT 多模态对话节点
+提供 GPT 系列模型（如 GPT-4o, o1 等）的多模态对话功能
 
 作者：@炮老师的小课堂
 版本：v1.0.1
@@ -27,25 +27,25 @@ except ImportError:
 
 # 获取当前目录
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-GROK_CONFIG_FILE = os.path.join(CURRENT_DIR, 'grok_config.json')
+GPT_CONFIG_FILE = os.path.join(CURRENT_DIR, 'gpt_config.json')
 
-print(f"[dapaoAPI] Grok 节点模块已加载")
+print(f"[dapaoAPI] GPT 多模态节点模块已加载")
 
 # ==================== 辅助函数 ====================
 
 def _log_info(message):
     """统一的日志输出函数"""
-    print(f"[dapaoAPI-Grok] 信息：{message}")
+    print(f"[dapaoAPI-GPT] 信息：{message}")
 
 
 def _log_warning(message):
     """统一的警告输出函数"""
-    print(f"[dapaoAPI-Grok] 警告：{message}")
+    print(f"[dapaoAPI-GPT] 警告：{message}")
 
 
 def _log_error(message):
     """统一的错误输出函数"""
-    print(f"[dapaoAPI-Grok] 错误：{message}")
+    print(f"[dapaoAPI-GPT] 错误：{message}")
 
 
 def encode_image_tensor(image_tensor) -> str:
@@ -73,18 +73,18 @@ def encode_image_tensor(image_tensor) -> str:
     return base64.b64encode(buffer.getvalue()).decode('utf-8')
 
 
-def get_grok_config():
-    """读取 Grok 配置文件"""
+def get_gpt_config():
+    """读取 GPT 配置文件"""
     default_config = {
-        "grok_api_key": "",
-        "grok_base_url": "https://ai.t8star.cn/v1",
-        "grok_model": "grok-4-1-fast-reasoning",
+        "gpt_api_key": "",
+        "gpt_base_url": "https://ai.t8star.cn/v1",
+        "gpt_model": "gpt-5.1-thinking",
         "timeout": 120
     }
     
     try:
-        if os.path.exists(GROK_CONFIG_FILE):
-            with open(GROK_CONFIG_FILE, 'r', encoding='utf-8') as f:
+        if os.path.exists(GPT_CONFIG_FILE):
+            with open(GPT_CONFIG_FILE, 'r', encoding='utf-8') as f:
                 config = json.load(f)
                 return {**default_config, **config}
         else:
@@ -96,34 +96,42 @@ def get_grok_config():
 
 # ==================== 节点类 ====================
 
-class Grok_Chat:
+class GPT_Multimodal_Chat:
     """
-    Grok (xAI) LLM对话节点
+    GPT 多模态对话节点
     
-    使用 xAI Grok 模型进行纯文本对话
+    支持 GPT-4o, o1 等模型的多模态输入（文本+图像）
     
     作者：@炮老师的小课堂
     """
     
     @classmethod
     def INPUT_TYPES(cls):
-        config = get_grok_config()
+        config = get_gpt_config()
+        # 常见 GPT 模型列表
+        model_list = [
+            "gpt-5.1-thinking",
+            "gpt-5.1-thinking-all",
+            "gpt-5.1",
+            "gpt-5.1-all"
+        ]
+        
         return {
             "required": {
                 "🎯 系统角色": ("STRING", {
                     "multiline": True,
-                    "default": "你是一个幽默、机智且直率的AI助手，深受《银河系漫游指南》的启发。",
+                    "default": "你是一个乐于助人的AI助手。",
                     "placeholder": "定义AI的角色和行为方式..."
                 }),
                 
                 "💬 用户输入": ("STRING", {
                     "multiline": True,
-                    "default": "你好，请介绍一下你自己。",
+                    "default": "请描述这张图片的内容。",
                     "placeholder": "输入你想要发送的消息..."
                 }),
                 
-                "🤖 模型选择": (["grok-4-1-fast-reasoning", "grok-4-fast-reasoning", "grok-beta", "grok-vision-beta"], {
-                    "default": config.get("grok_model", "grok-4-1-fast-reasoning")
+                "🤖 模型选择": (model_list, {
+                    "default": config.get("gpt_model", "gpt-5.1-thinking")
                 }),
                 
                 "🔑 API密钥": ("STRING", {
@@ -140,7 +148,7 @@ class Grok_Chat:
                     "min": 0.0,
                     "max": 2.0,
                     "step": 0.1,
-                    "tooltip": "控制生成的随机性，越高越有创造性"
+                    "tooltip": "控制生成的随机性 (对于o1/推理模型可能无效)"
                 }),
                 
                 "🎲 top_p": ("FLOAT", {
@@ -182,12 +190,12 @@ class Grok_Chat:
     RETURN_TYPES = ("STRING", "STRING", "STRING")
     RETURN_NAMES = ("💭 AI回复", "📄 完整响应", "ℹ️ 处理信息")
     FUNCTION = "chat"
-    CATEGORY = "🤖dapaoAPI/Grok"
-    DESCRIPTION = "xAI Grok 大语言模型对话 | 作者: @炮老师的小课堂"
+    CATEGORY = "🤖dapaoAPI/GPT"
+    DESCRIPTION = "GPT 多模态对话 (OpenAI/T8) | 作者: @炮老师的小课堂"
     OUTPUT_NODE = False
     
     def __init__(self):
-        self.config = get_grok_config()
+        self.config = get_gpt_config()
         self.last_seed = -1
 
     @classmethod
@@ -203,13 +211,13 @@ class Grok_Chat:
         return seed
     
     def chat(self, **kwargs):
-        """主函数：Grok对话"""
+        """主函数：GPT对话"""
         
         # === 参数解析 ===
         user_message = kwargs.get("💬 用户输入", "")
         system_prompt = kwargs.get("🎯 系统角色", "")
         api_key = kwargs.get("🔑 API密钥", "")
-        model_name = kwargs.get("🤖 模型选择", "grok-4-fast-reasoning")
+        model_name = kwargs.get("🤖 模型选择", "gpt-5.1-thinking")
         output_lang = kwargs.get("📊 输出语言", "中文")
         temperature = kwargs.get("🌡️ 温度", 0.7)
         top_p = kwargs.get("🎲 top_p", 0.9)
@@ -237,50 +245,50 @@ class Grok_Chat:
         
         # === 获取 API 密钥 ===
         if not api_key:
-            api_key = self.config.get("grok_api_key", "")
+            api_key = self.config.get("gpt_api_key", "")
         
         if not api_key:
-            error_msg = "❌ 错误：请配置 Grok API Key\n\n请执行以下操作之一：\n1. 在节点参数中输入 API 密钥\n2. 编辑 grok_config.json 文件配置"
+            error_msg = "❌ 错误：请配置 GPT API Key\n\n请执行以下操作之一：\n1. 在节点参数中输入 API 密钥\n2. 编辑 gpt_config.json 文件配置"
             _log_error(error_msg)
             return ("", "", error_msg)
         
-        try:
-            # === 种子处理 ===
-            # 确保种子在 signed 64-bit 整数范围内 (API限制)
-            MAX_SEED = 9223372036854775807
-
-            if seed_control == "固定":
-                effective_seed = seed
-                seed_mode = "固定"
-            elif seed_control == "随机":
-                effective_seed = random.randint(0, MAX_SEED)
-                seed_mode = "随机"
-            elif seed_control == "递增":
-                if self.last_seed == -1:
-                    effective_seed = seed if seed != -1 else random.randint(0, MAX_SEED)
-                else:
-                    effective_seed = self.last_seed + 1
-                seed_mode = "递增"
+        # === 种子处理 ===
+        # 确保种子在 signed 64-bit 整数范围内 (API限制)
+        MAX_SEED = 9223372036854775807
+        
+        if seed_control == "固定":
+            effective_seed = seed
+            seed_mode = "固定"
+        elif seed_control == "随机":
+            effective_seed = random.randint(0, MAX_SEED)
+            seed_mode = "随机"
+        elif seed_control == "递增":
+            if self.last_seed == -1:
+                effective_seed = seed if seed != -1 else random.randint(0, MAX_SEED)
             else:
-                effective_seed = random.randint(0, MAX_SEED)
-                seed_mode = "随机"
+                effective_seed = self.last_seed + 1
+            seed_mode = "递增"
+        else:
+            effective_seed = random.randint(0, MAX_SEED)
+            seed_mode = "随机"
+        
+        # 确保最终种子在有效范围内
+        effective_seed = effective_seed % MAX_SEED
+        
+        self.last_seed = effective_seed
+        random.seed(effective_seed)
             
-            # 确保最终种子在有效范围内
-            effective_seed = effective_seed % MAX_SEED
+        status_info.append(f"🤖 模型：{model_name}")
+        status_info.append(f"🎲 种子：{effective_seed} (模式: {seed_mode})")
+        if images:
+            status_info.append(f"🖼️ 图像输入：{len(images)} 张")
+        _log_info(f"使用种子：{effective_seed}，模式：{seed_mode}")
             
-            self.last_seed = effective_seed
-            random.seed(effective_seed)
-            
-            status_info.append(f"🤖 模型：{model_name} (xAI)")
-            status_info.append(f"🎲 种子：{effective_seed} (模式: {seed_mode})")
-            if images:
-                status_info.append(f"🖼️ 图像输入：{len(images)} 张")
-            _log_info(f"使用种子：{effective_seed}，模式：{seed_mode}")
-            
+        try:
             # === 调用 API ===
-            _log_info("正在调用 Grok API 进行对话...")
+            _log_info("正在调用 GPT API 进行对话...")
             
-            base_url = self.config.get("grok_base_url", "https://api.x.ai/v1")
+            base_url = self.config.get("gpt_base_url", "https://ai.t8star.cn/v1")
             url = f"{base_url}/chat/completions"
             
             headers = {
@@ -302,8 +310,22 @@ class Grok_Chat:
                 final_system_prompt = f"{final_system_prompt}\n\n{lang_instruction}"
             else:
                 final_system_prompt = lang_instruction
-                
-            messages.append({"role": "system", "content": final_system_prompt})
+            
+            # OpenAI o1 系列模型不支持 system role，需要转为 user role 或者 developer role
+            # 但大部分 T8/OpenAI 兼容接口目前对 o1 的支持各异，通常建议把 system prompt 合并到 user prompt
+            # 或者 T8 已经做了适配。为了安全起见，如果是 o1 模型，我们可以做个简单判断
+            is_reasoning_model = "o1" in model_name.lower() or "reasoning" in model_name.lower()
+            
+            if is_reasoning_model:
+                # 对于 o1 模型，有些接口不支持 system role，暂时先保留，如果报错再改
+                # 或者直接将 system prompt 作为第一条 user 消息
+                # 这里的处理方式：仍然保留 system，但如果报错 400 (unsupported role)，用户可能需要反馈
+                # 不过 T8 既然兼容，可能已经处理了。
+                # 按照 OpenAI 官方 o1-preview 文档，system message 是支持的，但是不建议用复杂的 system instruction
+                # 还是照常发送 system message
+                messages.append({"role": "system", "content": final_system_prompt})
+            else:
+                messages.append({"role": "system", "content": final_system_prompt})
             
             # 构建用户消息内容
             user_content = []
@@ -330,8 +352,7 @@ class Grok_Chat:
                     except Exception as e:
                         _log_error(f"处理图像失败: {e}")
             
-            # 如果没有图像，可以使用简化的文本格式（虽然OpenAI格式也支持content为字符串，但列表更通用）
-            # 但为了兼容性，如果只有文本且没有图像，有些API可能更喜欢纯字符串
+            # 构造 messages
             if not images and len(user_content) == 1 and user_content[0]["type"] == "text":
                  messages.append({"role": "user", "content": user_message})
             else:
@@ -345,21 +366,20 @@ class Grok_Chat:
             }
             
             # 针对 reasoning (推理) 模型的特殊处理
-            # 某些 reasoning 模型不支持 temperature 和 top_p，或者要求 temperature=1
-            is_reasoning_model = "reasoning" in model_name.lower() or "o1" in model_name.lower()
-            
             if not is_reasoning_model:
                 payload["temperature"] = temperature
                 payload["top_p"] = top_p
-                # Grok API (OpenAI兼容) 种子参数为 seed
+                # OpenAI 种子参数
                 if effective_seed != 0:
                     payload["seed"] = effective_seed
             else:
-                _log_info(f"检测到推理模型 ({model_name})，已自动移除 temperature, top_p, max_tokens 和 seed 参数以避免 422 错误")
+                _log_info(f"检测到推理模型 ({model_name})，已自动移除 temperature, top_p, max_tokens 和 seed 参数以避免 422/400 错误")
                 # 推理模型通常不接受 max_tokens (改用 max_completion_tokens) 或 seed
-                # 为了兼容性，最安全的做法是只传 model 和 messages
                 if "max_tokens" in payload:
+                    # OpenAI o1 使用 max_completion_tokens，这里先移除 max_tokens
+                    # 如果需要支持 max_completion_tokens，可以添加
                     del payload["max_tokens"]
+                    # payload["max_completion_tokens"] = max_tokens # 可选
 
             timeout = self.config.get("timeout", 120)
             
@@ -387,7 +407,7 @@ class Grok_Chat:
             # === 生成详细信息 ===
             info_lines = [
                 "=" * 50,
-                "🎉 Grok 对话成功",
+                "🎉 GPT 对话成功",
                 "=" * 50,
                 "",
                 "📊 对话统计：",
@@ -400,16 +420,12 @@ class Grok_Chat:
                 f"   🎯 Top-P：{top_p}",
                 f"   📏 最大长度：{max_tokens}",
                 "",
-                "💡 使用提示：",
-                "   - AI回复可直接使用或继续处理",
-                "   - Grok 模型通常具有幽默感和实时信息访问能力",
-                "",
                 "=" * 50
             ]
             
             info = "\n".join(info_lines)
             
-            _log_info("✅ Grok 对话完成！")
+            _log_info("✅ GPT 对话完成！")
             return (response_text, response_text, info)
             
         except Exception as e:
@@ -423,9 +439,6 @@ class Grok_Chat:
                     error_details = f"{e.response.status_code} - {e.response.text}"
             
             _log_error(f"API调用失败: {error_details}")
-            # 如果是 422 错误，给出更具体的建议
-            if "422" in str(error_details):
-                _log_error("⚠️ 422 错误通常意味着模型名称不正确或参数不兼容。请尝试切换回 grok-4-fast-reasoning 或使用 check_t8_models.py 脚本确认正确的模型ID。")
             
             return ("", f"Error: {error_details}", f"❌ API调用失败: {error_details}")
 
@@ -433,9 +446,9 @@ class Grok_Chat:
 # ==================== 节点注册 ====================
 
 NODE_CLASS_MAPPINGS = {
-    "Grok_Chat": Grok_Chat,
+    "GPT_Multimodal_Chat": GPT_Multimodal_Chat,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Grok_Chat": "🤖 Grok LLM对话 (xAI) @炮老师的小课堂",
+    "GPT_Multimodal_Chat": "🤖 GPT 多模态对话 (OpenAI/T8) @炮老师的小课堂",
 }

@@ -1,6 +1,6 @@
 {
-    "grok_api_key": "YOUR_API_KEY_HERE",
-    "grok_base_url": "https://api.t8star.cn/v1",
-    "grok_model": "grok-4-fast-reasoning",
+    "grok_api_key": "sk-xxxxxxxx",
+    "grok_base_url": "https://ai.t8star.cn/v1",
+    "grok_model": "grok-4-1-fast-reasoning",
     "timeout": 120
 }
