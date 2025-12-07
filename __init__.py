@@ -7,6 +7,7 @@
 - 智谱 AI 提示词润色（GLM-4）
 - 豆包 LLM对话（Seed-1.6）
 - 智谱 LLM对话（GLM-4 系列）
+- xAI Grok LLM对话（Grok-beta）
 - Google Nano Banana 2 多模态（图像+文本）
 - 通用 API 调用节点（支持任意 HTTP API）
 - 通用图像编辑 API 节点
@@ -16,7 +17,7 @@
 - 大炮提示词模板管理
 
 作者：@炮老师的小课堂
-版本：v1.2.6
+版本：v1.3.0
 """
 
 import aiohttp.web
@@ -54,6 +55,12 @@ from .doubao_chat_node import (
 from .zhipu_chat_node import (
     NODE_CLASS_MAPPINGS as ZHIPU_CHAT_MAPPINGS,
     NODE_DISPLAY_NAME_MAPPINGS as ZHIPU_CHAT_DISPLAY_MAPPINGS
+)
+
+# 加载 Grok LLM对话节点
+from .grok_node import (
+    NODE_CLASS_MAPPINGS as GROK_MAPPINGS,
+    NODE_DISPLAY_NAME_MAPPINGS as GROK_DISPLAY_MAPPINGS
 )
 
 # 加载Gemini 3多功能节点
@@ -100,6 +107,7 @@ NODE_CLASS_MAPPINGS = {
     **GLM_MAPPINGS,
     **DOUBAO_CHAT_MAPPINGS,
     **ZHIPU_CHAT_MAPPINGS,
+    **GROK_MAPPINGS,
 
     **GEMINI3_MAPPINGS,
     **UNIVERSAL_MAPPINGS,
@@ -114,6 +122,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     **GLM_DISPLAY_MAPPINGS,
     **DOUBAO_CHAT_DISPLAY_MAPPINGS,
     **ZHIPU_CHAT_DISPLAY_MAPPINGS,
+    **GROK_DISPLAY_MAPPINGS,
 
     **GEMINI3_DISPLAY_MAPPINGS,
     **UNIVERSAL_DISPLAY_MAPPINGS,
@@ -389,6 +398,7 @@ else:
     print("  ⚠️  GLM 节点未启用（需要安装 zhipuai）")
 print(f"  💬 豆包LLM对话：{len(DOUBAO_CHAT_MAPPINGS)} 个")
 print(f"  💬 智谱LLM对话：{len(ZHIPU_CHAT_MAPPINGS)} 个")
+print(f"  💬 Grok LLM对话：{len(GROK_MAPPINGS)} 个")
 
 print(f"  💎 Gemini 3多功能：{len(GEMINI3_MAPPINGS)} 个")
 print(f"  🌐 通用API调用：{len(UNIVERSAL_MAPPINGS)} 个")

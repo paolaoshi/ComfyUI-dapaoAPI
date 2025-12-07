@@ -1,148 +1,157 @@
 """
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🤖 Grok API 调用节点
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+大炮 API - Grok (xAI) 对话节点
+提供 xAI Grok 大语言模型对话功能
 
-📝 功能说明：
-   - 支持调用 xAI Grok 系列模型
-   - 支持文生文、多模态识图 (Grok Vision)
-   - 兼容 OpenAI 格式调用
-   - 支持流式/非流式 (本节点使用非流式以获取完整结果)
-
-🔧 技术特性：
-   - 自动处理 Base64 图片编码
-   - 完整的错误处理
-   - 支持自定义系统提示词
-
-👨‍🏫 作者：@炮老师的小课堂
-📦 版本：v1.0.0
-🎨 主题：黑色 (#000000)
-🌐 API文档：https://docs.x.ai/docs/overview
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+作者：@炮老师的小课堂
+版本：v1.0.0
 """
 
 import os
 import json
+import random
 import requests
 import base64
 import io
-import torch
-import numpy as np
-import random
 from PIL import Image
-from typing import Tuple, Optional
+import numpy as np
+import torch
+import urllib3
 
-# 节点颜色 (黑色/深灰，对应 xAI 风格)
+# 禁用 SSL 警告
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# 获取当前目录
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+GROK_CONFIG_FILE = os.path.join(CURRENT_DIR, 'grok_config.json')
+
+# ==================== 辅助函数 ====================
+
+def _log_info(message):
+    """统一的日志输出函数"""
+    print(f"[dapaoAPI-Grok] 信息：{message}")
 
 
-def tensor2pil(image_tensor):
-    """将 Tensor 转换为 PIL Image"""
-    # image_tensor shape: [B, H, W, C]
-    if image_tensor.dim() == 4:
-        image_tensor = image_tensor[0]
+def _log_warning(message):
+    """统一的警告输出函数"""
+    print(f"[dapaoAPI-Grok] 警告：{message}")
+
+
+def _log_error(message):
+    """统一的错误输出函数"""
+    print(f"[dapaoAPI-Grok] 错误：{message}")
+
+
+def get_grok_config():
+    """读取 Grok 配置文件"""
+    default_config = {
+        "grok_api_key": "",
+        "grok_base_url": "https://api.x.ai/v1",
+        "grok_model": "grok-beta",
+        "timeout": 120
+    }
     
-    image_np = (image_tensor.cpu().numpy() * 255).astype('uint8')
-    pil_image = Image.fromarray(image_np)
-    return pil_image
+    try:
+        if os.path.exists(GROK_CONFIG_FILE):
+            with open(GROK_CONFIG_FILE, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+                return {**default_config, **config}
+        else:
+            return default_config
+    except Exception as e:
+        _log_error(f"读取配置文件失败: {e}")
+        return default_config
 
-def image_to_base64(pil_image):
-    """将 PIL Image 转换为 Base64 字符串"""
-    buffered = io.BytesIO()
-    pil_image.save(buffered, format="PNG")
-    img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
-    return f"data:image/png;base64,{img_str}"
 
-class GrokChatNode:
+# ==================== 节点类 ====================
+
+class Grok_Chat:
     """
-    xAI Grok 大模型调用节点
+    Grok (xAI) LLM对话节点
+    
+    使用 xAI Grok 模型进行纯文本对话
+    
+    作者：@炮老师的小课堂
     """
     
     @classmethod
     def INPUT_TYPES(cls):
+        config = get_grok_config()
         return {
             "required": {
-                "📝 系统提示词": ("STRING", {
+                "💬 用户消息": ("STRING", {
                     "multiline": True,
-                    "default": "You are a helpful assistant.",
-                    "placeholder": "设置 AI 的角色..."
+                    "default": "你好，请介绍一下你自己。",
+                    "placeholder": "输入你想要发送的消息..."
                 }),
                 
-                "💬 用户输入": ("STRING", {
+                "🎯 系统提示词": ("STRING", {
                     "multiline": True,
-                    "default": "请解释一下量子纠缠。",
-                    "placeholder": "输入你的问题..."
-                }),
-                
-                "🤖 模型选择": (["grok-4-fast-reasoning", "grok-4-fast-non-reasoning", "grok-4", "grok-4-0709", "grok-2-vision-1212", "grok-2-1212", "grok-beta", "grok-vision-beta"], {
-                    "default": "grok-4-fast-reasoning"
+                    "default": "你是一个幽默、机智且直率的AI助手，深受《银河系漫游指南》的启发。",
+                    "placeholder": "定义AI的角色和行为方式..."
                 }),
                 
                 "🔑 API密钥": ("STRING", {
                     "default": "",
-                    "placeholder": "输入贞贞 API Key (sk-...)",
-                    "multiline": False
+                    "placeholder": "留空则从配置文件读取"
                 }),
                 
-                "🎲 随机种子": ("INT", {
-                    "default": -1,
-                    "min": -1,
-                    "max": 0xffffffffffffffff,
-                    "tooltip": "随机种子，-1为随机"
+                "🤖 模型": ("STRING", {
+                    "default": config.get("grok_model", "grok-beta"),
+                    "placeholder": "如: grok-beta, grok-vision-beta"
                 }),
-
-                "🎯 种子控制": (["随机", "固定", "递增"], {"default": "随机"}),
-            },
-            "optional": {
-                "🖼️ 图像1": ("IMAGE",),
-                "🖼️ 图像2": ("IMAGE",),
-                "🖼️ 图像3": ("IMAGE",),
-                "🖼️ 图像4": ("IMAGE",),
                 
                 "🌡️ 温度": ("FLOAT", {
                     "default": 0.7,
                     "min": 0.0,
                     "max": 2.0,
                     "step": 0.1,
-                    "tooltip": "数值越高，回答越随机；数值越低，回答越确定。"
+                    "tooltip": "控制生成的随机性，越高越有创造性"
                 }),
                 
-                "🎲 Top P": ("FLOAT", {
-                    "default": 1.0,
+                "🎯 Top-P": ("FLOAT", {
+                    "default": 0.9,
                     "min": 0.0,
                     "max": 1.0,
-                    "step": 0.05
+                    "step": 0.05,
+                    "tooltip": "Top-p 核采样参数"
                 }),
                 
-                "📏 最大Token": ("INT", {
+                "📏 最大长度": ("INT", {
                     "default": 4096,
-                    "min": 128,
-                    "max": 128000
+                    "min": 256,
+                    "max": 128000,
+                    "step": 256,
+                    "tooltip": "生成文本的最大token数量"
                 }),
                 
-                "⏱️ 超时时间": ("INT", {
-                    "default": 60,
-                    "min": 5,
-                    "max": 300,
-                    "tooltip": "API 请求超时时间(秒)"
+                "🎲 随机种子": ("INT", {
+                    "default": 0,
+                    "min": 0,
+                    "max": 0xffffffffffffffff,
+                    "tooltip": "随机种子值（0表示不使用固定种子）"
                 }),
                 
-                "🌐 自定义API地址": ("STRING", {
-                    "default": "https://ai.t8star.cn/v1/chat/completions",
-                    "placeholder": "默认使用贞贞 API 地址"
+                "🎛️ 种子控制": (["固定", "随机", "递增"], {
+                    "default": "随机",
+                    "tooltip": "固定: 使用上方种子值; 随机: 每次生成新种子; 递增: 种子值+1"
                 }),
             }
         }
-
-    RETURN_TYPES = ("STRING", "STRING")
-    RETURN_NAMES = ("AI回复", "完整响应JSON")
+    
+    RETURN_TYPES = ("STRING", "STRING", "STRING")
+    RETURN_NAMES = ("💭 AI回复", "📄 完整响应", "ℹ️ 处理信息")
     FUNCTION = "chat"
     CATEGORY = "🤖dapaoAPI/Grok"
-    DESCRIPTION = "调用 Grok 系列模型 (via 贞贞 API)，支持多模态识图"
+    DESCRIPTION = "xAI Grok 大语言模型对话 | 作者: @炮老师的小课堂"
+    OUTPUT_NODE = False
+    
+    def __init__(self):
+        self.config = get_grok_config()
+        self.last_seed = -1
 
     @classmethod
     def IS_CHANGED(cls, **kwargs):
-        seed_control = kwargs.get("🎯 种子控制", "随机")
+        seed_control = kwargs.get("🎛️ 种子控制", "随机")
         seed = kwargs.get("🎲 随机种子", -1)
         
         # 随机和递增模式下，强制更新 (返回 NaN)
@@ -151,146 +160,155 @@ class GrokChatNode:
         
         # 固定模式下，仅当种子值变化时更新
         return seed
-
-    def __init__(self):
-        self.last_seed = -1
-
+    
     def chat(self, **kwargs):
-        # 提取参数
-        system_prompt = kwargs.get("📝 系统提示词", "")
-        user_prompt = kwargs.get("💬 用户输入", "")
-        model = kwargs.get("🤖 模型选择", "grok-4-fast-reasoning")
+        """主函数：Grok对话"""
+        
+        # === 参数解析 ===
+        user_message = kwargs.get("💬 用户消息", "")
+        system_prompt = kwargs.get("🎯 系统提示词", "")
         api_key = kwargs.get("🔑 API密钥", "")
-        
-        # 图像处理
-        images = [kwargs.get(f"🖼️ 图像1"), kwargs.get(f"🖼️ 图像2"), 
-                 kwargs.get(f"🖼️ 图像3"), kwargs.get(f"🖼️ 图像4")]
-        
+        model_name = kwargs.get("🤖 模型", "grok-beta")
         temperature = kwargs.get("🌡️ 温度", 0.7)
-        top_p = kwargs.get("🎲 Top P", 1.0)
-        max_tokens = kwargs.get("📏 最大Token", 4096)
-        timeout = kwargs.get("⏱️ 超时时间", 60)
-        api_url = kwargs.get("🌐 自定义API地址", "https://ai.t8star.cn/v1/chat/completions")
+        top_p = kwargs.get("🎯 Top-P", 0.9)
+        max_tokens = kwargs.get("📏 最大长度", 4096)
+        seed = kwargs.get("🎲 随机种子", 0)
+        seed_control = kwargs.get("🎛️ 种子控制", "随机")
         
-        seed = kwargs.get("🎲 随机种子", -1)
-        seed_control = kwargs.get("🎯 种子控制", "随机")
-
-        # 处理种子逻辑
-        if seed_control == "固定":
-            effective_seed = seed if seed != -1 else random.randint(0, 2147483647)
-        elif seed_control == "随机":
-            effective_seed = random.randint(0, 2147483647)
-        elif seed_control == "递增":
-            if self.last_seed == -1:
-                effective_seed = seed if seed != -1 else random.randint(0, 2147483647)
-            else:
-                effective_seed = self.last_seed + 1
-        else:
-            effective_seed = random.randint(0, 2147483647)
+        # === 状态信息 ===
+        status_info = []
         
-        # 更新 last_seed
-        self.last_seed = effective_seed
-        print(f"[GrokAPI] 🎲 种子模式: {seed_control}, 使用种子: {effective_seed}")
-
-        # 检查 API Key
+        # === 检查消息 ===
+        if not user_message.strip():
+            error_msg = "❌ 错误：请输入用户消息"
+            _log_error(error_msg)
+            return ("", "", error_msg)
+        
+        # === 获取 API 密钥 ===
         if not api_key:
-            # 尝试从配置文件读取 (虽然现在默认不保存，但为了兼容性)
-            # 这里为了安全，如果输入为空，直接报错，或者可以检查环境变量
-            return ("❌ 错误：未提供 API Key，请在节点中输入。", "{}")
-
-        # 构建消息体
-        messages = []
+            api_key = self.config.get("grok_api_key", "")
         
-        # 1. 系统提示词
-        if system_prompt:
-            messages.append({"role": "system", "content": system_prompt})
+        if not api_key:
+            error_msg = "❌ 错误：请配置 Grok API Key\n\n请执行以下操作之一：\n1. 在节点参数中输入 API 密钥\n2. 编辑 grok_config.json 文件配置"
+            _log_error(error_msg)
+            return ("", "", error_msg)
         
-        # 2. 用户消息 (包含文本和图像)
-        user_content = []
-        
-        # 添加文本
-        if user_prompt:
-            user_content.append({"type": "text", "text": user_prompt})
-        
-        # 添加图像
-        has_images = False
-        for img_tensor in images:
-            if img_tensor is not None:
-                has_images = True
-                pil_img = tensor2pil(img_tensor)
-                base64_img = image_to_base64(pil_img)
-                user_content.append({
-                    "type": "image_url",
-                    "image_url": {
-                        "url": base64_img,
-                        "detail": "auto"
-                    }
-                })
-        
-        # 如果没有图像，content 可以直接是字符串 (兼容性更好)，但 OpenAI 格式支持 array
-        # Grok 文档建议 Vision 模型才传图片
-        if not has_images:
-            # 如果只有文本，简化结构
-            messages.append({"role": "user", "content": user_prompt})
-        else:
-            messages.append({"role": "user", "content": user_content})
-
-        # 准备请求头
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}"
-        }
-
-        # 准备请求体
-        payload = {
-            "model": model,
-            "messages": messages,
-            "temperature": temperature,
-            "top_p": top_p,
-            "max_tokens": max_tokens,
-            "seed": effective_seed,
-            "stream": False
-        }
-
-        # 发送请求
         try:
-            print(f"[GrokAPI] 发送请求到 {api_url} (Model: {model})")
-            response = requests.post(
-                api_url,
-                headers=headers,
-                json=payload,
-                timeout=timeout
-            )
+            # === 种子处理 ===
+            if seed_control == "固定":
+                effective_seed = seed
+                seed_mode = "固定"
+            elif seed_control == "随机":
+                effective_seed = random.randint(0, 0xffffffffffffffff)
+                seed_mode = "随机"
+            elif seed_control == "递增":
+                if self.last_seed == -1:
+                    effective_seed = seed if seed != -1 else random.randint(0, 0xffffffffffffffff)
+                else:
+                    effective_seed = self.last_seed + 1
+                seed_mode = "递增"
+            else:
+                effective_seed = random.randint(0, 0xffffffffffffffff)
+                seed_mode = "随机"
             
-            # 检查状态码
+            self.last_seed = effective_seed
+            random.seed(effective_seed)
+            
+            status_info.append(f"🤖 模型：{model_name} (xAI)")
+            status_info.append(f"🎲 种子：{effective_seed} (模式: {seed_mode})")
+            _log_info(f"使用种子：{effective_seed}，模式：{seed_mode}")
+            
+            # === 调用 API ===
+            _log_info("正在调用 Grok API 进行对话...")
+            
+            base_url = self.config.get("grok_base_url", "https://api.x.ai/v1")
+            url = f"{base_url}/chat/completions"
+            
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {api_key}"
+            }
+            
+            messages = []
+            if system_prompt.strip():
+                messages.append({"role": "system", "content": system_prompt})
+            messages.append({"role": "user", "content": user_message})
+            
+            payload = {
+                "model": model_name,
+                "messages": messages,
+                "temperature": temperature,
+                "top_p": top_p,
+                "max_tokens": max_tokens,
+                "stream": False
+            }
+            
+            # Grok API 可能不完全支持 seed 参数，但我们尝试传递
+            if effective_seed != 0:
+                payload["seed"] = effective_seed
+            
+            timeout = self.config.get("timeout", 120)
+            
+            # 发送请求
+            response = requests.post(url, headers=headers, json=payload, timeout=timeout, verify=False)
+            
             if response.status_code != 200:
-                error_msg = f"API Error {response.status_code}: {response.text}"
-                print(f"[GrokAPI] ❌ {error_msg}")
-                return (f"Error: {error_msg}", response.text)
+                error_msg = f"API调用失败: {response.status_code} - {response.text}"
+                _log_error(error_msg)
+                return ("", str(response.text), f"❌ API 调用失败：{error_msg}")
             
-            # 解析响应
             result = response.json()
             
-            # 提取回复内容
-            try:
-                content = result["choices"][0]["message"]["content"]
-                print(f"[GrokAPI] ✅ 请求成功，回复长度: {len(content)}")
-                return (content, json.dumps(result, indent=2, ensure_ascii=False))
-            except (KeyError, IndexError) as e:
-                error_msg = f"解析响应失败: {e}"
-                print(f"[GrokAPI] ❌ {error_msg}")
-                return (f"Error: {error_msg}\nRaw: {json.dumps(result)}", json.dumps(result))
-
+            if "choices" in result and len(result["choices"]) > 0:
+                response_text = result["choices"][0]["message"]["content"]
+                _log_info(f"API调用成功，生成长度: {len(response_text)} 字符")
+            else:
+                error_msg = f"响应格式错误: {result}"
+                _log_error(error_msg)
+                return ("", str(result), f"❌ 响应格式错误：{error_msg}")
+            
+            # === 生成详细信息 ===
+            info_lines = [
+                "=" * 50,
+                "🎉 Grok 对话成功",
+                "=" * 50,
+                "",
+                "📊 对话统计：",
+                *[f"   {info}" for info in status_info],
+                f"   📝 回复长度：{len(response_text)} 字符",
+                f"   💬 用户消息长度：{len(user_message)} 字符",
+                "",
+                "🤖 API 参数：",
+                f"   🌡️ 温度：{temperature}",
+                f"   🎯 Top-P：{top_p}",
+                f"   📏 最大长度：{max_tokens}",
+                "",
+                "💡 使用提示：",
+                "   - AI回复可直接使用或继续处理",
+                "   - Grok 模型通常具有幽默感和实时信息访问能力",
+                "",
+                "=" * 50
+            ]
+            
+            info = "\n".join(info_lines)
+            
+            _log_info("✅ Grok 对话完成！")
+            return (response_text, response_text, info)
+            
         except Exception as e:
-            error_msg = f"请求异常: {str(e)}"
-            print(f"[GrokAPI] ❌ {error_msg}")
-            return (f"Error: {error_msg}", "{}")
+            error_msg = f"❌ 错误：对话失败\n\n{str(e)}"
+            _log_error(error_msg)
+            import traceback
+            _log_error(traceback.format_exc())
+            return ("", str(e), error_msg)
 
-# 节点映射
+
+# ==================== 节点注册 ====================
+
 NODE_CLASS_MAPPINGS = {
-    "GrokChatNode": GrokChatNode
+    "Grok_Chat": Grok_Chat,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "GrokChatNode": "🤖 Grok API 聊天 (xAI)"
+    "Grok_Chat": "🤖 Grok LLM对话 (xAI) @炮老师的小课堂",
 }
