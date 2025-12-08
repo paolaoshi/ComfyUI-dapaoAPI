@@ -9,6 +9,7 @@
 - 智谱 LLM对话（GLM-4 系列）
 - xAI Grok LLM对话（Grok-beta）
 - Google Nano Banana 2 多模态（图像+文本）
+- Google Gemini 3 多模态对话（官方+T8）
 - 通用 API 调用节点（支持任意 HTTP API）
 - 通用图像编辑 API 节点
 - SORA2 视频生成（贞贞API）
@@ -17,7 +18,7 @@
 - 大炮提示词模板管理
 
 作者：@炮老师的小课堂
-版本：v1.3.2
+版本：v1.3.3
 """
 
 import aiohttp.web
@@ -99,6 +100,12 @@ from .banana_integrated_node import (
     NODE_DISPLAY_NAME_MAPPINGS as BANANA_INTEGRATED_DISPLAY_MAPPINGS
 )
 
+# 加载 Gemini 3 多模态对话节点
+from .gemini3_multimodal_chat_node import (
+    NODE_CLASS_MAPPINGS as GEMINI3_CHAT_MAPPINGS,
+    NODE_DISPLAY_NAME_MAPPINGS as GEMINI3_CHAT_DISPLAY_MAPPINGS
+)
+
 # 加载大炮提示词模板节点
 from .dapao_template_node import (
     NODE_CLASS_MAPPINGS as PROMPT_MAPPINGS,
@@ -121,6 +128,7 @@ NODE_CLASS_MAPPINGS = {
     **IMAGE_EDIT_MAPPINGS,
     **SORA2_MAPPINGS,
     **BANANA_INTEGRATED_MAPPINGS,
+    **GEMINI3_CHAT_MAPPINGS,
     **PROMPT_MAPPINGS,
 }
 
@@ -137,6 +145,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     **IMAGE_EDIT_DISPLAY_MAPPINGS,
     **SORA2_DISPLAY_MAPPINGS,
     **BANANA_INTEGRATED_DISPLAY_MAPPINGS,
+    **GEMINI3_CHAT_DISPLAY_MAPPINGS,
     **PROMPT_DISPLAY_MAPPINGS,
 }
 
@@ -409,6 +418,7 @@ print(f"  💬 智谱LLM对话：{len(ZHIPU_CHAT_MAPPINGS)} 个")
 print(f"  💬 Grok LLM对话：{len(GROK_MAPPINGS)} 个")
 
 print(f"  💎 Gemini 3多功能：{len(GEMINI3_MAPPINGS)} 个")
+print(f"  💎 Gemini 3对话（官方+T8）：{len(GEMINI3_CHAT_MAPPINGS)} 个")
 print(f"  🌐 通用API调用：{len(UNIVERSAL_MAPPINGS)} 个")
 print(f"  🎨 图像编辑API：{len(IMAGE_EDIT_MAPPINGS)} 个")
 print(f"  🎬 SORA2视频生成：{len(SORA2_MAPPINGS)} 个")
