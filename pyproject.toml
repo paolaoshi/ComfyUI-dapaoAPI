@@ -1,7 +1,7 @@
 [project]
 name = "ComfyUI-dapaoAPI"
 description = "dapaoAPI 是一套为 ComfyUI 设计的高质量自定义节点集合，提供从图像生成、图像分析到文本处理的完整工作流支持。"
-version = "1.2.3"
+version = "1.2.6"
 license = { file = "LICENSE" }
 
 [project.urls]
