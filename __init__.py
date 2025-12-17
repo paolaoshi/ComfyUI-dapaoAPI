@@ -19,7 +19,7 @@
 - 大炮提示词模板管理
 
 作者：@炮老师的小课堂
-版本：v1.4.0
+版本：v1.5.0
 """
 
 import aiohttp.web
@@ -118,6 +118,13 @@ from .dapao_template_node import (
     NODE_CLASS_MAPPINGS as PROMPT_MAPPINGS,
     NODE_DISPLAY_NAME_MAPPINGS as PROMPT_DISPLAY_MAPPINGS
 )
+
+# 加载 SynVow 详情页提示词节点
+from .synvow_prompt_node import (
+    NODE_CLASS_MAPPINGS as SYNVOW_MAPPINGS,
+    NODE_DISPLAY_NAME_MAPPINGS as SYNVOW_DISPLAY_MAPPINGS
+)
+
 from .dapao_template_adapter import DapaoPromptTemplateAdapter
 from .dapao_user_templates_manager import DapaoUserTemplatesManager
 
@@ -138,6 +145,7 @@ NODE_CLASS_MAPPINGS = {
     **BANANA_INTEGRATED_MAPPINGS,
     **GEMINI3_CHAT_MAPPINGS,
     **PROMPT_MAPPINGS,
+    **SYNVOW_MAPPINGS,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -156,6 +164,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     **BANANA_INTEGRATED_DISPLAY_MAPPINGS,
     **GEMINI3_CHAT_DISPLAY_MAPPINGS,
     **PROMPT_DISPLAY_MAPPINGS,
+    **SYNVOW_DISPLAY_MAPPINGS,
 }
 
 # 声明 Web 目录，用于加载 JavaScript 扩展
