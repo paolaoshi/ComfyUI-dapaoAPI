@@ -37,9 +37,9 @@ def pil_to_base64(image):
     image.save(buffered, format="JPEG")
     return base64.b64encode(buffered.getvalue()).decode('utf-8')
 
-class SynVowPromptGenerator:
+class DapaoEcommercePromptGenerator:
     """
-    SynVow 详情页提示词生成器
+    Dapao 详情页提示词生成器
     复刻自: https://github.com/AJbeckliy/SynVow-prompt
     """
     
@@ -341,10 +341,10 @@ class SynVowPromptGenerator:
             return ([f"Error: {error_msg}"], json.dumps(debug_info, ensure_ascii=False, indent=2))
 
 NODE_CLASS_MAPPINGS = {
-    "SynVowPromptGenerator": SynVowPromptGenerator
+    "DapaoEcommercePromptGenerator": DapaoEcommercePromptGenerator
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "SynVowPromptGenerator": "🦁详情页提示词@炮老师的小课堂"
+    "DapaoEcommercePromptGenerator": "🦁详情页提示词@炮老师的小课堂"
 }
 
