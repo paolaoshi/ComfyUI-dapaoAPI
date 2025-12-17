@@ -267,7 +267,7 @@ class Seedream_Text2Image:
     RETURN_TYPES = ("IMAGE", "STRING")
     RETURN_NAMES = ("🖼️ 图像", "ℹ️ 信息")
     FUNCTION = "generate_image"
-    CATEGORY = "🤖dapaoAPI/Seedream 4.0"
+    CATEGORY = "🤖dapaoAPI/seeddream"
     DESCRIPTION = "使用 Seedream 4.0 API 根据文本生成图像，支持批量生成、风格预设、种子控制 | 作者: @炮老师的小课堂"
     OUTPUT_NODE = False
     
@@ -720,7 +720,7 @@ class Seedream_MultiImage:
     RETURN_TYPES = ("IMAGE", "STRING")
     RETURN_NAMES = ("🎨 生成图像", "ℹ️ 处理信息")
     FUNCTION = "generate_image"
-    CATEGORY = "🤖dapaoAPI/Seedream 4.0"
+    CATEGORY = "🤖dapaoAPI/seeddream"
     DESCRIPTION = "多图编辑和融合，支持批量生成、8种编辑模式、智能融合 | 作者: @炮老师的小课堂"
     OUTPUT_NODE = False
     

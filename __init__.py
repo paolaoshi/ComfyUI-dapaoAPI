@@ -3,6 +3,7 @@
 
 支持功能：
 - Seedream 4.0 图像生成（文生图、多图编辑）
+- Seedream 4.5 图像生成（文生图、多图融合、组图生成）
 - 智谱 AI 图像反推（GLM-4V）
 - 智谱 AI 提示词润色（GLM-4）
 - 豆包 LLM对话（Seed-1.6）
@@ -18,7 +19,7 @@
 - 大炮提示词模板管理
 
 作者：@炮老师的小课堂
-版本：v1.3.3
+版本：v1.4.0
 """
 
 import aiohttp.web
@@ -30,6 +31,12 @@ import traceback
 from .seedream_nodes import (
     NODE_CLASS_MAPPINGS as SEEDREAM_MAPPINGS,
     NODE_DISPLAY_NAME_MAPPINGS as SEEDREAM_DISPLAY_MAPPINGS
+)
+
+# 加载 Seedream 4.5 节点
+from .seedream45_node import (
+    NODE_CLASS_MAPPINGS as SEEDREAM45_MAPPINGS,
+    NODE_DISPLAY_NAME_MAPPINGS as SEEDREAM45_DISPLAY_MAPPINGS
 )
 
 # 尝试加载 GLM 节点
@@ -117,6 +124,7 @@ from .dapao_user_templates_manager import DapaoUserTemplatesManager
 # 合并所有节点映射
 NODE_CLASS_MAPPINGS = {
     **SEEDREAM_MAPPINGS,
+    **SEEDREAM45_MAPPINGS,
     **GLM_MAPPINGS,
     **DOUBAO_CHAT_MAPPINGS,
     **ZHIPU_CHAT_MAPPINGS,
@@ -134,6 +142,7 @@ NODE_CLASS_MAPPINGS = {
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     **SEEDREAM_DISPLAY_MAPPINGS,
+    **SEEDREAM45_DISPLAY_MAPPINGS,
     **GLM_DISPLAY_MAPPINGS,
     **DOUBAO_CHAT_DISPLAY_MAPPINGS,
     **ZHIPU_CHAT_DISPLAY_MAPPINGS,
@@ -408,7 +417,8 @@ __all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS', 'WEB_DIRECTORY']
 print("=" * 60)
 print("  🎨 大炮 API (dapaoAPI) 节点加载完成!")
 print("=" * 60)
-print(f"  📦 Seedream 节点：{len(SEEDREAM_MAPPINGS)} 个")
+print(f"  📦 Seedream 4.0 节点：{len(SEEDREAM_MAPPINGS)} 个")
+print(f"  🌟 Seedream 4.5 节点：{len(SEEDREAM45_MAPPINGS)} 个")
 if GLM_AVAILABLE:
     print(f"  🤖 GLM 智谱节点：{len(GLM_MAPPINGS)} 个")
 else:
