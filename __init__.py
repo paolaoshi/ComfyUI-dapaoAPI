@@ -19,7 +19,7 @@
 - 大炮提示词模板管理
 
 作者：@炮老师的小课堂
-版本：v1.5.0
+版本：v1.5.1
 """
 
 import aiohttp.web
@@ -119,8 +119,8 @@ from .dapao_template_node import (
     NODE_DISPLAY_NAME_MAPPINGS as PROMPT_DISPLAY_MAPPINGS
 )
 
-# 加载 SynVow 详情页提示词节点
-from .synvow_prompt_node import (
+# 加载 Dapao 详情页提示词节点
+from .dapao_ecommerce_node import (
     NODE_CLASS_MAPPINGS as DAPAO_ECOMMERCE_MAPPINGS,
     NODE_DISPLAY_NAME_MAPPINGS as DAPAO_ECOMMERCE_DISPLAY_MAPPINGS
 )

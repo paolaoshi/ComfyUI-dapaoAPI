@@ -40,7 +40,6 @@ def pil_to_base64(image):
 class DapaoEcommercePromptGenerator:
     """
     Dapao 详情页提示词生成器
-    复刻自: https://github.com/AJbeckliy/SynVow-prompt
     """
     
     @classmethod
@@ -186,9 +185,16 @@ class DapaoEcommercePromptGenerator:
    - "棚拍干净背景"：侧重纯色、简单几何背景、光影质感。
    - "混合"：结合以上两者，以展示产品优势为主。
 3. **设计风格**：严格遵循`design_style`指定的视觉风格。
-4. **输出格式**：必须输出一个纯 JSON 字符串列表 `["prompt 1", "prompt 2", ...]`，不要包含 markdown 代码块标记，不要包含其他解释性文字。
+4. **输出格式（严格遵守）**：
+   - 必须且仅输出一个纯 JSON 字符串列表 `["prompt 1", "prompt 2", ...]`。
+   - **严禁**使用 Markdown 代码块标记（如 ```json 或 ```）。
+   - **严禁**包含任何其他解释性文字、前缀或后缀。
+   - 确保 JSON 格式合法，字符串内双引号需转义。
 5. **语言**：根据`output_language`输出。如果选"自动检测"，则与卖点语言一致。
 6. **数量**：必须生成 `prompt_count` 个提示词。
+
+**输出示例**：
+["提示词1内容...", "提示词2内容...", "提示词3内容..."]
 
 **⚠️ 核心规则：卖点可视化（Visual Translation）**
 用户提供的 `selling_points` 包含核心营销信息（如品牌名、Slogan、抽象卖点）。你**绝不能忽略**这些信息，必须将其转化为具体的视觉元素：
@@ -347,4 +353,3 @@ NODE_CLASS_MAPPINGS = {
 NODE_DISPLAY_NAME_MAPPINGS = {
     "DapaoEcommercePromptGenerator": "🦁详情页提示词@炮老师的小课堂"
 }
-

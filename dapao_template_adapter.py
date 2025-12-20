@@ -1,5 +1,6 @@
 import json
 import re
+import os
 from pathlib import Path
 from typing import Dict, List, Any
 
@@ -14,14 +15,11 @@ class DapaoPromptTemplateAdapter:
         
         # Paths
         self.internal_json = self.base_dir / "bananapro-image-prompts-master/gpt4o-image-prompts-master/data/prompts.json"
-        # External paths provided by user
-        # self.external_json = Path(r"C:\Users\upboy\Desktop\参考提示词\gpt4o-image-prompts\data\prompts.json")
-        self.external_json = self.base_dir / "external_prompts.json" # 默认指向项目内的一个不存在的文件，避免报错
-        
-        # ZHO模板路径修正为相对路径
+        self.external_json = self.base_dir / "external_prompts.json" 
         self.zho_readme = self.base_dir / "bananapro-image-prompts-master/README.md"
         
         self.templates = []
+        self.last_load_time = 0
         
         # Fixed Categories
         self.categories = {
@@ -41,9 +39,25 @@ class DapaoPromptTemplateAdapter:
         
         self._load_all_data()
 
+    def _check_and_reload(self):
+        """Check if file modified and reload if necessary"""
+        try:
+            if not self.internal_json.exists():
+                return
+
+            mtime = self.internal_json.stat().st_mtime
+            if mtime > self.last_load_time:
+                print(f"[Dapao] Detected changes in prompts.json, reloading...")
+                self._load_all_data()
+        except Exception as e:
+            print(f"[Dapao] Error checking reload: {e}")
+
     def _load_all_data(self):
         """Load data from all sources and merge"""
         print("[Dapao] Loading templates...")
+        
+        if self.internal_json.exists():
+            self.last_load_time = self.internal_json.stat().st_mtime
         
         # 1. Load Text-to-Image (Internal + External)
         t2i_templates = self._load_gpt4o_templates()
@@ -68,7 +82,9 @@ class DapaoPromptTemplateAdapter:
         
         def process_file(file_path):
             if not file_path.exists():
-                print(f"[Dapao] Warning: File not found {file_path}")
+                # Only warn for internal file, external is optional
+                if file_path == self.internal_json:
+                    print(f"[Dapao] Warning: File not found {file_path}")
                 return
             try:
                 with open(file_path, 'r', encoding='utf-8') as f:
@@ -88,18 +104,25 @@ class DapaoPromptTemplateAdapter:
                     seen_prompts.add(dedup_key)
                     
                     # Fix image path
-                    # JSON has "images/xxx.jpeg", we want "/dapao/images/xxx.jpeg"
                     cover_img = item.get('coverImage', '')
-                    if cover_img.startswith('images/'):
-                        filename = cover_img.split('/')[-1]
-                        item['coverImage'] = f"/dapao/images/{filename}"
+                    if cover_img and not cover_img.startswith('/dapao/images/'):
+                        # If it's a relative path like "images/xxx.jpeg"
+                        if cover_img.startswith('images/'):
+                            filename = cover_img.split('/')[-1]
+                            item['coverImage'] = f"/dapao/images/{filename}"
+                        # If it's a full URL (from opennana), we mapped it to local filename in sync script
+                        # But prompts.json still has "images/xxx.jpeg"
+                        # So the above check covers both cases if sync script kept relative paths
                     
                     # Also fix 'images' list
                     fixed_images = []
                     for img in item.get('images', []):
-                        if img.startswith('images/'):
-                            fname = img.split('/')[-1]
-                            fixed_images.append(f"/dapao/images/{fname}")
+                        if img and not img.startswith('/dapao/images/'):
+                            if img.startswith('images/'):
+                                fname = img.split('/')[-1]
+                                fixed_images.append(f"/dapao/images/{fname}")
+                            else:
+                                fixed_images.append(img)
                         else:
                             fixed_images.append(img)
                     item['images'] = fixed_images
@@ -124,23 +147,11 @@ class DapaoPromptTemplateAdapter:
     def _load_zho_templates(self) -> List[Dict]:
         templates = []
         if not self.zho_readme.exists():
-            print("[Dapao] ZHO README not found")
             return []
             
         try:
             content = self.zho_readme.read_text(encoding='utf-8')
-            
-            # Split by "## " headers
-            # This regex splits but captures delimiters if in parens. 
-            # We use simple split and manual reconstruction or just findall
-            
-            # Strategy: Iterate through lines, find "## ", start new section
             lines = content.split('\n')
-            current_section = []
-            current_title = ""
-            
-            # Skip header
-            start_parsing = False
             
             sections = []
             buffer = []
@@ -159,22 +170,15 @@ class DapaoPromptTemplateAdapter:
                 section_text = '\n'.join(section_lines)
                 title_line = section_lines[0].strip().replace('## ', '').strip()
                 
-                # Filter: Must contain "Prompt：" or "Prompt:"
                 if "Prompt" not in section_text:
                     continue
                     
-                # Extract Prompt
-                # Find content between ``` and ```
                 code_blocks = re.findall(r'```(.*?)```', section_text, re.DOTALL)
                 if not code_blocks:
                     continue
                     
-                # Use the first code block as prompt
                 prompt_text = code_blocks[0].strip()
                 
-                # Extract Image
-                # Try to find github image url
-                # src="..." or markdown ![...](...)
                 cover_image = ""
                 img_match = re.search(r'src="(https://[^"]+)"', section_text)
                 if img_match:
@@ -184,9 +188,6 @@ class DapaoPromptTemplateAdapter:
                     if md_img:
                         cover_image = md_img.group(1)
                         
-                # Clean Title (remove emojis if needed, but user might like them)
-                # ZHO uses "1️⃣ Title", "2️⃣ Title". We keep them.
-                
                 template = {
                     "id": f"zho_{i}",
                     "title": title_line,
@@ -205,12 +206,13 @@ class DapaoPromptTemplateAdapter:
                 
         except Exception as e:
             print(f"[Dapao] Error parsing ZHO README: {e}")
-            import traceback
-            traceback.print_exc()
             
         return templates
 
     def get_all_categories(self, lang: str = 'zh') -> List[Dict[str, Any]]:
+        # Check reload before returning categories
+        self._check_and_reload()
+        
         cats = [self.categories['text_to_image'], self.categories['image_editing']]
         result = []
         for c in cats:
@@ -223,24 +225,20 @@ class DapaoPromptTemplateAdapter:
         return result
 
     def get_templates_by_category(self, category_id: str) -> List[Dict[str, Any]]:
+        # Check reload before returning templates
+        self._check_and_reload()
+        
         filtered = []
         for t in self.templates:
             if t.get('_dapao_category') == category_id:
                 prompts = t.get('prompts', [])
                 prompt_en = prompts[0] if prompts else ""
                 
-                # ZHO templates only have one prompt usually (English)
-                # GPT4o templates have [En, Zh] or [Zh]
-                
                 prompt_zh = ""
                 if len(prompts) > 1:
                     prompt_zh = prompts[1]
                 else:
-                    # If only one prompt, reuse it for both if needed, or just leave ZH empty?
-                    # Dapao UI expects bilingual?
-                    # If source is ZHO, prompt is usually English code.
-                    # If source is GPT4o, prompts[0] is English.
-                    prompt_zh = prompt_en # Fallback to show something
+                    prompt_zh = prompt_en 
                 
                 filtered.append({
                     'id': t.get('id'),

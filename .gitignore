@@ -28,6 +28,8 @@ env/
 # IDE 相关
 .vscode/
 .idea/
+.trae/
+.windsurf/
 *.swp
 *.swo
 *~
