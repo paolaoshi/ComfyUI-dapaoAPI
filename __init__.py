@@ -19,7 +19,7 @@
 - 大炮提示词模板管理
 
 作者：@炮老师的小课堂
-版本：v1.5.1
+版本：v1.5.2
 """
 
 import aiohttp.web
@@ -125,6 +125,28 @@ from .dapao_ecommerce_node import (
     NODE_DISPLAY_NAME_MAPPINGS as DAPAO_ECOMMERCE_DISPLAY_MAPPINGS
 )
 
+# 加载 Banana2 贞贞节点
+from .banana2_zhenzhen_node import DapaoBanana2ZhenzhenNode
+
+BANANA2_ZHENZHEN_MAPPINGS = {
+    "DapaoBanana2ZhenzhenNode": DapaoBanana2ZhenzhenNode
+}
+
+BANANA2_ZHENZHEN_DISPLAY_MAPPINGS = {
+    "DapaoBanana2ZhenzhenNode": "🙈Banana2贞贞@炮老师的小课堂"
+}
+
+# 加载 Banana2 Aabao 节点
+from .banana2_aabao_node import DapaoBanana2AabaoNode
+
+BANANA2_AABAO_MAPPINGS = {
+    "DapaoBanana2AabaoNode": DapaoBanana2AabaoNode
+}
+
+BANANA2_AABAO_DISPLAY_MAPPINGS = {
+    "DapaoBanana2AabaoNode": "🙈Banana2aabao专用@炮老师的小课堂"
+}
+
 from .dapao_template_adapter import DapaoPromptTemplateAdapter
 from .dapao_user_templates_manager import DapaoUserTemplatesManager
 
@@ -143,6 +165,8 @@ NODE_CLASS_MAPPINGS = {
     **IMAGE_EDIT_MAPPINGS,
     **SORA2_MAPPINGS,
     **BANANA_INTEGRATED_MAPPINGS,
+    **BANANA2_ZHENZHEN_MAPPINGS,
+    **BANANA2_AABAO_MAPPINGS,
     **GEMINI3_CHAT_MAPPINGS,
     **PROMPT_MAPPINGS,
     **DAPAO_ECOMMERCE_MAPPINGS,
@@ -162,6 +186,8 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     **IMAGE_EDIT_DISPLAY_MAPPINGS,
     **SORA2_DISPLAY_MAPPINGS,
     **BANANA_INTEGRATED_DISPLAY_MAPPINGS,
+    **BANANA2_ZHENZHEN_DISPLAY_MAPPINGS,
+    **BANANA2_AABAO_DISPLAY_MAPPINGS,
     **GEMINI3_CHAT_DISPLAY_MAPPINGS,
     **PROMPT_DISPLAY_MAPPINGS,
     **DAPAO_ECOMMERCE_DISPLAY_MAPPINGS,
@@ -441,7 +467,7 @@ print(f"  💎 Gemini 3对话（官方+T8）：{len(GEMINI3_CHAT_MAPPINGS)} 个"
 print(f"  🌐 通用API调用：{len(UNIVERSAL_MAPPINGS)} 个")
 print(f"  🎨 图像编辑API：{len(IMAGE_EDIT_MAPPINGS)} 个")
 print(f"  🎬 SORA2视频生成：{len(SORA2_MAPPINGS)} 个")
-print(f"  🍌 Banana整合版：{len(BANANA_INTEGRATED_MAPPINGS)} 个")
+print(f"  🍌 Banana整合版：{len(BANANA_INTEGRATED_MAPPINGS) + len(BANANA2_ZHENZHEN_MAPPINGS) + len(BANANA2_AABAO_MAPPINGS)} 个")
 print(f"  🎨 大炮提示词模板：{len(PROMPT_MAPPINGS)} 个")
 print(f"  ✅ 总计：{len(NODE_CLASS_MAPPINGS)} 个节点")
 print(f"  👨‍🏫 作者：@炮老师的小课堂")
