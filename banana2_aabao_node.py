@@ -79,11 +79,21 @@ class DapaoBanana2AabaoNode:
                 "🆔 任务ID": ("STRING", {"default": "", "tooltip": "Gemini 模式下通常无效"}),
                 "📦 返回格式": (["url", "b64_json"], {"default": "url", "tooltip": "内部自动处理"}),
                 
-                # 多图输入 (支持最多4张图，Gemini 限制)
+                # 多图输入 (支持最多14张图，Gemini 限制)
                 "🖼️ 参考图1": ("IMAGE",),
                 "🖼️ 参考图2": ("IMAGE",),
                 "🖼️ 参考图3": ("IMAGE",),
                 "🖼️ 参考图4": ("IMAGE",),
+                "🖼️ 参考图5": ("IMAGE",),
+                "🖼️ 参考图6": ("IMAGE",),
+                "🖼️ 参考图7": ("IMAGE",),
+                "🖼️ 参考图8": ("IMAGE",),
+                "🖼️ 参考图9": ("IMAGE",),
+                "🖼️ 参考图10": ("IMAGE",),
+                "🖼️ 参考图11": ("IMAGE",),
+                "🖼️ 参考图12": ("IMAGE",),
+                "🖼️ 参考图13": ("IMAGE",),
+                "🖼️ 参考图14": ("IMAGE",),
             }
         }
 
