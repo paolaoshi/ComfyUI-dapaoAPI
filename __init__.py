@@ -17,9 +17,10 @@
 - 灵活的分辨率和宽高比控制
 - 统一的紫色+橙棕色节点主题
 - 大炮提示词模板管理
+- 对比打标 (API)
 
 作者：@炮老师的小课堂
-版本：v1.5.3
+版本：v1.6.0
 """
 
 import aiohttp.web
@@ -147,6 +148,12 @@ BANANA2_AABAO_DISPLAY_MAPPINGS = {
     "DapaoBanana2AabaoNode": "🙈Banana2aabao专用@炮老师的小课堂"
 }
 
+# 加载对比打标节点
+from .dapao_compare_tagging_node import (
+    NODE_CLASS_MAPPINGS as COMPARE_TAGGING_MAPPINGS,
+    NODE_DISPLAY_NAME_MAPPINGS as COMPARE_TAGGING_DISPLAY_MAPPINGS
+)
+
 from .dapao_template_adapter import DapaoPromptTemplateAdapter
 from .dapao_user_templates_manager import DapaoUserTemplatesManager
 
@@ -170,6 +177,7 @@ NODE_CLASS_MAPPINGS = {
     **GEMINI3_CHAT_MAPPINGS,
     **PROMPT_MAPPINGS,
     **DAPAO_ECOMMERCE_MAPPINGS,
+    **COMPARE_TAGGING_MAPPINGS,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -191,6 +199,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     **GEMINI3_CHAT_DISPLAY_MAPPINGS,
     **PROMPT_DISPLAY_MAPPINGS,
     **DAPAO_ECOMMERCE_DISPLAY_MAPPINGS,
+    **COMPARE_TAGGING_DISPLAY_MAPPINGS,
 }
 
 # 声明 Web 目录，用于加载 JavaScript 扩展
@@ -469,6 +478,7 @@ print(f"  🎨 图像编辑API：{len(IMAGE_EDIT_MAPPINGS)} 个")
 print(f"  🎬 SORA2视频生成：{len(SORA2_MAPPINGS)} 个")
 print(f"  🍌 Banana整合版：{len(BANANA_INTEGRATED_MAPPINGS) + len(BANANA2_ZHENZHEN_MAPPINGS) + len(BANANA2_AABAO_MAPPINGS)} 个")
 print(f"  🎨 大炮提示词模板：{len(PROMPT_MAPPINGS)} 个")
+print(f"  🔍 对比打标节点：{len(COMPARE_TAGGING_MAPPINGS)} 个")
 print(f"  ✅ 总计：{len(NODE_CLASS_MAPPINGS)} 个节点")
 print(f"  👨‍🏫 作者：@炮老师的小课堂")
 print(f"  🎨 主题：紫色标题栏 + 橙棕色背景")
