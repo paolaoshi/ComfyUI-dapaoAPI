@@ -29,6 +29,14 @@
         "gemini-2.5-flash",
         "gemini-2.5-pro"
       ]
+    },
+    "T8": {
+      "api_key": "",
+      "base_url": "https://ai.t8star.cn/v1",
+      "models": [
+        "gemini-3-pro-preview",
+        "gemini-3-flash-preview"
+      ]
     }
   },
   "default_provider": "comfly"

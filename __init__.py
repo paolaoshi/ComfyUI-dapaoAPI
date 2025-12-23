@@ -20,7 +20,7 @@
 - 对比打标 (API)
 
 作者：@炮老师的小课堂
-版本：v1.7.0
+版本：v1.7.4
 """
 
 import aiohttp.web
@@ -160,6 +160,33 @@ from .dapao_api_batch_reverse_node import (
     NODE_DISPLAY_NAME_MAPPINGS as BATCH_REVERSE_DISPLAY_MAPPINGS
 )
 
+# 加载 Gemini 指令节点（贞贞 / 官方）
+try:
+    from .gemini_instruction_zhenzhen_node import (
+        DapaoGeminiInstructionZhenzhenNode,
+        DapaoGeminiInstructionOfficialNode,
+    )
+    GEMINI_ZHENZHEN_MAPPINGS = {
+        "DapaoGeminiInstructionZhenzhenNode": DapaoGeminiInstructionZhenzhenNode
+    }
+    GEMINI_ZHENZHEN_DISPLAY_MAPPINGS = {
+        "DapaoGeminiInstructionZhenzhenNode": "💓Gemini指令贞贞@炮老师的小课堂"
+    }
+    GEMINI_OFFICIAL_MAPPINGS = {
+        "DapaoGeminiInstructionOfficialNode": DapaoGeminiInstructionOfficialNode
+    }
+    GEMINI_OFFICIAL_DISPLAY_MAPPINGS = {
+        "DapaoGeminiInstructionOfficialNode": "💓Gemini指令官方@炮老师的小课堂"
+    }
+except Exception as e:
+    print(f"[dapaoAPI] ❌ 警告：Gemini 指令贞贞节点加载失败: {e}")
+    import traceback
+    traceback.print_exc()
+    GEMINI_ZHENZHEN_MAPPINGS = {}
+    GEMINI_ZHENZHEN_DISPLAY_MAPPINGS = {}
+    GEMINI_OFFICIAL_MAPPINGS = {}
+    GEMINI_OFFICIAL_DISPLAY_MAPPINGS = {}
+
 from .dapao_template_adapter import DapaoPromptTemplateAdapter
 from .dapao_user_templates_manager import DapaoUserTemplatesManager
 
@@ -185,6 +212,8 @@ NODE_CLASS_MAPPINGS = {
     **DAPAO_ECOMMERCE_MAPPINGS,
     **COMPARE_TAGGING_MAPPINGS,
     **BATCH_REVERSE_MAPPINGS,
+    **GEMINI_ZHENZHEN_MAPPINGS,
+    **GEMINI_OFFICIAL_MAPPINGS,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -208,6 +237,8 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     **DAPAO_ECOMMERCE_DISPLAY_MAPPINGS,
     **COMPARE_TAGGING_DISPLAY_MAPPINGS,
     **BATCH_REVERSE_DISPLAY_MAPPINGS,
+    **GEMINI_ZHENZHEN_DISPLAY_MAPPINGS,
+    **GEMINI_OFFICIAL_DISPLAY_MAPPINGS,
 }
 
 # 声明 Web 目录，用于加载 JavaScript 扩展
@@ -488,6 +519,8 @@ print(f"  🍌 Banana整合版：{len(BANANA_INTEGRATED_MAPPINGS) + len(BANANA2_
 print(f"  🎨 大炮提示词模板：{len(PROMPT_MAPPINGS)} 个")
 print(f"  🔍 对比打标节点：{len(COMPARE_TAGGING_MAPPINGS)} 个")
 print(f"  🍭 批量反推节点：{len(BATCH_REVERSE_MAPPINGS)} 个")
+print(f"  💓 Gemini 指令贞贞：{len(GEMINI_ZHENZHEN_MAPPINGS)} 个")
+print(f"  💓 Gemini 指令官方：{len(GEMINI_OFFICIAL_MAPPINGS)} 个")
 print(f"  ✅ 总计：{len(NODE_CLASS_MAPPINGS)} 个节点")
 print(f"  👨‍🏫 作者：@炮老师的小课堂")
 print(f"  🎨 主题：紫色标题栏 + 橙棕色背景")
