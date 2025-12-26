@@ -145,7 +145,7 @@ class GeminiImageReverseNode:
     FUNCTION = "process"
     CATEGORY = "🤖dapaoAPI/Gemini"
     DESCRIPTION = "Gemini 图像反推专用节点 | 作者: @炮老师的小课堂"
-    OUTPUT_NODE = False
+    OUTPUT_NODE = True
     
     def process(self, **kwargs):
         """同步处理入口"""

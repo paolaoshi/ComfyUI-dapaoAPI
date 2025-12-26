@@ -183,10 +183,10 @@ try:
     }
     
     GEMINI_REVERSE_MAPPINGS = {
-        "GeminiImageReverseNode": GeminiImageReverseNode
+        "DapaoGeminiImageReverse": GeminiImageReverseNode
     }
     GEMINI_REVERSE_DISPLAY_MAPPINGS = {
-        "GeminiImageReverseNode": "💐Gemini图像反推 @炮老师的小课堂"
+        "DapaoGeminiImageReverse": "💐Gemini图像反推 @炮老师的小课堂"
     }
     
 except Exception as e:
@@ -253,6 +253,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     **BATCH_REVERSE_DISPLAY_MAPPINGS,
     **GEMINI_ZHENZHEN_DISPLAY_MAPPINGS,
     **GEMINI_OFFICIAL_DISPLAY_MAPPINGS,
+    **GEMINI_REVERSE_DISPLAY_MAPPINGS,
 }
 
 # 声明 Web 目录，用于加载 JavaScript 扩展
@@ -535,6 +536,7 @@ print(f"  🔍 对比打标节点：{len(COMPARE_TAGGING_MAPPINGS)} 个")
 print(f"  🍭 批量反推节点：{len(BATCH_REVERSE_MAPPINGS)} 个")
 print(f"  💓 Gemini 指令贞贞：{len(GEMINI_ZHENZHEN_MAPPINGS)} 个")
 print(f"  💓 Gemini 指令官方：{len(GEMINI_OFFICIAL_MAPPINGS)} 个")
+print(f"  💐 Gemini 图像反推：{len(GEMINI_REVERSE_MAPPINGS)} 个")
 print(f"  ✅ 总计：{len(NODE_CLASS_MAPPINGS)} 个节点")
 print(f"  👨‍🏫 作者：@炮老师的小课堂")
 print(f"  🎨 主题：紫色标题栏 + 橙棕色背景")
