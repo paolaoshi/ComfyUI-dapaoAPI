@@ -211,7 +211,7 @@ class GeminiImageReverseNode:
                         image_base64 = encode_image_tensor(single_image)
                         parts.append({
                             "inline_data": {
-                                "mime_type": "image/png",
+                                "mime_type": "image/jpeg",
                                 "data": image_base64
                             }
                         })

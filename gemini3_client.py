@@ -55,8 +55,8 @@ def get_api_key(api_provider: str, api_key_override: str = "") -> Optional[str]:
     return None
 
 
-def encode_image_tensor(image_tensor) -> str:
-    """将ComfyUI tensor转换为base64 PNG"""
+def encode_image_tensor(image_tensor, max_size=1568) -> str:
+    """将ComfyUI tensor转换为base64 JPEG"""
     # Convert tensor to numpy array
     if hasattr(image_tensor, 'cpu'):
         image_np = image_tensor.cpu().numpy()
@@ -69,10 +69,24 @@ def encode_image_tensor(image_tensor) -> str:
     
     # Create PIL Image
     img = Image.fromarray(image_np)
+
+    # Resize if too large (maintain aspect ratio)
+    if max(img.size) > max_size:
+        ratio = max_size / max(img.size)
+        new_size = (int(img.width * ratio), int(img.height * ratio))
+        img = img.resize(new_size, Image.Resampling.LANCZOS)
     
-    # Encode to PNG
+    # Encode to JPEG
     buffer = BytesIO()
-    img.save(buffer, format='PNG')
+    # Convert to RGB if needed (JPEG doesn't support alpha)
+    if img.mode in ('RGBA', 'LA'):
+        background = Image.new('RGB', img.size, (255, 255, 255))
+        background.paste(img, mask=img.split()[-1])
+        img = background
+    elif img.mode != 'RGB':
+        img = img.convert('RGB')
+        
+    img.save(buffer, format='JPEG', quality=90, optimize=True)
     return base64.b64encode(buffer.getvalue()).decode('utf-8')
 
 
@@ -114,7 +128,7 @@ class GeminiClient:
         self.api_provider = api_provider
         self.session: Optional[aiohttp.ClientSession] = None
         self.base_url = "https://generativelanguage.googleapis.com"
-        self.timeout = 120
+        self.timeout = 300
         
         # 加载提供商配置
         config = {}
