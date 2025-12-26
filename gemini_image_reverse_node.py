@@ -125,9 +125,9 @@ class GeminiImageReverseNode:
                 }),
                 
                 "📝 最大令牌": ("INT", {
-                    "default": 2048,
+                    "default": 8192,
                     "min": 1,
-                    "max": 32768
+                    "max": 65536
                 }),
             },
             "optional": {
