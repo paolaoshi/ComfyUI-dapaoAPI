@@ -166,6 +166,9 @@ try:
         DapaoGeminiInstructionZhenzhenNode,
         DapaoGeminiInstructionOfficialNode,
     )
+    # 加载 Gemini 图像反推节点
+    from .gemini_image_reverse_node import GeminiImageReverseNode
+    
     GEMINI_ZHENZHEN_MAPPINGS = {
         "DapaoGeminiInstructionZhenzhenNode": DapaoGeminiInstructionZhenzhenNode
     }
@@ -178,6 +181,14 @@ try:
     GEMINI_OFFICIAL_DISPLAY_MAPPINGS = {
         "DapaoGeminiInstructionOfficialNode": "💓Gemini指令官方@炮老师的小课堂"
     }
+    
+    GEMINI_REVERSE_MAPPINGS = {
+        "GeminiImageReverseNode": GeminiImageReverseNode
+    }
+    GEMINI_REVERSE_DISPLAY_MAPPINGS = {
+        "GeminiImageReverseNode": "💐Gemini图像反推 @炮老师的小课堂"
+    }
+    
 except Exception as e:
     print(f"[dapaoAPI] ❌ 警告：Gemini 指令贞贞节点加载失败: {e}")
     import traceback
@@ -186,6 +197,8 @@ except Exception as e:
     GEMINI_ZHENZHEN_DISPLAY_MAPPINGS = {}
     GEMINI_OFFICIAL_MAPPINGS = {}
     GEMINI_OFFICIAL_DISPLAY_MAPPINGS = {}
+    GEMINI_REVERSE_MAPPINGS = {}
+    GEMINI_REVERSE_DISPLAY_MAPPINGS = {}
 
 from .dapao_template_adapter import DapaoPromptTemplateAdapter
 from .dapao_user_templates_manager import DapaoUserTemplatesManager
@@ -214,6 +227,7 @@ NODE_CLASS_MAPPINGS = {
     **BATCH_REVERSE_MAPPINGS,
     **GEMINI_ZHENZHEN_MAPPINGS,
     **GEMINI_OFFICIAL_MAPPINGS,
+    **GEMINI_REVERSE_MAPPINGS,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
