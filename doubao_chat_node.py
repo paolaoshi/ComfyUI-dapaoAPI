@@ -10,12 +10,19 @@
 import os
 import json
 import random
+import time
 import requests
 import base64
 import io
 from PIL import Image
 import numpy as np
 import torch
+import comfy.utils
+from comfy.comfy_types import IO
+try:
+    import folder_paths
+except Exception:
+    folder_paths = None
 
 # 获取当前目录
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -91,6 +98,72 @@ def tensor_to_base64(image_tensor: torch.Tensor) -> str:
 
 
 # ==================== 节点类 ====================
+
+class DoubaoVideoAdapter:
+    """
+    视频适配器：兼容 ComfyUI 的 VIDEO 类型输出
+    
+    说明：
+    - 这里优先支持视频 URL（豆包视频生成接口一般返回 URL）
+    - save_to 会把 URL 下载到 ComfyUI 指定的输出路径
+    """
+    def __init__(self, video_path_or_url: str):
+        self.video_url = None
+        self.video_path = None
+        self.is_url = False
+        
+        if not video_path_or_url:
+            return
+        
+        if isinstance(video_path_or_url, str) and video_path_or_url.startswith("http"):
+            self.is_url = True
+            self.video_url = video_path_or_url
+        else:
+            self.is_url = False
+            self.video_path = video_path_or_url
+    
+    def get_dimensions(self):
+        """
+        获取视频尺寸
+        
+        说明：豆包任务结果通常是 URL，尺寸信息不一定能直接拿到，因此返回一个合理默认值。
+        """
+        return 1280, 720
+    
+    def save_to(self, output_path, format="auto", codec="auto", metadata=None):
+        """
+        保存视频到指定路径（ComfyUI SaveVideo/保存节点会调用）
+        """
+        if self.is_url:
+            try:
+                _log_info(f"开始下载视频到: {output_path}")
+                response = requests.get(self.video_url, stream=True, timeout=300, allow_redirects=True, verify=False)
+                response.raise_for_status()
+                total_bytes = 0
+                with open(output_path, "wb") as f:
+                    for chunk in response.iter_content(chunk_size=1024 * 1024):
+                        if chunk:
+                            f.write(chunk)
+                            total_bytes += len(chunk)
+                _log_info(f"视频下载完成，大小: {round(total_bytes / 1024 / 1024, 2)} MB")
+                return True
+            except Exception as e:
+                _log_error(f"从 URL 下载视频失败: {e}")
+                return False
+        
+        try:
+            if not self.video_path or not os.path.exists(self.video_path):
+                return False
+            with open(self.video_path, "rb") as src, open(output_path, "wb") as dst:
+                while True:
+                    chunk = src.read(1024 * 1024)
+                    if not chunk:
+                        break
+                    dst.write(chunk)
+            return True
+        except Exception as e:
+            _log_error(f"保存本地视频失败: {e}")
+            return False
 
 class Doubao_Chat:
     """
@@ -955,18 +1028,386 @@ class Doubao_VideoToPrompt:
             _log_error(traceback.format_exc())
             return ("", error_msg)
 
+
+class Doubao_VideoGenerate:
+    """
+    🫐 豆包视频生成节点
+    
+    功能：
+    - 调用火山方舟 Ark 的视频生成异步接口创建任务
+    - 轮询任务状态，成功后输出视频 URL，并提供 VIDEO 类型输出以便连接保存节点
+    
+    说明：
+    - 文本提示词会被拼接为：提示词 + 参数（如分辨率/时长/镜头固定等）
+    - 可选输入首帧图，走图生视频（I2V）流程
+    """
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "🎬 生成模式": (["文生视频", "图生视频", "首尾帧视频"], {
+                    "default": "文生视频"
+                }),
+                "🎨 提示词": ("STRING", {
+                    "multiline": True,
+                    "default": "天空的云飘动着，路上的车辆行驶",
+                    "placeholder": "描述你想要生成的视频内容..."
+                }),
+                
+                "🤖 模型名称": ("STRING", {
+                    "default": "doubao-seedance-1-5-pro-251215",
+                    "placeholder": "在火山方舟控制台查看对应的 Model ID"
+                }),
+                
+                "🖥️ 分辨率": (["480p", "720p", "1080p"], {
+                    "default": "720p"
+                }),
+                
+                "📐 视频比例": (["16:9", "9:16", "1:1", "4:3", "3:4", "21:9"], {
+                    "default": "16:9"
+                }),
+                
+                "⏱️ 时长(秒)": ("INT", {
+                    "default": 5,
+                    "min": 2,
+                    "max": 12,
+                    "step": 1
+                }),
+                
+                "📷 镜头固定": ("BOOLEAN", {
+                    "default": False
+                }),
+                
+                "➕ 额外参数": ("STRING", {
+                    "default": "",
+                    "multiline": False,
+                    "placeholder": "可选：直接填写 Seedance 参数（例如：--cameramove 1），会原样拼接到提示词末尾"
+                }),
+                
+                "🔑 API密钥": ("STRING", {
+                    "default": "",
+                    "placeholder": "留空则从 doubao_config.json 读取"
+                }),
+                
+                "⏳ 最大等待(秒)": ("INT", {
+                    "default": 600,
+                    "min": 30,
+                    "max": 3600,
+                    "step": 10
+                }),
+                
+                "🔁 查询间隔(秒)": ("INT", {
+                    "default": 2,
+                    "min": 1,
+                    "max": 30,
+                    "step": 1
+                }),
+            },
+            "optional": {
+                "🖼️ 首帧图": ("IMAGE",),
+                "🖼️ 尾帧图": ("IMAGE",),
+            }
+        }
+    
+    RETURN_TYPES = (IO.VIDEO, "STRING", "STRING")
+    RETURN_NAMES = ("🎬 视频", "🎥 视频URL", "📋 响应信息")
+    FUNCTION = "generate_video"
+    CATEGORY = "🤖dapaoAPI/豆包"
+    DESCRIPTION = "调用豆包 Seedance 模型生成视频（异步任务轮询）| 作者: @炮老师的小课堂"
+    OUTPUT_NODE = False
+    
+    def __init__(self):
+        self.config = get_doubao_config()
+    
+    def _build_prompt_text(self, prompt: str, resolution: str, ratio: str, duration: int, camera_fixed: bool, extra_args: str) -> str:
+        prompt = (prompt or "").strip()
+        extra_args = (extra_args or "").strip()
+        camera_fixed_text = "true" if camera_fixed else "false"
+        
+        parts = [
+            prompt,
+            f"--resolution {resolution}",
+            f"--ratio {ratio}",
+            f"--duration {duration}",
+            f"--camerafixed {camera_fixed_text}",
+        ]
+        if extra_args:
+            parts.append(extra_args)
+        return " ".join([p for p in parts if p])
+    
+    def _extract_task_id(self, create_result: dict) -> str:
+        if not isinstance(create_result, dict):
+            return ""
+        if create_result.get("id"):
+            return str(create_result["id"])
+        data = create_result.get("data")
+        if isinstance(data, dict) and data.get("id"):
+            return str(data["id"])
+        return ""
+    
+    def _extract_video_url(self, task_result: dict) -> str:
+        if not isinstance(task_result, dict):
+            return ""
+        
+        direct_candidates = [
+            task_result.get("video_url"),
+            task_result.get("url"),
+        ]
+        for c in direct_candidates:
+            if isinstance(c, str) and c.startswith("http"):
+                return c
+        
+        content = task_result.get("content")
+        if isinstance(content, dict):
+            for key in ("video_url", "url"):
+                url = content.get(key)
+                if isinstance(url, str) and url.startswith("http"):
+                    return url
+        if isinstance(content, list):
+            for item in content:
+                if not isinstance(item, dict):
+                    continue
+                if item.get("type") in ("video_url", "video"):
+                    for key in ("video_url", "video"):
+                        value = item.get(key)
+                        if isinstance(value, dict):
+                            url = value.get("url")
+                            if isinstance(url, str) and url.startswith("http"):
+                                return url
+                        if isinstance(value, str) and value.startswith("http"):
+                            return value
+                for key in ("url", "video_url"):
+                    url = item.get(key)
+                    if isinstance(url, str) and url.startswith("http"):
+                        return url
+        
+        result = task_result.get("result")
+        if isinstance(result, dict):
+            for key in ("video_url", "url"):
+                url = result.get(key)
+                if isinstance(url, str) and url.startswith("http"):
+                    return url
+            result_content = result.get("content")
+            if isinstance(result_content, list):
+                for item in result_content:
+                    if not isinstance(item, dict):
+                        continue
+                    url = item.get("url")
+                    if isinstance(url, str) and url.startswith("http"):
+                        return url
+        
+        return ""
+    
+    def _extract_status(self, task_result: dict) -> str:
+        if not isinstance(task_result, dict):
+            return "unknown"
+        
+        for key in ("status", "state"):
+            v = task_result.get(key)
+            if isinstance(v, str) and v.strip():
+                return v.strip()
+        
+        data = task_result.get("data")
+        if isinstance(data, dict):
+            v = data.get("status") or data.get("state")
+            if isinstance(v, str) and v.strip():
+                return v.strip()
+        
+        return "unknown"
+    
+    def _download_video_to_output(self, video_url: str, task_id: str) -> tuple[str, str]:
+        if not video_url or not isinstance(video_url, str) or not video_url.startswith("http"):
+            return "", "video_url 为空或不合法"
+        
+        if folder_paths is None:
+            return "", "folder_paths 不可用，无法确定输出目录"
+        
+        try:
+            output_root = folder_paths.get_output_directory()
+            target_dir = os.path.join(output_root, "video", "dapaoAPI")
+            os.makedirs(target_dir, exist_ok=True)
+            
+            safe_task_id = (task_id or "task").replace("/", "_").replace("\\", "_")
+            target_path = os.path.join(target_dir, f"doubao_{safe_task_id}.mp4")
+            
+            _log_info(f"开始预下载视频到输出目录: {target_path}")
+            r = requests.get(video_url, stream=True, timeout=300, allow_redirects=True, verify=False)
+            r.raise_for_status()
+            
+            total_bytes = 0
+            with open(target_path, "wb") as f:
+                for chunk in r.iter_content(chunk_size=1024 * 1024):
+                    if chunk:
+                        f.write(chunk)
+                        total_bytes += len(chunk)
+            
+            _log_info(f"预下载完成，大小: {round(total_bytes / 1024 / 1024, 2)} MB")
+            return target_path, ""
+        except Exception as e:
+            return "", str(e)
+    
+    def generate_video(self, **kwargs):
+        mode = kwargs.get("🎬 生成模式", "文生视频")
+        prompt = kwargs.get("🎨 提示词", "")
+        model_name = kwargs.get("🤖 模型名称", "doubao-seedance-1-5-pro-251215")
+        resolution = kwargs.get("🖥️ 分辨率", "720p")
+        ratio = kwargs.get("📐 视频比例", "16:9")
+        duration = int(kwargs.get("⏱️ 时长(秒)", 5))
+        camera_fixed = bool(kwargs.get("📷 镜头固定", False))
+        extra_args = kwargs.get("➕ 额外参数", "")
+        api_key = kwargs.get("🔑 API密钥", "")
+        max_wait_seconds = int(kwargs.get("⏳ 最大等待(秒)", 600))
+        poll_interval = int(kwargs.get("🔁 查询间隔(秒)", 2))
+        first_frame = kwargs.get("🖼️ 首帧图")
+        last_frame = kwargs.get("🖼️ 尾帧图")
+        
+        if not (prompt or "").strip():
+            raise ValueError("❌ 错误：请输入提示词")
+        
+        if not api_key:
+            api_key = self.config.get("doubao_api_key", "")
+        if not api_key:
+            raise ValueError("❌ 错误：请配置豆包 API Key（节点参数或 doubao_config.json）")
+        
+        base_url = self.config.get("doubao_base_url", "https://ark.cn-beijing.volces.com/api/v3").rstrip("/")
+        create_url = f"{base_url}/contents/generations/tasks"
+        
+        prompt_text = self._build_prompt_text(prompt, resolution, ratio, duration, camera_fixed, extra_args)
+        _log_info(f"开始创建视频生成任务，模型：{model_name}")
+        
+        content = [{"type": "text", "text": prompt_text}]
+        
+        if mode == "文生视频":
+            if first_frame is not None or last_frame is not None:
+                raise ValueError("❌ 错误：文生视频模式不需要首帧图/尾帧图，请清空后重试")
+        elif mode == "图生视频":
+            if first_frame is None:
+                raise ValueError("❌ 错误：图生视频模式必须提供首帧图")
+            if last_frame is not None:
+                raise ValueError("❌ 错误：图生视频模式不支持尾帧图，请切换为首尾帧视频")
+        elif mode == "首尾帧视频":
+            if first_frame is None or last_frame is None:
+                raise ValueError("❌ 错误：首尾帧视频模式必须同时提供首帧图和尾帧图")
+        else:
+            raise ValueError(f"❌ 错误：未知生成模式: {mode}")
+        
+        if first_frame is not None:
+            first_frame_base64 = tensor_to_base64(first_frame)
+            if not first_frame_base64:
+                raise ValueError("❌ 错误：首帧图转换失败，请检查输入图像")
+            content.append({"type": "image_url", "image_url": {"url": first_frame_base64}})
+        
+        if last_frame is not None:
+            last_frame_base64 = tensor_to_base64(last_frame)
+            if not last_frame_base64:
+                raise ValueError("❌ 错误：尾帧图转换失败，请检查输入图像")
+            content.append({"type": "image_url", "image_url": {"url": last_frame_base64}})
+        
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+        }
+        payload = {
+            "model": model_name,
+            "content": content,
+        }
+        
+        timeout = int(self.config.get("timeout", 120))
+        pbar = comfy.utils.ProgressBar(100)
+        pbar.update_absolute(5)
+        
+        response = requests.post(create_url, headers=headers, json=payload, timeout=timeout, verify=False)
+        if response.status_code != 200:
+            raise ValueError(f"❌ 创建任务失败: {response.status_code} - {response.text}")
+        
+        create_result = response.json()
+        task_id = self._extract_task_id(create_result)
+        if not task_id:
+            raise ValueError(f"❌ 创建任务返回缺少 task_id: {create_result}")
+        
+        _log_info(f"任务创建成功，task_id: {task_id}")
+        pbar.update_absolute(15)
+        
+        get_url = f"{base_url}/contents/generations/tasks/{task_id}"
+        start_time = time.time()
+        attempts = 0
+        last_status = "unknown"
+        
+        while True:
+            elapsed = time.time() - start_time
+            if elapsed > max_wait_seconds:
+                raise TimeoutError(f"❌ 等待超时：{max_wait_seconds} 秒内未生成完成（最后状态：{last_status}）")
+            
+            attempts += 1
+            try:
+                r = requests.get(get_url, headers=headers, timeout=timeout, verify=False)
+                if r.status_code != 200:
+                    time.sleep(poll_interval)
+                    continue
+                
+                task_result = r.json()
+                status = self._extract_status(task_result).lower()
+                last_status = status
+                
+                if status in ("succeeded", "success", "completed", "done"):
+                    video_url = self._extract_video_url(task_result)
+                    if not video_url:
+                        raise ValueError(f"❌ 任务已完成但未解析到视频 URL: {task_result}")
+                    
+                    local_video_path, download_error = self._download_video_to_output(video_url, task_id)
+                    adapter = DoubaoVideoAdapter(local_video_path if local_video_path else video_url)
+                    pbar.update_absolute(100)
+                    
+                    info = {
+                        "model": model_name,
+                        "task_id": task_id,
+                        "status": status,
+                        "prompt": prompt,
+                        "prompt_with_args": prompt_text,
+                        "resolution": resolution,
+                        "ratio": ratio,
+                        "duration": duration,
+                        "camera_fixed": camera_fixed,
+                        "mode": mode,
+                        "has_first_frame": first_frame is not None,
+                        "has_last_frame": last_frame is not None,
+                        "video_url": video_url,
+                        "local_video_path": local_video_path,
+                        "local_download_error": download_error,
+                        "attempts": attempts,
+                        "elapsed_seconds": round(elapsed, 2),
+                        "raw_response": task_result,
+                    }
+                    
+                    _log_info("✅ 视频生成完成")
+                    return (adapter, video_url, json.dumps(info, ensure_ascii=False, indent=2))
+                
+                if status in ("failed", "error"):
+                    raise ValueError(f"❌ 任务失败: {task_result}")
+                
+                progress = 15 + min(80, int((elapsed / max_wait_seconds) * 80))
+                pbar.update_absolute(progress)
+            
+            except Exception as e:
+                _log_warning(f"轮询异常（第 {attempts} 次）: {e}")
+            
+            time.sleep(poll_interval)
+
 # ==================== 节点注册 ====================
 
 NODE_CLASS_MAPPINGS = {
     "Doubao_Chat": Doubao_Chat,
     "Doubao_ImageToPrompt": Doubao_ImageToPrompt,
     "Doubao_VideoToPrompt": Doubao_VideoToPrompt,
+    "Doubao_VideoGenerate": Doubao_VideoGenerate,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "Doubao_Chat": "💬 豆包LLM对话 @炮老师的小课堂",
     "Doubao_ImageToPrompt": "🔍 豆包图像反推 @炮老师的小课堂",
     "Doubao_VideoToPrompt": "🎬 豆包视频反推 @炮老师的小课堂",
+    "Doubao_VideoGenerate": "🫐豆包视频生成@炮老师的小课堂",
 }
 
 __all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']
