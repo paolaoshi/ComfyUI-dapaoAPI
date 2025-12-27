@@ -1089,6 +1089,18 @@ class Doubao_VideoGenerate:
                     "default": "",
                     "placeholder": "留空则从 doubao_config.json 读取"
                 }),
+
+                "🎲 随机种子": ("INT", {
+                    "default": 0,
+                    "min": 0,
+                    "max": 2147483647,
+                    "step": 1
+                }),
+
+                "🌐 BaseURL": ("STRING", {
+                    "default": "https://ark.cn-beijing.volces.com/api/v3",
+                    "placeholder": "例如：https://ark.cn-beijing.volces.com/api/v3"
+                }),
                 
                 "⏳ 最大等待(秒)": ("INT", {
                     "default": 600,
@@ -1105,6 +1117,7 @@ class Doubao_VideoGenerate:
                 }),
             },
             "optional": {
+                "🖼️ 参考图(用于图生)": ("IMAGE",),
                 "🖼️ 首帧图": ("IMAGE",),
                 "🖼️ 尾帧图": ("IMAGE",),
             }
@@ -1120,7 +1133,7 @@ class Doubao_VideoGenerate:
     def __init__(self):
         self.config = get_doubao_config()
     
-    def _build_prompt_text(self, prompt: str, resolution: str, ratio: str, duration: int, camera_fixed: bool, extra_args: str) -> str:
+    def _build_prompt_text(self, prompt: str, resolution: str, ratio: str, duration: int, camera_fixed: bool, seed: int, extra_args: str) -> str:
         prompt = (prompt or "").strip()
         extra_args = (extra_args or "").strip()
         camera_fixed_text = "true" if camera_fixed else "false"
@@ -1132,6 +1145,8 @@ class Doubao_VideoGenerate:
             f"--duration {duration}",
             f"--camerafixed {camera_fixed_text}",
         ]
+        if int(seed) > 0:
+            parts.append(f"--seed {int(seed)}")
         if extra_args:
             parts.append(extra_args)
         return " ".join([p for p in parts if p])
@@ -1257,8 +1272,11 @@ class Doubao_VideoGenerate:
         camera_fixed = bool(kwargs.get("📷 镜头固定", False))
         extra_args = kwargs.get("➕ 额外参数", "")
         api_key = kwargs.get("🔑 API密钥", "")
+        seed = int(kwargs.get("🎲 随机种子", 0))
+        base_url_input = (kwargs.get("🌐 BaseURL", "") or "").strip()
         max_wait_seconds = int(kwargs.get("⏳ 最大等待(秒)", 600))
         poll_interval = int(kwargs.get("🔁 查询间隔(秒)", 2))
+        ref_image = kwargs.get("🖼️ 参考图(用于图生)")
         first_frame = kwargs.get("🖼️ 首帧图")
         last_frame = kwargs.get("🖼️ 尾帧图")
         
@@ -1270,20 +1288,20 @@ class Doubao_VideoGenerate:
         if not api_key:
             raise ValueError("❌ 错误：请配置豆包 API Key（节点参数或 doubao_config.json）")
         
-        base_url = self.config.get("doubao_base_url", "https://ark.cn-beijing.volces.com/api/v3").rstrip("/")
+        base_url = (base_url_input or self.config.get("doubao_base_url", "https://ark.cn-beijing.volces.com/api/v3")).rstrip("/")
         create_url = f"{base_url}/contents/generations/tasks"
         
-        prompt_text = self._build_prompt_text(prompt, resolution, ratio, duration, camera_fixed, extra_args)
+        prompt_text = self._build_prompt_text(prompt, resolution, ratio, duration, camera_fixed, seed, extra_args)
         _log_info(f"开始创建视频生成任务，模型：{model_name}")
         
         content = [{"type": "text", "text": prompt_text}]
         
         if mode == "文生视频":
-            if first_frame is not None or last_frame is not None:
-                raise ValueError("❌ 错误：文生视频模式不需要首帧图/尾帧图，请清空后重试")
+            if ref_image is not None or first_frame is not None or last_frame is not None:
+                raise ValueError("❌ 错误：文生视频模式不需要参考图/首帧图/尾帧图，请清空后重试")
         elif mode == "图生视频":
-            if first_frame is None:
-                raise ValueError("❌ 错误：图生视频模式必须提供首帧图")
+            if ref_image is None and first_frame is None:
+                raise ValueError("❌ 错误：图生视频模式必须提供参考图(用于图生) 或 首帧图")
             if last_frame is not None:
                 raise ValueError("❌ 错误：图生视频模式不支持尾帧图，请切换为首尾帧视频")
         elif mode == "首尾帧视频":
@@ -1292,17 +1310,22 @@ class Doubao_VideoGenerate:
         else:
             raise ValueError(f"❌ 错误：未知生成模式: {mode}")
         
-        if first_frame is not None:
+        if mode == "图生视频":
+            chosen_ref = ref_image if ref_image is not None else first_frame
+            ref_base64 = tensor_to_base64(chosen_ref)
+            if not ref_base64:
+                raise ValueError("❌ 错误：参考图转换失败，请检查输入图像")
+            content.append({"type": "image_url", "image_url": {"url": ref_base64}})
+        elif mode == "首尾帧视频":
             first_frame_base64 = tensor_to_base64(first_frame)
             if not first_frame_base64:
                 raise ValueError("❌ 错误：首帧图转换失败，请检查输入图像")
-            content.append({"type": "image_url", "image_url": {"url": first_frame_base64}})
-        
-        if last_frame is not None:
+            content.append({"type": "image_url", "image_url": {"url": first_frame_base64}, "role": "first_frame"})
+            
             last_frame_base64 = tensor_to_base64(last_frame)
             if not last_frame_base64:
                 raise ValueError("❌ 错误：尾帧图转换失败，请检查输入图像")
-            content.append({"type": "image_url", "image_url": {"url": last_frame_base64}})
+            content.append({"type": "image_url", "image_url": {"url": last_frame_base64}, "role": "last_frame"})
         
         headers = {
             "Content-Type": "application/json",
@@ -1370,6 +1393,9 @@ class Doubao_VideoGenerate:
                         "duration": duration,
                         "camera_fixed": camera_fixed,
                         "mode": mode,
+                        "seed": seed,
+                        "base_url": base_url,
+                        "has_ref_image": ref_image is not None,
                         "has_first_frame": first_frame is not None,
                         "has_last_frame": last_frame is not None,
                         "video_url": video_url,

@@ -60,6 +60,16 @@ from .doubao_chat_node import (
     NODE_DISPLAY_NAME_MAPPINGS as DOUBAO_CHAT_DISPLAY_MAPPINGS
 )
 
+# 加载豆包视频生成节点
+from .doubao_video_node import DoubaoVideoGeneration
+
+DOUBAO_VIDEO_MAPPINGS = {
+    "DapaoDoubaoVideoGeneration": DoubaoVideoGeneration
+}
+DOUBAO_VIDEO_DISPLAY_MAPPINGS = {
+    "DapaoDoubaoVideoGeneration": "🎬Doubao视频生成 @炮老师的小课堂"
+}
+
 # 加载智谱LLM对话节点
 from .zhipu_chat_node import (
     NODE_CLASS_MAPPINGS as ZHIPU_CHAT_MAPPINGS,
@@ -522,6 +532,7 @@ if GLM_AVAILABLE:
 else:
     print("  ⚠️  GLM 节点未启用（需要安装 zhipuai）")
 print(f"  💬 豆包LLM对话：{len(DOUBAO_CHAT_MAPPINGS)} 个")
+print(f"  🎬 豆包视频生成：{len(DOUBAO_VIDEO_MAPPINGS)} 个")
 print(f"  💬 智谱LLM对话：{len(ZHIPU_CHAT_MAPPINGS)} 个")
 print(f"  💬 Grok LLM对话：{len(GROK_MAPPINGS)} 个")
 
