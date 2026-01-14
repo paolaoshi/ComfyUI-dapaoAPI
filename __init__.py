@@ -136,8 +136,8 @@ from .dapao_ecommerce_node import (
     NODE_DISPLAY_NAME_MAPPINGS as DAPAO_ECOMMERCE_DISPLAY_MAPPINGS
 )
 
-# 加载 Banana2 贞贞节点
-from .banana2_zhenzhen_node import DapaoBanana2ZhenzhenNode
+# 加载 Banana2 贞贞节点 / 官方节点 / 定制节点
+from .banana2_zhenzhen_node import DapaoBanana2ZhenzhenNode, DapaoBanana2OfficialNode, DapaoCustomBanana2Node
 
 BANANA2_ZHENZHEN_MAPPINGS = {
     "DapaoBanana2ZhenzhenNode": DapaoBanana2ZhenzhenNode
@@ -145,6 +145,22 @@ BANANA2_ZHENZHEN_MAPPINGS = {
 
 BANANA2_ZHENZHEN_DISPLAY_MAPPINGS = {
     "DapaoBanana2ZhenzhenNode": "🙈Banana2贞贞@炮老师的小课堂"
+}
+
+BANANA2_OFFICIAL_MAPPINGS = {
+    "DapaoBanana2OfficialNode": DapaoBanana2OfficialNode
+}
+
+BANANA2_OFFICIAL_DISPLAY_MAPPINGS = {
+    "DapaoBanana2OfficialNode": "🙈Banana2官方@炮老师的小课堂"
+}
+
+BANANA2_CUSTOM_MAPPINGS = {
+    "DapaoCustomBanana2Node": DapaoCustomBanana2Node
+}
+
+BANANA2_CUSTOM_DISPLAY_MAPPINGS = {
+    "DapaoCustomBanana2Node": "定制-大香蕉🍌2"
 }
 
 # 加载 Banana2 Aabao 节点
@@ -229,6 +245,8 @@ NODE_CLASS_MAPPINGS = {
     **SORA2_MAPPINGS,
     **BANANA_INTEGRATED_MAPPINGS,
     **BANANA2_ZHENZHEN_MAPPINGS,
+    **BANANA2_OFFICIAL_MAPPINGS,
+    **BANANA2_CUSTOM_MAPPINGS,
     **BANANA2_AABAO_MAPPINGS,
     **GEMINI3_CHAT_MAPPINGS,
     **PROMPT_MAPPINGS,
@@ -255,6 +273,8 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     **SORA2_DISPLAY_MAPPINGS,
     **BANANA_INTEGRATED_DISPLAY_MAPPINGS,
     **BANANA2_ZHENZHEN_DISPLAY_MAPPINGS,
+    **BANANA2_OFFICIAL_DISPLAY_MAPPINGS,
+    **BANANA2_CUSTOM_DISPLAY_MAPPINGS,
     **BANANA2_AABAO_DISPLAY_MAPPINGS,
     **GEMINI3_CHAT_DISPLAY_MAPPINGS,
     **PROMPT_DISPLAY_MAPPINGS,
