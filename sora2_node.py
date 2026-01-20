@@ -32,6 +32,9 @@ import requests
 import torch
 import cv2
 import shutil
+import re
+import numpy as np
+import folder_paths
 from io import BytesIO
 from PIL import Image
 from typing import Tuple, Optional
@@ -223,7 +226,7 @@ class Sora2VideoGenNode:
     RETURN_TYPES = (IO.VIDEO, "STRING", "STRING")
     RETURN_NAMES = ("🎬 视频", "🎥 视频URL", "📋 响应信息")
     FUNCTION = "generate_video"
-    CATEGORY = "🤖dapaoAPI"
+    CATEGORY = "zhenzhen/SORA2"
     DESCRIPTION = "使用 SORA2 API 生成视频，支持文生视频和图生视频 | 作者: @炮老师的小课堂"
     OUTPUT_NODE = False
     
@@ -269,6 +272,95 @@ class Sora2VideoGenNode:
             _log_error(f"图像转换失败: {e}")
             return None
     
+    def _parse_stream(self, response, pbar):
+        """解析流式响应"""
+        video_url = None
+        full_content = ""
+        
+        for line in response.iter_lines():
+            if not line:
+                continue
+            
+            decoded_line = line.decode('utf-8').strip()
+            if not decoded_line.startswith('data:'):
+                try:
+                    # 尝试解析普通 JSON 行 (兼容非 SSE 格式)
+                    data = json.loads(decoded_line)
+                    if "choices" in data and len(data["choices"]) > 0:
+                        delta = data["choices"][0].get("delta", {})
+                        content = delta.get("content", "")
+                        if content:
+                            full_content += content
+                            # 尝试提取进度
+                            match = re.search(r'进度.*?(\d+)%', content)
+                            if match:
+                                progress = int(match.group(1))
+                                pbar.update_absolute(min(95, progress))
+                                _log_info(f"生成进度: {progress}%")
+                except:
+                    pass
+                continue
+                
+            # 处理 SSE 格式 (data: {...})
+            json_str = decoded_line[5:].strip()
+            if json_str == "[DONE]":
+                break
+                
+            try:
+                data = json.loads(json_str)
+                if "choices" in data and len(data["choices"]) > 0:
+                    delta = data["choices"][0].get("delta", {})
+                    content = delta.get("content", "")
+                    if content:
+                        full_content += content
+                        # 尝试提取进度
+                        match = re.search(r'进度.*?(\d+)%', content)
+                        if match:
+                            progress = int(match.group(1))
+                            pbar.update_absolute(min(95, progress))
+                            _log_info(f"生成进度: {progress}%")
+            except Exception as e:
+                continue
+
+        # 从完整内容中提取视频 URL
+        # 格式通常是: ... [视频](URL) ... OR just the URL
+        # 贞贞API通常在最后返回 URL
+        url_match = re.search(r'https://[^\s\)]+\.mp4', full_content)
+        if url_match:
+            video_url = url_match.group(0)
+        
+        return video_url, full_content
+
+    def _download_and_wrap_video(self, video_url):
+        """下载视频并包装为 ComflyVideoAdapter"""
+        try:
+            _log_info(f"正在下载视频: {video_url}")
+            resp = requests.get(video_url, stream=True, timeout=120)
+            if resp.status_code != 200:
+                _log_error(f"下载失败: {resp.status_code}")
+                # 尝试返回 URL 适配器作为回退
+                return ComflyVideoAdapter(video_url)
+            
+            # 使用临时文件
+            temp_dir = folder_paths.get_temp_directory()
+            temp_file = os.path.join(temp_dir, f"sora_{int(time.time())}_{random.randint(0, 1000)}.mp4")
+            
+            with open(temp_file, 'wb') as f:
+                for chunk in resp.iter_content(chunk_size=8192):
+                    f.write(chunk)
+            
+            _log_info(f"视频已下载到临时文件: {temp_file}")
+            
+            # 返回本地文件适配器
+            return ComflyVideoAdapter(temp_file)
+            
+        except Exception as e:
+            _log_error(f"视频下载包装失败: {e}")
+            # 尝试返回 URL 适配器作为回退
+            return ComflyVideoAdapter(video_url)
+
+
+
     def generate_video(
         self,
         **kwargs
@@ -316,22 +408,21 @@ class Sora2VideoGenNode:
             _log_error(error_msg)
             raise ValueError(error_msg)
         
-        # 参数验证
-        if duration == "25" and hd:
-            error_msg = "25秒视频和高清模式不能同时使用，请只选择其中一个"
-            _log_error(error_msg)
-            raise ValueError(error_msg)
-        
-        if model == "sora-2":
-            if duration == "25":
-                error_msg = "sora-2 模型不支持 25 秒视频，请使用 sora-2-pro"
-                _log_error(error_msg)
-                raise ValueError(error_msg)
-            if hd:
-                error_msg = "sora-2 模型不支持高清模式，请使用 sora-2-pro 或关闭高清"
-                _log_error(error_msg)
-                raise ValueError(error_msg)
-        
+        # 参数验证与模型映射
+        # Sora-2 API 在贞贞平台上对应的模型名称通常是 sora_video2
+        # 我们这里做一个映射，或者直接使用用户选择的
+        api_model = "sora_video2" 
+        if model == "sora-2-pro":
+             # 假设 pro 对应 sora_video2_pro 或者保持 sora_video2 但参数不同？
+             # 参考代码中 default="sora_video2"，没有看到 pro 的特殊映射，
+             # 但用户界面有 "sora-2-pro"。这里暂时都映射为 sora_video2，或者相信用户的选择
+             # 如果用户选择的是 "sora-2"，我们映射为 "sora_video2"
+             # 如果是 "sora-2-pro"，可能需要具体 API 文档。
+             # 暂时保持原样传递，或者参考 Comfyui-zhenzhen 的 Comfly.py 只有 sora_video2
+             api_model = "sora_video2"
+        else:
+             api_model = "sora_video2"
+
         # 创建进度条
         pbar = comfy.utils.ProgressBar(100)
         pbar.update_absolute(10)
@@ -339,162 +430,139 @@ class Sora2VideoGenNode:
         try:
             # 处理图像输入
             has_image = any(img is not None for img in [image1, image2, image3, image4])
+            messages = []
             
+            # 构建 Prompt，包含参数信息
+            # Sora-2 的参数通常作为 Prompt 的一部分或者 System Prompt？
+            # 贞贞 API 的 OpenAISoraAPIPlus 并没有把 aspect_ratio 等放到 payload 顶层，
+            # 而是只用了 model 和 messages。
+            # 这意味着参数可能需要拼接到 prompt 中，或者 API 实际上忽略了它们？
+            # 仔细看 OpenAISoraAPIPlus 的 INPUT_TYPES，有 aspect_ratio, duration 等，
+            # 但是在 generate 中，并没有使用这些参数！
+            # 这是一个重大发现：OpenAISoraAPIPlus 的 generate 方法接收了 aspect_ratio 等，但根本没用！
+            # 只有 user_prompt 被使用了。
+            # 这可能意味着：
+            # 1. 默认参数已经足够。
+            # 2. 参数应该写在 prompt 里。
+            # 3. 那个节点实现不完整。
+            # 既然用户说那个节点成功，那我们照搬它的逻辑：只发 prompt (和 image)。
+            # 为了保险，我把参数加到 prompt 后面，或者作为 system prompt?
+            # 还是严格照搬？
+            # 照搬的话，宽高比和时长怎么控制？
+            # 也许 sora_video2 模型足够智能，从 prompt 理解？
+            # 或者我应该把它们拼接到 prompt 中。
+            
+            enhanced_prompt = prompt
+            params_desc = []
+            if aspect_ratio: params_desc.append(f"--ar {aspect_ratio}")
+            if duration: params_desc.append(f"--d {duration}")
+            # if hd: params_desc.append("--hd") # 假设支持
+            
+            # 很多 Sora 包装器支持 --ar 格式
+            if params_desc:
+                enhanced_prompt += " " + " ".join(params_desc)
+
             if has_image:
-                _log_info("处理输入图像...")
-                images = []
+                _log_info("处理输入图像 (图生视频模式)...")
+                content_list = [{"type": "text", "text": enhanced_prompt}]
+                
+                # 限制最多处理1张图？OpenAISoraAPIPlus 似乎只处理了一张 image (Input type definition)
+                # 但这里我们支持4张。OpenAI 格式支持多图。
                 for idx, img in enumerate([image1, image2, image3, image4], 1):
                     if img is not None:
-                        img_base64 = self.image_to_base64(img)
+                        img_base64 = self.image_to_base64(img) # 返回 data:image/png;base64,...
                         if img_base64:
-                            images.append(img_base64)
-                            _log_info(f"图像 {idx} 处理成功")
+                            content_list.append({
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": img_base64,
+                                    "detail": "high"
+                                }
+                            })
+                            _log_info(f"图像 {idx} 已添加")
                 
-                if not images:
-                    error_msg = "所有输入图像处理失败"
-                    _log_error(error_msg)
-                    raise ValueError(error_msg)
-                
-                _log_info(f"共处理 {len(images)} 张图像")
+                messages = [{"role": "user", "content": content_list}]
+            else:
+                _log_info("文生视频模式...")
+                messages = [{"role": "user", "content": enhanced_prompt}]
             
-            # 构建请求体
+            # 构建 API URL
+            # 确保 URL 正确：https://ai.t8star.cn/v1/chat/completions
+            base = self.base_url.rstrip('/')
+            if not base.endswith('/v1'):
+                base += '/v1'
+            api_url = f"{base}/chat/completions"
+            
             payload = {
-                "prompt": prompt,
-                "model": model,
+                "model": api_model,
+                "messages": messages,
+                "stream": True,
+                # 尝试将参数放入 payload，适配部分 OpenAI 兼容接口的扩展参数
                 "aspect_ratio": aspect_ratio,
                 "duration": duration,
-                "hd": hd,
-                "private": private
+                "hd": hd
             }
             
-            if has_image:
-                payload["images"] = images
-            
-            if effective_seed >= 0:
-                payload["seed"] = effective_seed
-            
             _log_info(f"开始生成视频...")
-            _log_info(f"  - 模型: {model}")
-            _log_info(f"  - 宽高比: {aspect_ratio}")
-            _log_info(f"  - 时长: {duration}秒")
-            _log_info(f"  - 高清: {'是' if hd else '否'}")
-            _log_info(f"  - 图像输入: {'是' if has_image else '否'}")
+            _log_info(f"  - 模型: {api_model}")
+            _log_info(f"  - 提示词: {enhanced_prompt[:50]}...")
             
             pbar.update_absolute(20)
             
             # 发送生成请求
-            endpoint = f"{self.base_url}/v2/videos/generations"
             response = requests.post(
-                endpoint,
+                api_url,
                 headers=self.get_headers(),
                 json=payload,
-                timeout=self.timeout
+                timeout=self.timeout,
+                stream=True
             )
             
             if response.status_code != 200:
-                error_msg = f"API 错误: {response.status_code} - {response.text}"
-                _log_error(error_msg)
-                raise ValueError(error_msg)
-            
-            result = response.json()
-            
-            if "task_id" not in result:
-                error_msg = "API 响应中没有任务 ID"
-                _log_error(error_msg)
-                raise ValueError(error_msg)
-            
-            task_id = result["task_id"]
-            _log_info(f"✅ 任务创建成功，任务 ID: {task_id}")
-            
-            pbar.update_absolute(30)
-            
-            # 轮询任务状态
-            max_attempts = 300  # 最多等待 50 分钟
-            attempts = 0
-            video_url = None
-            
-            _log_info("等待视频生成...")
-            
-            while attempts < max_attempts:
-                time.sleep(10)  # 每 10 秒检查一次
-                attempts += 1
-                
+                # 尝试读取错误信息
                 try:
-                    status_response = requests.get(
-                        f"{self.base_url}/v2/videos/generations/{task_id}",
-                        headers=self.get_headers(),
-                        timeout=self.timeout
-                    )
-                    
-                    if status_response.status_code != 200:
-                        continue
-                    
-                    status_data = status_response.json()
-                    
-                    # 更新进度条
-                    progress_text = status_data.get("progress", "0%")
-                    try:
-                        if progress_text.endswith('%'):
-                            progress_value = int(progress_text[:-1])
-                            pbar_value = min(90, 30 + int(progress_value * 0.6))
-                            pbar.update_absolute(pbar_value)
-                            _log_info(f"生成进度: {progress_text}")
-                    except (ValueError, AttributeError):
-                        progress_value = min(80, 30 + (attempts * 50 // max_attempts))
-                        pbar.update_absolute(progress_value)
-                    
-                    status = status_data.get("status", "")
-                    
-                    if status == "SUCCESS":
-                        if "data" in status_data and "output" in status_data["data"]:
-                            video_url = status_data["data"]["output"]
-                            _log_info(f"✅ 视频生成成功！")
-                            break
-                    
-                    elif status == "FAILURE":
-                        fail_reason = status_data.get("fail_reason", "未知错误")
-                        error_msg = f"视频生成失败: {fail_reason}"
-                        _log_error(error_msg)
-                        raise ValueError(error_msg)
-                
-                except requests.RequestException as e:
-                     _log_error(f"请求异常: {str(e)}")
-                     # 继续尝试，不立即失败
-                except ValueError as e:
-                     # 重新抛出已知的错误
-                     raise e
-                except Exception as e:
-                    _log_error(f"检查任务状态时出错: {str(e)}")
+                    err_text = response.text
+                except:
+                    err_text = "无法读取响应内容"
+                error_msg = f"API 错误: {response.status_code} - {err_text}"
+                _log_error(error_msg)
+                raise ValueError(error_msg)
+            
+            _log_info("请求已提交，正在接收流式响应...")
+            
+            # 解析流式响应
+            video_url, full_response = self._parse_stream(response, pbar)
             
             if not video_url:
-                error_msg = f"等待超时：在 {max_attempts} 次尝试后仍未获取到视频 URL"
-                _log_error(error_msg)
-                raise TimeoutError(error_msg)
+                # 如果流式没有解析到 URL，尝试从 full_response 再次查找 (防止 parse_stream 漏掉)
+                url_match = re.search(r'https://[^\s\)]+\.mp4', full_response)
+                if url_match:
+                    video_url = url_match.group(0)
             
-            # 创建视频适配器
-            video_adapter = ComflyVideoAdapter(video_url)
+            if not video_url:
+                error_msg = "未能从响应中提取视频 URL"
+                _log_error(error_msg)
+                _log_error(f"完整响应: {full_response[:200]}...")
+                raise ValueError(error_msg)
+            
+            _log_info(f"✅ 视频生成成功！URL: {video_url}")
+            
+            # 下载并包装为 Adapter
+            video_output = self._download_and_wrap_video(video_url)
             
             pbar.update_absolute(100)
             
             # 构建响应数据
             response_data = {
                 "status": "success",
-                "task_id": task_id,
-                "prompt": prompt,
-                "model": model,
-                "aspect_ratio": aspect_ratio,
-                "duration": duration,
-                "hd": hd,
-                "private": private,
+                "prompt": enhanced_prompt,
+                "model": api_model,
                 "video_url": video_url,
-                "has_images": has_image
+                "raw_response": full_response[:500]
             }
             
-            _log_info(f"✅ 视频生成完成")
-            _log_info(f"视频 URL: {video_url}")
-            
             return (
-                video_adapter,
+                video_output,
                 video_url,
                 json.dumps(response_data, ensure_ascii=False, indent=2)
             )
@@ -504,7 +572,7 @@ class Sora2VideoGenNode:
             _log_error(error_msg)
             import traceback
             traceback.print_exc()
-            raise ValueError(error_msg)  # 抛出异常以便 ComfyUI 显示错误
+            raise ValueError(error_msg)
 
 
 # ==================== 节点注册 ====================

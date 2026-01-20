@@ -465,7 +465,7 @@ class DapaoBanana2OfficialNode:
                 "🔑 Google API Key": ("STRING", {"default": "", "multiline": False, "tooltip": "请输入 Google API Key"}),
                 "📝 提示词": ("STRING", {"multiline": True, "default": "", "tooltip": "提示词"}),
                 "🎨 生成模式": (["文生图", "图像编辑"], {"default": "文生图", "tooltip": "模式：文生图 或 图像编辑"}),
-                "🤖 模型版本": (["gemini-3-pro-image-preview"], {"default": "gemini-3-pro-image-preview", "tooltip": "选择模型版本"}),
+                "🤖 模型版本": ("STRING", {"default": "gemini-3-pro-image-preview", "multiline": False, "tooltip": "模型名称可手动输入，方便后续升级/更名"}),
                 "📐 宽高比": (["auto", "16:9", "4:3", "4:5", "3:2", "1:1", "2:3", "3:4", "5:4", "9:16", "21:9"], {"default": "auto", "tooltip": "宽高比"}),
                 "🖼️ 图片分辨率": (["1K", "2K", "4K"], {"default": "2K", "tooltip": "图片分辨率"}),
                 "🎲 随机种子": ("INT", {"default": 0, "min": 0, "max": 2147483647, "control_after_generate": "randomize", "tooltip": "随机种子"}),
