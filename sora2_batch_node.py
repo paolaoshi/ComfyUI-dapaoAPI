@@ -189,7 +189,7 @@ class Sora2BatchVideoGenerator:
     RETURN_NAMES = ("🎬 合并视频", "📄 合并文件名") + tuple([n for i in range(1, 11) for n in (f"🎬 视频 {i}", f"📄 文件名 {i}")]) + ("📋 执行报告",)
     
     FUNCTION = "generate_batch"
-    CATEGORY = "zhenzhen/SORA2"
+    CATEGORY = "🤖dapaoAPI/SORA2"
     DESCRIPTION = "批量并发生成 SORA2 视频，智能区分文生视频/图生视频 | 作者: @炮老师的小课堂"
     OUTPUT_NODE = True
 

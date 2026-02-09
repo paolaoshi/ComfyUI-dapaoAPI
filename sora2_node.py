@@ -226,7 +226,7 @@ class Sora2VideoGenNode:
     RETURN_TYPES = (IO.VIDEO, "STRING", "STRING")
     RETURN_NAMES = ("🎬 视频", "🎥 视频URL", "📋 响应信息")
     FUNCTION = "generate_video"
-    CATEGORY = "zhenzhen/SORA2"
+    CATEGORY = "🤖dapaoAPI/SORA2"
     DESCRIPTION = "使用 SORA2 API 生成视频，支持文生视频和图生视频 | 作者: @炮老师的小课堂"
     OUTPUT_NODE = False
     
