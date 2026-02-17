@@ -4,6 +4,7 @@ import json
 import os
 import time
 from typing import Any, Dict, List, Optional, Tuple
+from urllib.parse import quote
 
 import numpy as np
 import requests
@@ -82,6 +83,13 @@ def _encode_image_tensor_to_data_url(image_tensor: torch.Tensor) -> str:
     pil_img.save(buffer, format="PNG")
     b64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
     return f"data:image/png;base64,{b64}"
+
+def _encode_image_tensor_to_jpeg_data_url(image_tensor: torch.Tensor, quality: int = 85) -> str:
+    pil_img = _tensor2pil(image_tensor)
+    buffer = io.BytesIO()
+    pil_img.save(buffer, format="JPEG", quality=int(quality))
+    b64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+    return f"data:image/jpeg;base64,{b64}"
 
 
 def _post_json(url: str, headers: Dict[str, str], payload: Dict[str, Any], timeout: int) -> Dict[str, Any]:
@@ -330,6 +338,293 @@ class DapaoModelScopeChat:
         return effective_seed
 
 
+class DapaoModelScopeImageEdit:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "🔑 魔塔Token": ("STRING", {"default": "", "multiline": False}),
+                "🌐 Base URL": ("STRING", {"default": "https://api-inference.modelscope.cn/v1", "multiline": False}),
+                "🧠 模型ID": ("STRING", {"default": "damo/cv_stable-diffusion_image-to-image", "multiline": False}),
+                "📝 提示词": ("STRING", {"default": "", "multiline": True}),
+                "📐 图像宽度": ("INT", {"default": 1024, "min": 64, "max": 8192, "step": 64, "display": "number"}),
+                "📏 图像高度": ("INT", {"default": 1024, "min": 64, "max": 8192, "step": 64, "display": "number"}),
+                "🔢 张数": ("INT", {"default": 1, "min": 1, "max": 4}),
+                "⏱️ 超时时间": ("INT", {"default": 300, "min": 1, "max": 900}),
+                "🎲 随机种子": ("INT", {"default": -1, "min": -1, "max": 0xffffffffffffffff}),
+                "🎯 种子控制": (["随机", "固定", "递增"], {"default": "随机"}),
+                "🧩 启用LoRA": ("BOOLEAN", {"default": False}),
+                "🔢 LoRA数量": (["1", "2", "3", "4", "5"], {"default": "1"}),
+                "🧩 LoRA1 ID": ("STRING", {"default": "", "multiline": False}),
+                "🎚️ LoRA1 强度": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "step": 0.01}),
+                "🧩 LoRA2 ID": ("STRING", {"default": "", "multiline": False}),
+                "🎚️ LoRA2 强度": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.01}),
+                "🧩 LoRA3 ID": ("STRING", {"default": "", "multiline": False}),
+                "🎚️ LoRA3 强度": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.01}),
+                "🧩 LoRA4 ID": ("STRING", {"default": "", "multiline": False}),
+                "🎚️ LoRA4 强度": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.01}),
+                "🧩 LoRA5 ID": ("STRING", {"default": "", "multiline": False}),
+                "🎚️ LoRA5 强度": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.01}),
+            },
+            "optional": {
+                "🖼️ 图像1": ("IMAGE",),
+                "🖼️ 图像2": ("IMAGE",),
+                "🖼️ 图像3": ("IMAGE",),
+                "🖼️ 图像4": ("IMAGE",),
+                "🖼️ 图像5": ("IMAGE",),
+                "🖼️ 图像6": ("IMAGE",),
+            }
+        }
+
+    @classmethod
+    def IS_CHANGED(cls, **kwargs):
+        seed_control = kwargs.get("🎯 种子控制", "随机")
+        seed = kwargs.get("🎲 随机种子", -1)
+        if seed_control in ["随机", "递增"]:
+            return float("nan")
+        return seed
+
+    RETURN_TYPES = ("IMAGE", "STRING", "STRING")
+    RETURN_NAMES = ("🖼️ 图像", "🔗 图片链接", "raw_json")
+    FUNCTION = "generate"
+    CATEGORY = "🤖dapaoAPI/魔塔API"
+
+    def __init__(self):
+        self.last_seed = -1
+
+    def _effective_seed(self, seed: int, seed_control: str) -> int:
+        import random
+
+        if seed_control == "固定":
+            effective_seed = seed if seed != -1 else random.randint(0, 2147483647)
+        elif seed_control == "随机":
+            effective_seed = random.randint(0, 2147483647)
+        elif seed_control == "递增":
+            if self.last_seed == -1:
+                effective_seed = seed if seed != -1 else random.randint(0, 2147483647)
+            else:
+                effective_seed = self.last_seed + 1
+        else:
+            effective_seed = random.randint(0, 2147483647)
+        self.last_seed = effective_seed
+        return effective_seed
+
+    def generate(self, **kwargs) -> Tuple[torch.Tensor, str, str]:
+        token = _get_modelscope_token(kwargs.get("🔑 魔塔Token", ""))
+        if not token:
+            return (
+                _blank_image_tensor("red"),
+                "❌ 缺少Token",
+                json.dumps({"error": "missing_token"}, ensure_ascii=False),
+            )
+
+        base_url = _normalize_base_url(kwargs.get("🌐 Base URL", ""))
+        model_id = (kwargs.get("🧠 模型ID", "") or "").strip()
+        if not model_id:
+            return (
+                _blank_image_tensor("gray"),
+                "❌ 缺少模型ID",
+                json.dumps({"error": "missing_model_id"}, ensure_ascii=False),
+            )
+        url = f"{base_url}/images/generations"
+
+        prompt = kwargs.get("📝 提示词", "") or ""
+        width = int(kwargs.get("📐 图像宽度", 1024))
+        height = int(kwargs.get("📏 图像高度", 1024))
+        n_images = int(kwargs.get("🔢 张数", 1))
+        timeout = int(kwargs.get("⏱️ 超时时间", 300))
+
+        seed = int(kwargs.get("🎲 随机种子", -1))
+        seed_control = kwargs.get("🎯 种子控制", "随机")
+        effective_seed = self._effective_seed(seed, seed_control)
+
+        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+        headers_submit = {**headers, "X-ModelScope-Async-Mode": "true"}
+
+        # LoRA 处理
+        enable_lora = bool(kwargs.get("🧩 启用LoRA", False))
+        lora_count_raw = kwargs.get("🔢 LoRA数量", "1")
+        try:
+            lora_count = int(lora_count_raw)
+        except Exception:
+            lora_count = 1
+        lora_count = max(1, min(5, lora_count))
+
+        lora_items: List[Tuple[str, float]] = []
+        if enable_lora:
+            for idx in range(1, lora_count + 1):
+                lora_id = (kwargs.get(f"🧩 LoRA{idx} ID", "") or "").strip()
+                if not lora_id:
+                    continue
+                w = float(kwargs.get(f"🎚️ LoRA{idx} 强度", 0.0))
+                if w <= 0:
+                    continue
+                lora_items.append((lora_id, w))
+
+        lora_dict: Dict[str, float] = {}
+        if lora_items:
+            for lid, w in lora_items:
+                lora_dict[lid] = float(w)
+
+        # 收集图像
+        input_images = []
+        for i in range(1, 7):
+            img = kwargs.get(f"🖼️ 图像{i}")
+            if img is not None:
+                # 转换为 base64
+                single = img[0] if len(img.shape) == 4 else img
+                input_images.append(_encode_image_tensor_to_jpeg_data_url(single))
+        if not input_images:
+            return (
+                _blank_image_tensor("gray"),
+                "❌ 图像编辑需要至少 1 张输入图像",
+                json.dumps({"error": "missing_input_image"}, ensure_ascii=False),
+            )
+
+        payload: Dict[str, Any] = {
+            "model": model_id,
+            "prompt": prompt,
+            "seed": effective_seed,
+            "n": n_images,
+            "size": f"{width}x{height}",
+        }
+        if len(input_images) == 1:
+            payload["image"] = input_images[0]
+        else:
+            payload["images"] = input_images
+        if lora_dict:
+            payload["loras"] = lora_dict
+            first_lora_id = next(iter(lora_dict.keys()))
+            first_lora_w = next(iter(lora_dict.values()))
+            payload["lora"] = first_lora_id
+            payload["lora_weight"] = first_lora_w
+
+        headers_submit = {
+            **headers_submit,
+            "X-ModelScope-Task-Type": "image-to-image-generation",
+            "X-ModelScope-Request-Params": json.dumps({"loras": lora_dict} if lora_dict else {}, ensure_ascii=False),
+        }
+
+        # 尝试调用
+        try:
+            try:
+                data = _post_json(url, headers=headers_submit, payload=payload, timeout=timeout)
+            except Exception as e:
+                if "HTTP 400" not in str(e):
+                    raise
+                payload_no_size = {k: v for k, v in payload.items() if k != "size"}
+                data = _post_json(url, headers=headers_submit, payload=payload_no_size, timeout=timeout)
+
+            task_id = data.get("task_id") if isinstance(data, dict) else None
+            final_data: Any = data
+            urls: List[str] = []
+
+            # 异步任务轮询
+            if isinstance(task_id, str) and task_id.strip():
+                task_url = f"{base_url}/tasks/{task_id.strip()}"
+                # 注意：通用推理任务的任务查询 URL 可能不同，这里假设与 TextToImage 相同
+                # 如果 base_url 是 /v1，则 /tasks/{id} 是合理的
+                task_headers = {**headers, "X-ModelScope-Task-Type": "image_generation"}
+                start = time.time()
+                while True:
+                    if time.time() - start > timeout:
+                        raise RuntimeError(f"task_timeout: {task_id}")
+                    task_data = _get_json(task_url, headers=task_headers, timeout=min(timeout, 60))
+                    final_data = {"submit": data, "task": task_data}
+                    if isinstance(task_data, dict):
+                        status = (task_data.get("task_status") or task_data.get("status") or "").upper()
+                        if status in ["SUCCEED", "SUCCESS", "SUCCEEDED"]:
+                            out_imgs = task_data.get("output_images")
+                            # 通用推理结果可能在 output 字段
+                            if not out_imgs:
+                                out_imgs = task_data.get("output", {}).get("images")
+                            
+                            if isinstance(out_imgs, list):
+                                for u in out_imgs:
+                                    if isinstance(u, str) and u.strip():
+                                        urls.append(u.strip())
+                            break
+                        if status in ["FAILED", "FAIL"]:
+                            raise RuntimeError(f"task_failed: {json.dumps(task_data, ensure_ascii=False)[:2000]}")
+                    time.sleep(2)
+            else:
+                # 同步返回处理
+                # 通用推理结果通常在 data.output.choices (chat) 或 data.output.results
+                # 文生图/图生图通常直接返回 output_images 或 output: { output_imgs: ... }
+                
+                # 1. 尝试直接获取 images
+                images = data.get("images")
+                if isinstance(images, list):
+                    for item in images:
+                        if isinstance(item, dict):
+                            u = item.get("url")
+                            if isinstance(u, str) and u.strip():
+                                urls.append(u.strip())
+                        elif isinstance(item, str) and item.strip():
+                            urls.append(item.strip())
+                
+                # 2. 尝试 output_images
+                if not urls:
+                    out_imgs = data.get("output_images")
+                    if isinstance(out_imgs, list):
+                        for u in out_imgs:
+                            urls.append(u)
+                            
+                # 3. 尝试 output.images (常见于通用推理)
+                if not urls and isinstance(data.get("output"), dict):
+                    out_imgs = data.get("output", {}).get("images")
+                    if isinstance(out_imgs, list):
+                        for u in out_imgs:
+                            urls.append(u)
+
+                # 4. 尝试 output.img_url
+                if not urls and isinstance(data.get("output"), dict):
+                     u = data.get("output", {}).get("img_url")
+                     if u: urls.append(u)
+
+            if not urls:
+                return (_blank_image_tensor("gray"), "⚠️ 未返回图片URL", json.dumps(final_data, ensure_ascii=False))
+
+            tensors: List[torch.Tensor] = []
+            download_errors: List[Dict[str, Any]] = []
+            for u in urls:
+                try:
+                    if u.startswith("http"):
+                        r = requests.get(u, timeout=timeout)
+                        if r.status_code in (401, 403):
+                            r = requests.get(u, timeout=timeout, headers={"Authorization": f"Bearer {token}"})
+                        r.raise_for_status()
+                        img = Image.open(io.BytesIO(r.content))
+                    elif u.startswith("data:image") or ";base64," in u:
+                        import base64
+                        b64_part = u.split(",", 1)[1] if "," in u else u
+                        img = Image.open(io.BytesIO(base64.b64decode(b64_part)))
+                    else:
+                        download_errors.append({"url": u, "error": "unsupported_url"})
+                        continue
+
+                    if img.mode != "RGB":
+                        img = img.convert("RGB")
+                    tensors.append(_pil2tensor(img))
+                except Exception as e:
+                    download_errors.append({"url": u, "error": str(e)})
+                    continue
+
+            if not tensors:
+                if isinstance(final_data, dict):
+                    final_data = {**final_data, "download_errors": download_errors}
+                else:
+                    final_data = {"data": final_data, "download_errors": download_errors}
+                first_url = urls[0] if urls else ""
+                return (_blank_image_tensor("gray"), first_url or "⚠️ 未能下载图片", json.dumps(final_data, ensure_ascii=False))
+
+            out = torch.cat(tensors, dim=0)
+            return (out, urls[0] if urls else "", json.dumps(final_data, ensure_ascii=False))
+        except Exception as e:
+            err = {"error": str(e), "url": url}
+            return (_blank_image_tensor("red"), f"❌ {e}", json.dumps(err, ensure_ascii=False))
+
+
 class DapaoModelScopeTextToImage:
     @classmethod
     def INPUT_TYPES(cls):
@@ -339,14 +634,14 @@ class DapaoModelScopeTextToImage:
                 "🌐 Base URL": ("STRING", {"default": "https://api-inference.modelscope.cn/v1", "multiline": False}),
                 "🧠 模型ID": ("STRING", {"default": "Tongyi-MAI/Z-Image-Turbo", "multiline": False}),
                 "📝 提示词": ("STRING", {"default": "a cute girl in festive chinese new year clothing", "multiline": True}),
+                "📐 图像宽度": ("INT", {"default": 1024, "min": 64, "max": 8192, "step": 64, "display": "number"}),
+                "📏 图像高度": ("INT", {"default": 1024, "min": 64, "max": 8192, "step": 64, "display": "number"}),
                 "🔢 张数": ("INT", {"default": 1, "min": 1, "max": 4}),
                 "⏱️ 超时时间": ("INT", {"default": 300, "min": 1, "max": 900}),
                 "🎲 随机种子": ("INT", {"default": -1, "min": -1, "max": 0xffffffffffffffff}),
                 "🎯 种子控制": (["随机", "固定", "递增"], {"default": "随机"}),
                 "🧩 启用LoRA": ("BOOLEAN", {"default": False}),
                 "🔢 LoRA数量": (["1", "2", "3", "4", "5"], {"default": "1"}),
-            },
-            "optional": {
                 "🧩 LoRA1 ID": ("STRING", {"default": "", "multiline": False}),
                 "🎚️ LoRA1 强度": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "step": 0.01}),
                 "🧩 LoRA2 ID": ("STRING", {"default": "", "multiline": False}),
@@ -393,7 +688,7 @@ class DapaoModelScopeTextToImage:
         self.last_seed = effective_seed
         return effective_seed
 
-    def generate(self, **kwargs) -> Tuple[torch.Tensor, str, str]:
+    def generate(self, **kwargs):
         token = _get_modelscope_token(kwargs.get("🔑 魔塔Token", ""))
         if not token:
             return (
@@ -407,6 +702,8 @@ class DapaoModelScopeTextToImage:
 
         model_id = (kwargs.get("🧠 模型ID", "") or "").strip()
         prompt = kwargs.get("📝 提示词", "") or ""
+        width = int(kwargs.get("📐 图像宽度", 1024))
+        height = int(kwargs.get("📏 图像高度", 1024))
         n_images = int(kwargs.get("🔢 张数", 1))
         timeout = int(kwargs.get("⏱️ 超时时间", 300))
 
@@ -448,7 +745,7 @@ class DapaoModelScopeTextToImage:
                 loras_payload = {lid: (w / total) for lid, w in lora_items}
                 loras_meta = {"loras_original": {lid: w for lid, w in lora_items}, "loras_normalized": True}
 
-        payload: Dict[str, Any] = {"model": model_id, "prompt": prompt, "seed": effective_seed}
+        payload: Dict[str, Any] = {"model": model_id, "prompt": prompt, "seed": effective_seed, "size": f"{width}x{height}"}
         if n_images != 1:
             payload["n"] = n_images
         if loras_payload is not None:
@@ -515,16 +812,28 @@ class DapaoModelScopeTextToImage:
                 return (_blank_image_tensor("gray"), "⚠️ 未返回图片URL", json.dumps(final_data, ensure_ascii=False))
 
             tensors: List[torch.Tensor] = []
+            download_errors: List[Dict[str, Any]] = []
             for u in urls:
-                r = requests.get(u, timeout=timeout)
-                r.raise_for_status()
-                img = Image.open(io.BytesIO(r.content))
-                if img.mode != "RGB":
-                    img = img.convert("RGB")
-                tensors.append(_pil2tensor(img))
+                try:
+                    r = requests.get(u, timeout=timeout)
+                    if r.status_code in (401, 403):
+                        r = requests.get(u, timeout=timeout, headers={"Authorization": f"Bearer {token}"})
+                    r.raise_for_status()
+                    img = Image.open(io.BytesIO(r.content))
+                    if img.mode != "RGB":
+                        img = img.convert("RGB")
+                    tensors.append(_pil2tensor(img))
+                except Exception as e:
+                    download_errors.append({"url": u, "error": str(e)})
+                    continue
 
             if not tensors:
-                return (_blank_image_tensor("gray"), "⚠️ 未能下载图片", json.dumps(final_data, ensure_ascii=False))
+                if isinstance(final_data, dict):
+                    final_data = {**final_data, "download_errors": download_errors}
+                else:
+                    final_data = {"data": final_data, "download_errors": download_errors}
+                first_url = urls[0] if urls else ""
+                return (_blank_image_tensor("gray"), first_url or "⚠️ 未能下载图片", json.dumps(final_data, ensure_ascii=False))
 
             out = torch.cat(tensors, dim=0)
             return (out, urls[0], json.dumps(final_data, ensure_ascii=False))
@@ -537,12 +846,14 @@ NODE_CLASS_MAPPINGS = {
     "DapaoModelScopeListModels": DapaoModelScopeListModels,
     "DapaoModelScopeChat": DapaoModelScopeChat,
     "DapaoModelScopeTextToImage": DapaoModelScopeTextToImage,
+    "DapaoModelScopeImageEdit": DapaoModelScopeImageEdit,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "DapaoModelScopeListModels": "📃 魔塔模型列表 @炮老师的小课堂",
     "DapaoModelScopeChat": "💬 魔塔LLM对话 @炮老师的小课堂",
     "DapaoModelScopeTextToImage": "🎨 魔塔文生图 @炮老师的小课堂",
+    "DapaoModelScopeImageEdit": "魔塔图像编辑@炮老师的小课堂",
 }
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]
