@@ -66,15 +66,29 @@ def _get_modelscope_token(token_override: str) -> Optional[str]:
 
 
 def _normalize_base_url(base_url: str) -> str:
-    base_url = (base_url or "").strip()
-    if not base_url:
+    url = str(base_url or "").strip()
+    if not url:
         return "https://api-inference.modelscope.cn/v1"
-    base_url = base_url.rstrip("/")
-    if base_url.endswith("/v1"):
-        return base_url
-    if base_url.startswith("https://api-inference.modelscope.cn") or base_url.startswith("http://api-inference.modelscope.cn"):
-        return f"{base_url}/v1"
-    return base_url
+
+    url = url.strip("`").strip().strip('"').strip("'")
+    url = url.split("?", 1)[0].rstrip("/")
+
+    endpoint_suffixes = [
+        "/v1/images/generations",
+        "/v1/images/edits",
+        "/images/generations",
+        "/images/edits",
+    ]
+    for s in endpoint_suffixes:
+        if url.endswith(s):
+            url = url[: -len(s)].rstrip("/")
+            break
+
+    if url.endswith("/v1"):
+        return url
+    if url.startswith("https://api-inference.modelscope.cn") or url.startswith("http://api-inference.modelscope.cn"):
+        return f"{url}/v1"
+    return url
 
 
 def _encode_image_tensor_to_data_url(image_tensor: torch.Tensor) -> str:
@@ -94,6 +108,29 @@ def _encode_image_tensor_to_jpeg_data_url(image_tensor: torch.Tensor, quality: i
 
 def _post_json(url: str, headers: Dict[str, str], payload: Dict[str, Any], timeout: int) -> Dict[str, Any]:
     resp = requests.post(url, headers=headers, json=payload, timeout=timeout)
+    raw_text = resp.text or ""
+    if not resp.ok:
+        raise RuntimeError(f"HTTP {resp.status_code}: {raw_text[:2000]}")
+    try:
+        data = resp.json()
+    except Exception:
+        raise RuntimeError(f"HTTP {resp.status_code} 非JSON响应: {raw_text[:2000]}")
+    if not isinstance(data, dict):
+        raise RuntimeError("API 返回不是 JSON 对象")
+    return data
+
+
+def _post_multipart(
+    url: str,
+    headers: Dict[str, str],
+    data_fields: Dict[str, Any],
+    files: List[Tuple[str, Tuple[str, io.BytesIO, str]]],
+    timeout: int,
+) -> Dict[str, Any]:
+    req_headers = dict(headers or {})
+    req_headers.pop("Content-Type", None)
+
+    resp = requests.post(url, headers=req_headers, data=data_fields, files=files, timeout=timeout)
     raw_text = resp.text or ""
     if not resp.ok:
         raise RuntimeError(f"HTTP {resp.status_code}: {raw_text[:2000]}")
@@ -345,7 +382,16 @@ class DapaoModelScopeImageEdit:
             "required": {
                 "🔑 魔塔Token": ("STRING", {"default": "", "multiline": False}),
                 "🌐 Base URL": ("STRING", {"default": "https://api-inference.modelscope.cn/v1", "multiline": False}),
-                "🧠 模型ID": ("STRING", {"default": "damo/cv_stable-diffusion_image-to-image", "multiline": False}),
+                "🧠 预设模型": ([
+                    "Qwen/Qwen-Image-Edit",
+                    "MusePublic/Qwen-Image-Edit",
+                    "Qwen/Qwen-Image-Edit-2511",
+                    "MusePublic/FLUX.1-Kontext-Dev",
+                    "black-forest-labs/FLUX.1-Kontext-dev",
+                    "black-forest-labs/FLUX.2-klein-9B",
+                ], {"default": "Qwen/Qwen-Image-Edit-2511"}),
+                "⚙️ 使用自定义模型": ("BOOLEAN", {"default": False}),
+                "🧠 模型ID": ("STRING", {"default": "", "multiline": False}),
                 "📝 提示词": ("STRING", {"default": "", "multiline": True}),
                 "📐 图像宽度": ("INT", {"default": 1024, "min": 64, "max": 8192, "step": 64, "display": "number"}),
                 "📏 图像高度": ("INT", {"default": 1024, "min": 64, "max": 8192, "step": 64, "display": "number"}),
@@ -419,7 +465,14 @@ class DapaoModelScopeImageEdit:
             )
 
         base_url = _normalize_base_url(kwargs.get("🌐 Base URL", ""))
-        model_id = (kwargs.get("🧠 模型ID", "") or "").strip()
+        
+        # 模型选择逻辑
+        use_custom_model = kwargs.get("⚙️ 使用自定义模型", False)
+        custom_model_id = (kwargs.get("🧠 模型ID", "") or "").strip()
+        preset_model_id = kwargs.get("🧠 预设模型", "")
+        
+        model_id = custom_model_id if use_custom_model and custom_model_id else preset_model_id
+        
         if not model_id:
             return (
                 _blank_image_tensor("gray"),
@@ -467,14 +520,22 @@ class DapaoModelScopeImageEdit:
                 lora_dict[lid] = float(w)
 
         # 收集图像
-        input_images = []
+        image_urls: List[str] = []
+        image_b64_list: List[str] = []
         for i in range(1, 7):
             img = kwargs.get(f"🖼️ 图像{i}")
-            if img is not None:
-                # 转换为 base64
-                single = img[0] if len(img.shape) == 4 else img
-                input_images.append(_encode_image_tensor_to_jpeg_data_url(single))
-        if not input_images:
+            if img is None:
+                continue
+            single = img[0] if len(img.shape) == 4 else img
+            pil_img = _tensor2pil(single)
+
+            buf = io.BytesIO()
+            pil_img.save(buf, format="PNG")
+            b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+            image_b64_list.append(b64)
+            image_urls.append(f"data:image/png;base64,{b64}")
+
+        if not image_urls:
             return (
                 _blank_image_tensor("gray"),
                 "❌ 图像编辑需要至少 1 张输入图像",
@@ -488,10 +549,11 @@ class DapaoModelScopeImageEdit:
             "n": n_images,
             "size": f"{width}x{height}",
         }
-        if len(input_images) == 1:
-            payload["image"] = input_images[0]
+        payload["image_url"] = image_urls
+        if len(image_b64_list) == 1:
+            payload["image"] = image_b64_list[0]
         else:
-            payload["images"] = input_images
+            payload["images"] = image_b64_list
         if lora_dict:
             payload["loras"] = lora_dict
             first_lora_id = next(iter(lora_dict.keys()))
@@ -499,11 +561,14 @@ class DapaoModelScopeImageEdit:
             payload["lora"] = first_lora_id
             payload["lora_weight"] = first_lora_w
 
-        headers_submit = {
-            **headers_submit,
-            "X-ModelScope-Task-Type": "image-to-image-generation",
-            "X-ModelScope-Request-Params": json.dumps({"loras": lora_dict} if lora_dict else {}, ensure_ascii=False),
-        }
+        model_id_lower = model_id.lower()
+        is_qwen_image = model_id_lower.startswith("qwen/qwen-image") or "qwen-image" in model_id_lower
+        if not is_qwen_image:
+            headers_submit = {
+                **headers_submit,
+                "X-ModelScope-Task-Type": "image-to-image-generation",
+                "X-ModelScope-Request-Params": json.dumps({"loras": lora_dict} if lora_dict else {}, ensure_ascii=False),
+            }
 
         # 尝试调用
         try:
@@ -563,7 +628,22 @@ class DapaoModelScopeImageEdit:
                         elif isinstance(item, str) and item.strip():
                             urls.append(item.strip())
                 
-                # 2. 尝试 output_images
+                # 2. 尝试 OpenAI 风格 data[].url / b64_json
+                if not urls:
+                    data_items = data.get("data")
+                    if isinstance(data_items, list):
+                        for it in data_items:
+                            if not isinstance(it, dict):
+                                continue
+                            u = it.get("url")
+                            if isinstance(u, str) and u.strip():
+                                urls.append(u.strip())
+                                continue
+                            b64j = it.get("b64_json")
+                            if isinstance(b64j, str) and b64j.strip():
+                                urls.append(f"data:image/png;base64,{b64j.strip()}")
+
+                # 3. 尝试 output_images
                 if not urls:
                     out_imgs = data.get("output_images")
                     if isinstance(out_imgs, list):
@@ -596,7 +676,6 @@ class DapaoModelScopeImageEdit:
                         r.raise_for_status()
                         img = Image.open(io.BytesIO(r.content))
                     elif u.startswith("data:image") or ";base64," in u:
-                        import base64
                         b64_part = u.split(",", 1)[1] if "," in u else u
                         img = Image.open(io.BytesIO(base64.b64decode(b64_part)))
                     else:
@@ -632,7 +711,19 @@ class DapaoModelScopeTextToImage:
             "required": {
                 "🔑 魔塔Token": ("STRING", {"default": "", "multiline": False}),
                 "🌐 Base URL": ("STRING", {"default": "https://api-inference.modelscope.cn/v1", "multiline": False}),
-                "🧠 模型ID": ("STRING", {"default": "Tongyi-MAI/Z-Image-Turbo", "multiline": False}),
+                "🧠 预设模型": ([
+                    "Tongyi-MAI/Z-Image-Turbo",
+                    "Qwen/Qwen-Image",
+                    "MusePublic/Qwen-image",
+                    "Qwen/Qwen-Image-2512",
+                    "MusePublic/489_ckpt_FLUX_1",
+                    "MusePublic/flux-high-res",
+                    "black-forest-labs/FLUX.1-Krea-dev",
+                    "MAILAND/majicflus_v1",
+                    "MoYouuu/MYHuman-QWen",
+                ], {"default": "Tongyi-MAI/Z-Image-Turbo"}),
+                "⚙️ 使用自定义模型": ("BOOLEAN", {"default": False}),
+                "🧠 模型ID": ("STRING", {"default": "", "multiline": False}),
                 "📝 提示词": ("STRING", {"default": "a cute girl in festive chinese new year clothing", "multiline": True}),
                 "📐 图像宽度": ("INT", {"default": 1024, "min": 64, "max": 8192, "step": 64, "display": "number"}),
                 "📏 图像高度": ("INT", {"default": 1024, "min": 64, "max": 8192, "step": 64, "display": "number"}),
@@ -700,7 +791,13 @@ class DapaoModelScopeTextToImage:
         base_url = _normalize_base_url(kwargs.get("🌐 Base URL", ""))
         url = f"{base_url}/images/generations"
 
-        model_id = (kwargs.get("🧠 模型ID", "") or "").strip()
+        # 模型选择逻辑
+        use_custom_model = kwargs.get("⚙️ 使用自定义模型", False)
+        custom_model_id = (kwargs.get("🧠 模型ID", "") or "").strip()
+        preset_model_id = kwargs.get("🧠 预设模型", "")
+        
+        model_id = custom_model_id if use_custom_model and custom_model_id else preset_model_id
+        
         prompt = kwargs.get("📝 提示词", "") or ""
         width = int(kwargs.get("📐 图像宽度", 1024))
         height = int(kwargs.get("📏 图像高度", 1024))
@@ -842,11 +939,129 @@ class DapaoModelScopeTextToImage:
             return (_blank_image_tensor("red"), f"❌ {e}", json.dumps(err, ensure_ascii=False))
 
 
+class DapaoModelScopeImageToPrompt:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "🔑 魔塔Token": ("STRING", {"default": "", "multiline": False}),
+                "🌐 Base URL": ("STRING", {"default": "https://api-inference.modelscope.cn/v1", "multiline": False}),
+                "🧠 模型ID": ("STRING", {"default": "Qwen/Qwen3-VL-8B-Instruct", "multiline": False}),
+                "🖼️ 图像": ("IMAGE",),
+                "📝 提示词": ("STRING", {"default": "Describe this image in detail.", "multiline": True}),
+                "🌡️ 温度": ("FLOAT", {"default": 0.7, "min": 0.0, "max": 2.0, "step": 0.01}),
+                "🎲 Top-P": ("FLOAT", {"default": 0.9, "min": 0.0, "max": 1.0, "step": 0.01}),
+                "📏 最大长度": ("INT", {"default": 2048, "min": 1, "max": 32768}),
+                "⏱️ 超时时间": ("INT", {"default": 180, "min": 1, "max": 600}),
+                "🎲 随机种子": ("INT", {"default": -1, "min": -1, "max": 0xffffffffffffffff}),
+                "🎯 种子控制": (["随机", "固定", "递增"], {"default": "随机"}),
+            }
+        }
+
+    RETURN_TYPES = ("STRING", "STRING")
+    RETURN_NAMES = ("📝 反推提示词", "raw_json")
+    FUNCTION = "image_to_prompt"
+    CATEGORY = "🤖dapaoAPI/魔塔API"
+
+    @classmethod
+    def IS_CHANGED(cls, **kwargs):
+        seed_control = kwargs.get("🎯 种子控制", "随机")
+        seed = kwargs.get("🎲 随机种子", -1)
+        if seed_control in ["随机", "递增"]:
+            return float("nan")
+        return seed
+
+    def __init__(self):
+        self.last_seed = -1
+
+    def _effective_seed(self, seed: int, seed_control: str) -> int:
+        import random
+
+        if seed_control == "固定":
+            effective_seed = seed if seed != -1 else random.randint(0, 2147483647)
+        elif seed_control == "随机":
+            effective_seed = random.randint(0, 2147483647)
+        elif seed_control == "递增":
+            if self.last_seed == -1:
+                effective_seed = seed if seed != -1 else random.randint(0, 2147483647)
+            else:
+                effective_seed = self.last_seed + 1
+        else:
+            effective_seed = random.randint(0, 2147483647)
+        self.last_seed = effective_seed
+        return effective_seed
+
+    def image_to_prompt(self, **kwargs) -> Tuple[str, str]:
+        token = _get_modelscope_token(kwargs.get("🔑 魔塔Token", ""))
+        if not token:
+            return ("❌ 缺少Token", json.dumps({"error": "missing_token"}, ensure_ascii=False))
+
+        base_url = _normalize_base_url(kwargs.get("🌐 Base URL", ""))
+        url = f"{base_url}/chat/completions"
+
+        model_id = (kwargs.get("🧠 模型ID", "") or "").strip()
+        image = kwargs.get("🖼️ 图像")
+        prompt = kwargs.get("📝 提示词", "") or "Describe this image."
+        temperature = float(kwargs.get("🌡️ 温度", 0.7))
+        top_p = float(kwargs.get("🎲 Top-P", 0.9))
+        max_tokens = int(kwargs.get("📏 最大长度", 2048))
+        timeout = int(kwargs.get("⏱️ 超时时间", 180))
+
+        seed = int(kwargs.get("🎲 随机种子", -1))
+        seed_control = kwargs.get("🎯 种子控制", "随机")
+        effective_seed = self._effective_seed(seed, seed_control)
+
+        if image is None:
+            return ("❌ 未提供图像", json.dumps({"error": "missing_image"}, ensure_ascii=False))
+
+        # 处理图像
+        single = image[0] if len(image.shape) == 4 else image
+        image_url = _encode_image_tensor_to_data_url(single)
+
+        # 构建 OpenAI 格式的 Vision 消息
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {"url": image_url}},
+                ],
+            }
+        ]
+
+        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+        payload = {
+            "model": model_id,
+            "messages": messages,
+            "temperature": temperature,
+            "top_p": top_p,
+            "max_tokens": max_tokens,
+            "stream": False,
+            "seed": effective_seed,
+        }
+
+        try:
+            data = _call_chat_completions(url=url, headers=headers, payload=payload, timeout=timeout)
+            text = ""
+            choices = data.get("choices")
+            if isinstance(choices, list) and choices:
+                msg = choices[0].get("message") if isinstance(choices[0], dict) else None
+                if isinstance(msg, dict):
+                    text = msg.get("content") or ""
+            if not text:
+                text = json.dumps(data, ensure_ascii=False)
+            return (text, json.dumps(data, ensure_ascii=False))
+        except Exception as e:
+            err = {"error": str(e), "url": url}
+            return (f"❌ 反推失败：{e}", json.dumps(err, ensure_ascii=False))
+
+
 NODE_CLASS_MAPPINGS = {
     "DapaoModelScopeListModels": DapaoModelScopeListModels,
     "DapaoModelScopeChat": DapaoModelScopeChat,
     "DapaoModelScopeTextToImage": DapaoModelScopeTextToImage,
     "DapaoModelScopeImageEdit": DapaoModelScopeImageEdit,
+    "DapaoModelScopeImageToPrompt": DapaoModelScopeImageToPrompt,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -854,6 +1069,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "DapaoModelScopeChat": "💬 魔塔LLM对话 @炮老师的小课堂",
     "DapaoModelScopeTextToImage": "🎨 魔塔文生图 @炮老师的小课堂",
     "DapaoModelScopeImageEdit": "魔塔图像编辑@炮老师的小课堂",
+    "DapaoModelScopeImageToPrompt": "🎴 魔塔图像反推 @炮老师的小课堂",
 }
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]
