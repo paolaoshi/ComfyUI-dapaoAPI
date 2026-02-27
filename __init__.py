@@ -40,6 +40,12 @@ from .seedream45_node import (
     NODE_DISPLAY_NAME_MAPPINGS as SEEDREAM45_DISPLAY_MAPPINGS
 )
 
+# 加载 Seedream 5.0 节点
+from .seedream50_node import (
+    NODE_CLASS_MAPPINGS as SEEDREAM50_MAPPINGS,
+    NODE_DISPLAY_NAME_MAPPINGS as SEEDREAM50_DISPLAY_MAPPINGS
+)
+
 # 尝试加载 GLM 节点
 try:
     from .glm_nodes import (
@@ -62,12 +68,17 @@ from .doubao_chat_node import (
 
 # 加载豆包视频生成节点
 from .doubao_video_node import DoubaoVideoGeneration
+from .doubao_seedance2_node import DoubaoSeedance2Node, DoubaoSeedance2AdvancedNode
 
 DOUBAO_VIDEO_MAPPINGS = {
-    "DapaoDoubaoVideoGeneration": DoubaoVideoGeneration
+    "DapaoDoubaoVideoGeneration": DoubaoVideoGeneration,
+    "DoubaoSeedance2Node": DoubaoSeedance2Node,
+    "DoubaoSeedance2AdvancedNode": DoubaoSeedance2AdvancedNode
 }
 DOUBAO_VIDEO_DISPLAY_MAPPINGS = {
-    "DapaoDoubaoVideoGeneration": "🎬Doubao视频生成 @炮老师的小课堂"
+    "DapaoDoubaoVideoGeneration": "🎬Doubao视频生成 @炮老师的小课堂",
+    "DoubaoSeedance2Node": "🥘seedance2.0视频基础@炮老师的小课堂",
+    "DoubaoSeedance2AdvancedNode": "🥘seedance2.0视频高级@炮老师的小课堂"
 }
 
 # 加载智谱LLM对话节点
@@ -242,8 +253,10 @@ from .dapao_user_templates_manager import DapaoUserTemplatesManager
 NODE_CLASS_MAPPINGS = {
     **SEEDREAM_MAPPINGS,
     **SEEDREAM45_MAPPINGS,
+    **SEEDREAM50_MAPPINGS,
     **GLM_MAPPINGS,
     **DOUBAO_CHAT_MAPPINGS,
+    **DOUBAO_VIDEO_MAPPINGS,
     **ZHIPU_CHAT_MAPPINGS,
     **GROK_MAPPINGS,
     **GPT_MAPPINGS,
@@ -271,8 +284,10 @@ NODE_CLASS_MAPPINGS = {
 NODE_DISPLAY_NAME_MAPPINGS = {
     **SEEDREAM_DISPLAY_MAPPINGS,
     **SEEDREAM45_DISPLAY_MAPPINGS,
+    **SEEDREAM50_DISPLAY_MAPPINGS,
     **GLM_DISPLAY_MAPPINGS,
     **DOUBAO_CHAT_DISPLAY_MAPPINGS,
+    **DOUBAO_VIDEO_DISPLAY_MAPPINGS,
     **ZHIPU_CHAT_DISPLAY_MAPPINGS,
     **GROK_DISPLAY_MAPPINGS,
     **GPT_DISPLAY_MAPPINGS,
