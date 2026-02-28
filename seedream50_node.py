@@ -131,6 +131,8 @@ def image_to_base64_dataurl(image_tensor: torch.Tensor, max_size=2048) -> str:
         return None
 
 
+
+
 class Seedream50_ImageGeneration:
     """
     Seedream 5.0 图像生成节点 v1.0
@@ -210,6 +212,10 @@ class Seedream50_ImageGeneration:
                     "default": False,
                     "tooltip": "在图片右下角添加'AI生成'水印"
                 }),
+                "🔍 网络搜索": ("BOOLEAN", {
+                    "default": False,
+                    "tooltip": "启用网络搜索功能，模型可以联网获取实时信息"
+                }),
                 "⏱️ 超时时间(秒)": ("INT", {
                     "default": 180,
                     "min": 30,
@@ -246,6 +252,7 @@ class Seedream50_ImageGeneration:
         self.config = get_config()
         self.last_seed = -1
 
+        # 官方 API size 参数格式：具体像素尺寸，如 "2048x2048"
         self.size_mapping = {
             "1:1":  {"2K": "2048x2048", "4K": "4096x4096"},
             "4:3":  {"2K": "2304x1728", "4K": "3456x2592"},
@@ -289,6 +296,7 @@ class Seedream50_ImageGeneration:
 
         stream_enabled = kwargs.get("🌊 流式输出", False)
         watermark_enabled = kwargs.get("💧 添加水印", False)
+        web_search_enabled = kwargs.get("🔍 网络搜索", False)
         timeout = kwargs.get("⏱️ 超时时间(秒)", 180)
 
         # === 收集参考图像 ===
@@ -367,6 +375,12 @@ class Seedream50_ImageGeneration:
                 "stream": stream_enabled
             }
 
+            # 网络搜索：直接传给 Seedream 5.0 图像生成 API
+            if web_search_enabled:
+                req_body["web_search"] = {"enable": True}
+                status_info.append("🔍 网络搜索：已启用（模型将联网搜索提示词相关信息）")
+                _log_info("🔍 网络搜索已启用，web_search={\"enable\": True}")
+
             if image_data_list:
                 req_body["image"] = image_data_list[0] if len(image_data_list) == 1 else image_data_list
 
@@ -380,6 +394,7 @@ class Seedream50_ImageGeneration:
 
             _log_info(f"📤 发送请求到 Seedream 5.0 API...")
             _log_info(f"🤖 模型：{model}")
+            _log_info(f"📋 请求体：{json.dumps(req_body, ensure_ascii=False, indent=2)}")
             status_info.append(f"🤖 模型：{model}")
 
             # === 5. 发送请求 ===

@@ -166,13 +166,16 @@ from .dapao_ecommerce_node import (
 
 # 加载 Banana2 贞贞节点 / 官方节点 / 定制节点
 from .banana2_zhenzhen_node import DapaoBanana2ZhenzhenNode, DapaoBanana2OfficialNode
+from .banana2_flash_zhenzhen_node import DapaoBanana2FlashZhenzhenNode
 
 BANANA2_ZHENZHEN_MAPPINGS = {
-    "DapaoBanana2ZhenzhenNode": DapaoBanana2ZhenzhenNode
+    "DapaoBanana2ZhenzhenNode": DapaoBanana2ZhenzhenNode,
+    "DapaoBanana2FlashZhenzhenNode": DapaoBanana2FlashZhenzhenNode,
 }
 
 BANANA2_ZHENZHEN_DISPLAY_MAPPINGS = {
-    "DapaoBanana2ZhenzhenNode": "🙈Banana2贞贞@炮老师的小课堂"
+    "DapaoBanana2ZhenzhenNode": "🙈Banana2贞贞@炮老师的小课堂",
+    "DapaoBanana2FlashZhenzhenNode": "🙈Banana2Flash贞贞@炮老师的小课堂",
 }
 
 BANANA2_OFFICIAL_MAPPINGS = {
