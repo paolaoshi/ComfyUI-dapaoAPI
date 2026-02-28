@@ -54,7 +54,6 @@ class DapaoBanana2FlashZhenzhenNode:
                 "🌐 API线路": (["zhenzhen", "ip", "hk", "us"], {"default": "zhenzhen"}),
                 "🔑 API密钥": ("STRING", {"default": "", "multiline": False}),
                 "📝 提示词": ("STRING", {"multiline": True, "default": ""}),
-                "🎨 生成模式": (["文生图", "图像编辑"], {"default": "文生图"}),
                 "🤖 模型版本": (["gemini-3.1-flash-image-preview"], {"default": "gemini-3.1-flash-image-preview"}),
                 "📐 宽高比": (["auto", "16:9", "4:3", "4:5", "3:2", "1:1", "2:3", "3:4", "5:4", "9:16", "21:9", "1:4", "4:1", "1:8", "8:1"], {"default": "auto"}),
                 "🖼️ 图片分辨率": (["1K", "2K", "4K"], {"default": "2K"}),
@@ -129,7 +128,6 @@ class DapaoBanana2FlashZhenzhenNode:
         api_source = kwargs.get("🌐 API线路", "zhenzhen")
         api_key = kwargs.get("🔑 API密钥", "")
         prompt = kwargs.get("📝 提示词", "")
-        mode = "text2img" if kwargs.get("🎨 生成模式", "文生图") == "文生图" else "img2img"
         model = kwargs.get("🤖 模型版本", "gemini-3.1-flash-image-preview")
         aspect_ratio = kwargs.get("📐 宽高比", "auto")
         image_size = kwargs.get("🖼️ 图片分辨率", "2K")
@@ -138,9 +136,10 @@ class DapaoBanana2FlashZhenzhenNode:
         stream_enabled = bool(kwargs.get("🌊 流式输出", False))
         custom_api_url = kwargs.get("🔗 自定义API地址", "")
         task_id = kwargs.get("🆔 任务ID", "")
-        response_format = kwargs.get("📦 返回格式", "url")
 
         images = [kwargs.get(f"🖼️ 参考图{i}") for i in range(1, 15)]
+        # 有参考图就是图像编辑，否则是文生图
+        has_ref_images = any(img is not None for img in images)
 
         base_url = self._get_base_url(api_source, custom_api_url)
 
@@ -157,71 +156,69 @@ class DapaoBanana2FlashZhenzhenNode:
 
             combined_tensors, all_urls, task_ids = [], [], []
             first_url, first_task_id = "", ""
-            params = {"async": "true"}
 
-            # 准备参考图片的 base64 编码（用于图像编辑模式）
+            # 准备参考图片的 base64 编码（压缩到最大 1024px，避免 SSL EOF）
             prepared_images_b64 = []
-            if mode == "img2img":
+            if has_ref_images:
                 for idx, img in enumerate(images):
                     if img is None:
                         continue
+                    pil_img = tensor2pil(img)[0]
+                    max_size = 1024
+                    w, h = pil_img.size
+                    if w > max_size or h > max_size:
+                        scale = max_size / max(w, h)
+                        pil_img = pil_img.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
                     buf = BytesIO()
-                    tensor2pil(img)[0].save(buf, format="PNG")
+                    if pil_img.mode != 'RGB':
+                        pil_img = pil_img.convert('RGB')
+                    pil_img.save(buf, format="JPEG", quality=85)
                     img_b64 = base64.b64encode(buf.getvalue()).decode('utf-8')
                     prepared_images_b64.append(img_b64)
+                    print(f"[dapaoAPI] 参考图{idx+1} 压缩后大小: {len(img_b64) // 1024}KB")
 
             for i in range(n_images):
                 pbar.update_absolute(min(30, 10 + int((i / max(1, n_images)) * 20)))
 
-                if mode == "text2img":
-                    # 文生图模式：使用 /v1/images/generations 接口
-                    headers = self.get_headers(api_key)
-                    headers["Content-Type"] = "application/json"
-                    payload = {"prompt": prompt, "model": model, "aspect_ratio": aspect_ratio, "image_size": image_size, "n": 1}
-                    if response_format:
-                        payload["response_format"] = response_format
-                    if seed > 0:
-                        payload["seed"] = seed
-                    response = requests.post(f"{base_url}/v1/images/generations", headers=headers, params=params, json=payload, timeout=self.timeout)
-                else:
-                    # 图像编辑模式：使用 /v1/chat/completions 接口（Chat修改图片）
-                    headers = self.get_headers(api_key)
-                    headers["Content-Type"] = "application/json"
-                    
-                    # 构建消息内容：先放图片，再放文字提示词
-                    content_parts = []
+                # 统一使用 /v1/chat/completions 接口
+                headers = self.get_headers(api_key)
+                headers["Content-Type"] = "application/json"
+
+                content_parts = []
+                if has_ref_images:
+                    # 有参考图：先放图片，再放提示词
                     for img_b64 in prepared_images_b64:
                         content_parts.append({
                             "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/png;base64,{img_b64}"
-                            }
+                            "image_url": {"url": f"data:image/jpeg;base64,{img_b64}"}
                         })
-                    content_parts.append({
-                        "type": "text",
-                        "text": prompt
-                    })
-                    
-                    # Chat Completions 格式的 payload
-                    payload = {
-                        "model": model,
-                        "messages": [
-                            {
-                                "role": "user",
-                                "content": content_parts
-                            }
-                        ]
-                    }
-                    
-                    # 不使用异步模式，直接同步请求
-                    response = requests.post(f"{base_url}/v1/chat/completions", headers=headers, json=payload, timeout=self.timeout)
+                # 提示词
+                content_parts.append({"type": "text", "text": prompt})
+
+                payload = {
+                    "model": model,
+                    "messages": [{"role": "user", "content": content_parts}]
+                }
+
+                response = requests.post(
+                    f"{base_url}/v1/chat/completions",
+                    headers=headers,
+                    json=payload,
+                    timeout=self.timeout,
+                    verify=False
+                )
 
                 if response.status_code != 200:
                     blank = pil2tensor(Image.new("RGB", (512, 512), color="red"))
                     return (blank, "", "", json.dumps({"status": "failed", "message": f"API Error: {response.status_code} - {response.text}"}))
 
                 result = response.json()
-                print(f"[dapaoAPI] 响应结果: {json.dumps(result, ensure_ascii=False)[:500]}...")
+                # 完整打印响应，方便调试
+                full_resp = json.dumps(result, ensure_ascii=False)
+                print(f"[dapaoAPI] 完整响应 (共{len(full_resp)}字符):")
+                # 分段打印，每段500字符
+                for chunk_start in range(0, min(len(full_resp), 3000), 500):
+                    print(full_resp[chunk_start:chunk_start+500])
 
                 # 处理 Chat Completions 响应格式（图像编辑模式）
                 if "choices" in result and result["choices"]:
