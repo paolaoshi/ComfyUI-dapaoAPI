@@ -14,6 +14,7 @@ import numpy as np
 import torch
 from PIL import Image
 from io import BytesIO
+import shutil
 
 try:
     import urllib3
@@ -22,7 +23,6 @@ except ImportError:
     pass
 
 from comfy.comfy_types import IO
-from comfy_api.input_impl import VideoFromFile
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 GROK_CONFIG_FILE = os.path.join(CURRENT_DIR, 'grok_config.json')
@@ -58,26 +58,58 @@ def _tensor2pil(tensor: torch.Tensor) -> Image.Image:
     return Image.fromarray((np.clip(tensor.cpu().numpy(), 0, 1) * 255).astype(np.uint8))
 
 
-def _image_to_base64(image_tensor: torch.Tensor) -> str:
-    pil = _tensor2pil(image_tensor)
-    buf = BytesIO()
-    pil.save(buf, format="JPEG", quality=90)
-    import base64
-    return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode('utf-8')
-
-
-def _download_video(video_url: str) -> str:
-    output_dir = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.dirname(CURRENT_DIR))), "output"
-    )
-    os.makedirs(output_dir, exist_ok=True)
-    filepath = os.path.join(output_dir, f"grok_video_{int(time.time())}.mp4")
-    res = requests.get(video_url, stream=True, timeout=120)
-    res.raise_for_status()
-    with open(filepath, 'wb') as f:
-        for chunk in res.iter_content(chunk_size=8192):
-            f.write(chunk)
-    return filepath
+class GrokVideoAdapter:
+    """
+    视频适配器类，用于包装视频URL
+    
+    Time: 2026/2/28 周六 10:40:00
+    Author: @炮老师的小课堂
+    """
+    def __init__(self, video_path_or_url):
+        if video_path_or_url.startswith('http'):
+            self.is_url = True
+            self.video_url = video_path_or_url
+            self.video_path = None
+        else:
+            self.is_url = False
+            self.video_path = video_path_or_url
+            self.video_url = None
+        
+    def get_dimensions(self):
+        if self.is_url:
+            return 1280, 720
+        else:
+            try:
+                import cv2
+                cap = cv2.VideoCapture(self.video_path)
+                width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                cap.release()
+                return width, height
+            except Exception as e:
+                print(f"Error getting video dimensions: {str(e)}")
+                return 1280, 720
+            
+    def save_to(self, output_path, format="auto", codec="auto", metadata=None):
+        if self.is_url:
+            try:
+                response = requests.get(self.video_url, stream=True)
+                response.raise_for_status()
+                
+                with open(output_path, "wb") as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        f.write(chunk)
+                return True
+            except Exception as e:
+                print(f"Error downloading video from URL: {str(e)}")
+                return False
+        else:
+            try:
+                shutil.copyfile(self.video_path, output_path)
+                return True
+            except Exception as e:
+                print(f"Error copying video file: {str(e)}")
+                return False
 
 
 class GrokVideoNode:
@@ -98,7 +130,7 @@ class GrokVideoNode:
                 }),
                 "🤖 模型": (["grok-video-3"], {"default": "grok-video-3"}),
                 "📐 视频比例": (["2:3", "3:2", "16:9", "9:16", "1:1"], {"default": "16:9"}),
-                "⏱️ 时长(秒)": ([6, 10, 15], {"default": 10}),
+                "⏱️ 时长(秒)": (["6", "10", "15"], {"default": "10"}),
                 "🖥️ 分辨率": (["480P", "720P", "1080P"], {"default": "1080P"}),
                 "🌐 API线路": (["zhenzhen", "ip", "hk", "us"], {"default": "zhenzhen"}),
                 "🔑 API密钥": ("STRING", {
@@ -106,20 +138,65 @@ class GrokVideoNode:
                     "placeholder": "留空则使用 grok_config.json 中的密钥"
                 }),
                 "🎲 随机种子": ("INT", {"default": 0, "min": 0, "max": 2147483647}),
-                "⏳ 最大等待(秒)": ("INT", {"default": 600, "min": 60, "max": 1800}),
-                "🔄 查询间隔(秒)": ("INT", {"default": 5, "min": 3, "max": 30}),
             },
             "optional": {
-                "🖼️ 参考图(图生视频)": ("IMAGE",),
+                "🖼️ 参考图1": ("IMAGE",),
+                "🖼️ 参考图2": ("IMAGE",),
+                "🖼️ 参考图3": ("IMAGE",),
+                "🖼️ 参考图4": ("IMAGE",),
+                "🖼️ 参考图5": ("IMAGE",),
+                "🖼️ 参考图6": ("IMAGE",),
+                "🖼️ 参考图7": ("IMAGE",),
                 "🔗 自定义API地址": ("STRING", {"default": ""}),
             }
         }
 
     RETURN_TYPES = (IO.VIDEO, "STRING", "STRING", "STRING")
-    RETURN_NAMES = ("🎬 视频", "🔗 视频URL", "📋 任务ID", "📄 响应信息")
+    RETURN_NAMES = ("🎬 视频", "📋 任务ID", "📄 响应信息", "🔗 视频URL")
     FUNCTION = "generate_video"
     CATEGORY = "🤖dapaoAPI/Grok"
     DESCRIPTION = "调用 xAI Grok-Video-3 生成视频 | 作者: @炮老师的小课堂"
+
+    def __init__(self):
+        self.api_key = ""
+        self.timeout = 300
+
+    def get_headers(self):
+        return {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}"
+        }
+
+    def upload_image(self, image_tensor, base_url):
+        """Upload image to the file endpoint and return the URL"""
+        try:
+            pil_image = _tensor2pil(image_tensor)
+
+            buffered = BytesIO()
+            pil_image.save(buffered, format="PNG")
+            file_content = buffered.getvalue()
+
+            files = {'file': ('image.png', file_content, 'image/png')}
+
+            response = requests.post(
+                f"{base_url}/v1/files",
+                headers={"Authorization": f"Bearer {self.api_key}"},
+                files=files,
+                timeout=self.timeout
+            )
+            
+            response.raise_for_status()
+            result = response.json()
+            
+            if 'url' in result:
+                return result['url']
+            else:
+                print(f"Unexpected response from file upload API: {result}")
+                return None
+                
+        except Exception as e:
+            print(f"Error uploading image: {str(e)}")
+            return None
 
     def generate_video(self, **kwargs):
         """
@@ -128,93 +205,195 @@ class GrokVideoNode:
         Time: 2026/2/28 周六 10:40:00
         Author: @炮老师的小课堂
         """
+        # 获取参数
         prompt = kwargs.get("📝 提示词", "")
         model = kwargs.get("🤖 模型", "grok-video-3")
         ratio = kwargs.get("📐 视频比例", "16:9")
-        duration = kwargs.get("⏱️ 时长(秒)", 10)
+        duration = kwargs.get("⏱️ 时长(秒)", "10")
         resolution = kwargs.get("🖥️ 分辨率", "1080P")
         api_route = kwargs.get("🌐 API线路", "zhenzhen")
         api_key_input = kwargs.get("🔑 API密钥", "")
         seed = kwargs.get("🎲 随机种子", 0)
-        max_wait = kwargs.get("⏳ 最大等待(秒)", 600)
-        poll_interval = kwargs.get("🔄 查询间隔(秒)", 5)
-        image = kwargs.get("🖼️ 参考图(图生视频)")
         custom_url = kwargs.get("🔗 自定义API地址", "")
-
-        if api_route == "ip":
-            base_url = custom_url.strip() if custom_url.strip() else "https://ai.t8star.cn"
+        
+        # 获取参考图
+        all_images = [
+            kwargs.get("🖼️ 参考图1"),
+            kwargs.get("🖼️ 参考图2"),
+            kwargs.get("🖼️ 参考图3"),
+            kwargs.get("🖼️ 参考图4"),
+            kwargs.get("🖼️ 参考图5"),
+            kwargs.get("🖼️ 参考图6"),
+            kwargs.get("🖼️ 参考图7"),
+        ]
+        
+        # 设置base_url
+        if api_route == "ip" and custom_url.strip():
+            base_url = custom_url.strip()
         else:
             base_url = BASE_URL_MAP.get(api_route, "https://ai.t8star.cn")
+        
+        # 设置API密钥
+        if api_key_input.strip():
+            self.api_key = api_key_input.strip()
+        else:
+            self.api_key = _get_api_key("")
+            
+        if not self.api_key:
+            error_response = {"code": "error", "message": "API key not found"}
+            return ("", "", json.dumps(error_response), "")
+            
+        try:
+            import comfy.utils
+            pbar = comfy.utils.ProgressBar(100)
+            pbar.update_absolute(10)
 
-        api_key = _get_api_key(api_key_input)
-        if not api_key:
-            raise ValueError("未提供 API Key，请在节点或 grok_config.json 中配置")
+            payload = {
+                "prompt": prompt,
+                "model": model,
+                "ratio": ratio,
+                "duration": int(duration),
+                "resolution": resolution
+            }
 
-        headers = {"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"}
-        payload = {
-            "prompt": prompt, "model": model,
-            "ratio": ratio, "duration": duration, "resolution": resolution
-        }
-        if seed > 0:
-            payload["seed"] = seed
+            if seed > 0:
+                payload["seed"] = seed
 
-        # 图生视频：转base64
-        if image is not None:
-            _log("正在处理参考图...")
-            payload["images"] = [_image_to_base64(image)]
-            _log("参考图处理完成")
+            # Handle image inputs (up to 7 reference images)
+            image_urls = []
+            
+            for i, img in enumerate(all_images):
+                if img is not None:
+                    pbar.update_absolute(15 + i * 2)
+                    uploaded_url = self.upload_image(img, base_url)
+                    if uploaded_url:
+                        image_urls.append(uploaded_url)
+                    else:
+                        error_message = f"Failed to upload image {i+1}. Please check your image and try again."
+                        print(error_message)
+                        return ("", "", json.dumps({"code": "error", "message": error_message}), "")
+            
+            if image_urls:
+                payload["images"] = image_urls
 
-        # 提交生成任务
-        _log(f"提交任务... 模型:{model} 比例:{ratio} 时长:{duration}s")
-        resp = requests.post(
-            f"{base_url}/v2/videos/generations",
-            headers=headers, json=payload, timeout=60
-        )
-        if resp.status_code != 200:
-            raise RuntimeError(f"API错误: {resp.status_code} - {resp.text}")
-        result = resp.json()
-        task_id = result.get("task_id")
-        if not task_id:
-            raise RuntimeError(f"未返回任务ID: {result}")
-        _log(f"任务已提交，ID: {task_id}")
+            pbar.update_absolute(30)
+            
+            # Submit video generation request
+            response = requests.post(
+                f"{base_url}/v2/videos/generations",
+                headers=self.get_headers(),
+                json=payload,
+                timeout=self.timeout
+            )
+            
+            if response.status_code != 200:
+                error_message = f"API error: {response.status_code} - {response.text}"
+                print(error_message)
+                return ("", "", json.dumps({"code": "error", "message": error_message}), "")
+                
+            result = response.json()
+            
+            # Extract task_id from response
+            task_id = result.get("task_id")
+            if not task_id:
+                error_message = "No task ID returned from API"
+                print(error_message)
+                return ("", "", json.dumps({"code": "error", "message": error_message}), "")
+            
+            pbar.update_absolute(40)
+            
+            # Poll for video generation completion
+            video_url = None
+            attempts = 0
+            max_attempts = 200
+            start_time = time.time()
+            max_wait_time = 600
+        
+            while attempts < max_attempts:
+                current_time = time.time()
+                elapsed_time = current_time - start_time
 
-        # 轮询任务状态
-        start_time = time.time()
-        while True:
-            elapsed = time.time() - start_time
-            if elapsed > max_wait:
-                raise TimeoutError(f"视频生成超时（{elapsed:.0f}s）")
-
-            time.sleep(poll_interval)
-            try:
-                sr = requests.get(
-                    f"{base_url}/v2/videos/generations/{task_id}",
-                    headers=headers, timeout=30
-                )
-                if sr.status_code != 200:
-                    continue
-                sr_data = sr.json()
-                status = sr_data.get("status", "UNKNOWN")
-                _log(f"状态: {status}（已等待 {elapsed:.0f}s）")
-
-                if status == "SUCCESS":
-                    video_url = sr_data.get("data", {}).get("output")
-                    if not video_url:
-                        continue
-                    _log(f"生成成功，下载视频: {video_url}")
-                    filepath = _download_video(video_url)
-                    _log(f"视频已保存: {filepath}")
-                    return (
-                        VideoFromFile(open(filepath, 'rb')),
-                        video_url,
-                        task_id,
-                        json.dumps({"code": "success", "url": video_url, "file": filepath}, ensure_ascii=False)
+                if elapsed_time > max_wait_time:
+                    error_message = f"Video generation timeout after {elapsed_time:.1f} seconds (max: {max_wait_time}s)"
+                    print(error_message)
+                    return ("", task_id, json.dumps({"code": "error", "message": error_message}), "")
+                
+                time.sleep(5)
+                attempts += 1
+                
+                try:
+                    # Query task status
+                    status_response = requests.get(
+                        f"{base_url}/v2/videos/generations/{task_id}",
+                        headers=self.get_headers(),
+                        timeout=30
                     )
-                elif status == "FAILURE":
-                    fail_reason = sr_data.get("fail_reason", "未知错误")
-                    raise RuntimeError(f"视频生成失败: {fail_reason}")
-            except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-                continue
+                    
+                    if status_response.status_code != 200:
+                        continue
+                        
+                    status_result = status_response.json()
+                    
+                    # Check task status
+                    status = status_result.get("status", "UNKNOWN")
+                    
+                    # Update progress bar based on status
+                    if status == "IN_PROGRESS":
+                        progress = status_result.get("progress", "0%")
+                        try:
+                            if progress.endswith('%'):
+                                progress_num = int(progress.rstrip('%'))
+                                pbar_value = min(90, 40 + progress_num * 50 / 100)
+                                pbar.update_absolute(pbar_value)
+                        except (ValueError, AttributeError):
+                            progress_value = min(80, 40 + (attempts * 40 // max_attempts))
+                            pbar.update_absolute(progress_value)
+                    
+                    # Handle different statuses
+                    if status == "SUCCESS":
+                        # Extract video URL from successful response
+                        data = status_result.get("data", {})
+                        if "output" in data:
+                            video_url = data["output"]
+                            break
+                        else:
+                            continue
+                    
+                    elif status == "FAILURE":
+                        fail_reason = status_result.get("fail_reason", "Unknown error")
+                        error_message = f"Video generation failed: {fail_reason}"
+                        print(error_message)
+                        return ("", task_id, json.dumps({"code": "error", "message": error_message}), "")
+                    
+                    elif status in ["NOT_START", "IN_PROGRESS"]:
+                        continue
+                    else:
+                        continue
+                    
+                except requests.exceptions.Timeout:
+                    continue
+                except Exception as e:
+                    continue
+            
+            if not video_url:
+                error_message = f"Video generation timeout or failed to retrieve video URL after {attempts} attempts, elapsed time: {elapsed_time:.1f}s"
+                print(error_message)
+                return ("", task_id, json.dumps({"code": "error", "message": error_message}), "")
+
+            if video_url:
+                pbar.update_absolute(95)
+                print(f"Video generation completed, URL: {video_url}")
+                
+                # Return video adapter
+                video_adapter = GrokVideoAdapter(video_url)
+                return (video_adapter, task_id, json.dumps({"code": "success", "url": video_url}), video_url)
+            
+        except Exception as e:
+            error_message = f"Error generating video: {str(e)}"
+            print(error_message)
+            import traceback
+            traceback.print_exc()
+            return ("", "", json.dumps({"code": "error", "message": error_message}), "")
 
 
 NODE_CLASS_MAPPINGS = {
