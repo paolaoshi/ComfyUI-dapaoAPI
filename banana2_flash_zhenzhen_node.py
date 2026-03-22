@@ -180,33 +180,53 @@ class DapaoBanana2FlashZhenzhenNode:
             for i in range(n_images):
                 pbar.update_absolute(min(30, 10 + int((i / max(1, n_images)) * 20)))
 
-                # 统一使用 /v1/chat/completions 接口
                 headers = self.get_headers(api_key)
-                headers["Content-Type"] = "application/json"
 
-                content_parts = []
                 if has_ref_images:
-                    # 有参考图：先放图片，再放提示词
-                    for img_b64 in prepared_images_b64:
-                        content_parts.append({
-                            "type": "image_url",
-                            "image_url": {"url": f"data:image/jpeg;base64,{img_b64}"}
-                        })
-                # 提示词
-                content_parts.append({"type": "text", "text": prompt})
+                    # 图像编辑：使用 /v1/images/edits，确保宽高比/分辨率参数生效
+                    data = {
+                        "prompt": prompt,
+                        "model": model,
+                        "aspect_ratio": aspect_ratio,
+                        "image_size": image_size,
+                        "response_format": kwargs.get("📦 返回格式", "url")
+                    }
+                    if seed > 0:
+                        data["seed"] = str(seed)
 
-                payload = {
-                    "model": model,
-                    "messages": [{"role": "user", "content": content_parts}]
-                }
+                    files = []
+                    for idx, img_b64 in enumerate(prepared_images_b64):
+                        img_bytes = base64.b64decode(img_b64)
+                        files.append(("image", (f"image_{idx}.jpg", BytesIO(img_bytes), "image/jpeg")))
 
-                response = requests.post(
-                    f"{base_url}/v1/chat/completions",
-                    headers=headers,
-                    json=payload,
-                    timeout=self.timeout,
-                    verify=False
-                )
+                    response = requests.post(
+                        f"{base_url}/v1/images/edits",
+                        headers=headers,
+                        data=data,
+                        files=files,
+                        timeout=self.timeout,
+                        verify=False
+                    )
+                else:
+                    # 文生图：使用 /v1/images/generations，确保宽高比/分辨率参数生效
+                    headers["Content-Type"] = "application/json"
+                    payload = {
+                        "prompt": prompt,
+                        "model": model,
+                        "aspect_ratio": aspect_ratio,
+                        "image_size": image_size,
+                        "response_format": kwargs.get("📦 返回格式", "url")
+                    }
+                    if seed > 0:
+                        payload["seed"] = seed
+
+                    response = requests.post(
+                        f"{base_url}/v1/images/generations",
+                        headers=headers,
+                        json=payload,
+                        timeout=self.timeout,
+                        verify=False
+                    )
 
                 if response.status_code != 200:
                     blank = pil2tensor(Image.new("RGB", (512, 512), color="red"))
