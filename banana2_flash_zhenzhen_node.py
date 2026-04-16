@@ -51,7 +51,7 @@ class DapaoBanana2FlashZhenzhenNode:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "🌐 API线路": (["zhenzhen", "柏拉图", "ip", "hk", "us"], {"default": "zhenzhen"}),
+                "🌐 API线路": (["zhenzhen", "柏拉图", "ip", "hk", "us"], {"default": "柏拉图"}),
                 "🔑 API密钥": ("STRING", {"default": "", "multiline": False}),
                 "📝 提示词": ("STRING", {"multiline": True, "default": ""}),
                 "🤖 模型版本": (["gemini-3.1-flash-image-preview"], {"default": "gemini-3.1-flash-image-preview"}),
@@ -126,7 +126,7 @@ class DapaoBanana2FlashZhenzhenNode:
         return {"Authorization": f"Bearer {api_key}"}
 
     def generate_image(self, **kwargs):
-        api_source = kwargs.get("🌐 API线路", "zhenzhen")
+        api_source = kwargs.get("🌐 API线路", "柏拉图")
         api_key = kwargs.get("🔑 API密钥", "")
         prompt = kwargs.get("📝 提示词", "")
         model = kwargs.get("🤖 模型版本", "gemini-3.1-flash-image-preview")

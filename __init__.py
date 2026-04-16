@@ -145,17 +145,6 @@ BANANA2_OFFICIAL_DISPLAY_MAPPINGS = {
     "DapaoBanana2OfficialNode": "🙈Banana2官方@炮老师的小课堂"
 }
 
-# 加载 Banana2 Aabao 节点
-from .banana2_aabao_node import DapaoBanana2AabaoNode
-
-BANANA2_AABAO_MAPPINGS = {
-    "DapaoBanana2AabaoNode": DapaoBanana2AabaoNode
-}
-
-BANANA2_AABAO_DISPLAY_MAPPINGS = {
-    "DapaoBanana2AabaoNode": "🙈Banana2aabao专用@炮老师的小课堂"
-}
-
 # 加载对比打标节点
 from .dapao_compare_tagging_node import (
     NODE_CLASS_MAPPINGS as COMPARE_TAGGING_MAPPINGS,
@@ -228,7 +217,6 @@ NODE_CLASS_MAPPINGS = {
     **BANANA_INTEGRATED_MAPPINGS,
     **BANANA2_ZHENZHEN_MAPPINGS,
     **BANANA2_OFFICIAL_MAPPINGS,
-    **BANANA2_AABAO_MAPPINGS,
     **GEMINI3_CHAT_MAPPINGS,
     **PROMPT_MAPPINGS,
     **DAPAO_ECOMMERCE_MAPPINGS,
@@ -255,7 +243,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     **BANANA_INTEGRATED_DISPLAY_MAPPINGS,
     **BANANA2_ZHENZHEN_DISPLAY_MAPPINGS,
     **BANANA2_OFFICIAL_DISPLAY_MAPPINGS,
-    **BANANA2_AABAO_DISPLAY_MAPPINGS,
     **GEMINI3_CHAT_DISPLAY_MAPPINGS,
     **PROMPT_DISPLAY_MAPPINGS,
     **DAPAO_ECOMMERCE_DISPLAY_MAPPINGS,
@@ -534,7 +521,7 @@ print(f"  💎 Gemini 3多功能：{len(GEMINI3_MAPPINGS)} 个")
 print(f"  💎 Gemini 3对话（官方+T8）：{len(GEMINI3_CHAT_MAPPINGS)} 个")
 print(f"  🌐 通用API调用：{len(UNIVERSAL_MAPPINGS)} 个")
 print(f"  🎨 图像编辑API：{len(IMAGE_EDIT_MAPPINGS)} 个")
-print(f"  🍌 Banana整合版：{len(BANANA_INTEGRATED_MAPPINGS) + len(BANANA2_ZHENZHEN_MAPPINGS) + len(BANANA2_AABAO_MAPPINGS)} 个")
+print(f"  🍌 Banana整合版：{len(BANANA_INTEGRATED_MAPPINGS) + len(BANANA2_ZHENZHEN_MAPPINGS)} 个")
 print(f"  🎨 大炮提示词模板：{len(PROMPT_MAPPINGS)} 个")
 print(f"  🔍 对比打标节点：{len(COMPARE_TAGGING_MAPPINGS)} 个")
 print(f"  🍭 批量反推节点：{len(BATCH_REVERSE_MAPPINGS)} 个")

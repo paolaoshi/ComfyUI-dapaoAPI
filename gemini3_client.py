@@ -140,7 +140,9 @@ class GeminiClient:
             except Exception as e:
                 print(f"[dapaoAPI-Gemini3] 警告：无法读取配置文件: {e}")
         
-        if 'api_providers' in config and self.api_provider in config['api_providers']:
+        if self.api_provider == "柏拉图":
+            self.base_url = "https://api.bltcy.ai"
+        elif 'api_providers' in config and self.api_provider in config['api_providers']:
             provider_config = config['api_providers'][self.api_provider]
             self.base_url = provider_config.get('base_url', self.base_url)
     

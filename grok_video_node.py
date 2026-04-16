@@ -29,6 +29,7 @@ GROK_CONFIG_FILE = os.path.join(CURRENT_DIR, 'grok_config.json')
 
 BASE_URL_MAP = {
     "zhenzhen": "https://ai.t8star.cn",
+    "柏拉图": "https://api.bltcy.ai",
     "hk": "https://hk-api.gptbest.vip",
     "us": "https://api.gptbest.vip",
 }
@@ -143,7 +144,7 @@ class GrokVideoNode:
                 "📐 视频比例": (["2:3", "3:2", "16:9", "9:16", "1:1"], {"default": "16:9"}),
                 "⏱️ 时长(秒)": (["6", "10", "15"], {"default": "10"}),
                 "🖥️ 分辨率": (["480P", "720P", "1080P"], {"default": "1080P"}),
-                "🌐 API线路": (["zhenzhen", "ip", "hk", "us"], {"default": "zhenzhen"}),
+                "🌐 API线路": (["zhenzhen", "柏拉图", "ip", "hk", "us"], {"default": "柏拉图"}),
                 "🔑 API密钥": ("STRING", {
                     "default": "",
                     "placeholder": "留空则使用 grok_config.json 中的密钥"
@@ -223,7 +224,7 @@ class GrokVideoNode:
         ratio = kwargs.get("📐 视频比例", "16:9")
         duration = kwargs.get("⏱️ 时长(秒)", "10")
         resolution = kwargs.get("🖥️ 分辨率", "1080P")
-        api_route = kwargs.get("🌐 API线路", "zhenzhen")
+        api_route = kwargs.get("🌐 API线路", "柏拉图")
         api_key_input = kwargs.get("🔑 API密钥", "")
         seed = kwargs.get("🎲 随机种子", 0)
         custom_url = kwargs.get("🔗 自定义API地址", "")
@@ -244,7 +245,7 @@ class GrokVideoNode:
         if api_route == "ip" and custom_url.strip():
             base_url = custom_url.strip()
         else:
-            base_url = BASE_URL_MAP.get(api_route, "https://ai.t8star.cn")
+            base_url = BASE_URL_MAP.get(api_route, "https://api.bltcy.ai")
         
         # 设置API密钥
         if api_key_input.strip():
@@ -431,7 +432,7 @@ class GrokVideo30sNode:
                 "📐 视频比例": (["2:3", "3:2", "16:9", "9:16", "1:1"], {"default": "16:9"}),
                 "⏱️ 时长(秒)": ("INT", {"default": 30, "min": 6, "max": 30}),
                 "🖥️ 分辨率": (["480P", "720P", "1080P"], {"default": "720P"}),
-                "🌐 API线路": (["zhenzhen", "ip", "hk", "us"], {"default": "zhenzhen"}),
+                "🌐 API线路": (["zhenzhen", "柏拉图", "ip", "hk", "us"], {"default": "柏拉图"}),
                 "🔑 API密钥": ("STRING", {
                     "default": "",
                     "placeholder": "留空则使用 grok_config.json 中的密钥"
@@ -510,7 +511,7 @@ class GrokVideo30sNode:
         ratio = kwargs.get("📐 视频比例", "16:9")
         duration = kwargs.get("⏱️ 时长(秒)", 30)
         resolution = kwargs.get("🖥️ 分辨率", "720P")
-        api_route = kwargs.get("🌐 API线路", "zhenzhen")
+        api_route = kwargs.get("🌐 API线路", "柏拉图")
         api_key_input = kwargs.get("🔑 API密钥", "")
         seed = kwargs.get("🎲 随机种子", 0)
         post_control = kwargs.get("🎬 生成后控制", "randomize")
@@ -532,7 +533,7 @@ class GrokVideo30sNode:
         if api_route == "ip" and custom_url.strip():
             base_url = custom_url.strip()
         else:
-            base_url = BASE_URL_MAP.get(api_route, "https://ai.t8star.cn")
+            base_url = BASE_URL_MAP.get(api_route, "https://api.bltcy.ai")
 
         # 设置API密钥
         if api_key_input.strip():

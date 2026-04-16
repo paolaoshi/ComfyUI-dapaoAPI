@@ -21,6 +21,42 @@ from .gemini3_client import (
     GeminiClient, get_api_key, encode_image_tensor, run_async
 )
 
+
+_PROMPT_DIR = os.path.join(os.path.dirname(__file__), "prompt")
+
+
+def _scan_prompt_styles():
+    """扫描 prompt/ 文件夹下所有 .txt 文件，文件名(去掉.txt)作为风格名，内容作为提示词"""
+    styles = {}
+    if not os.path.isdir(_PROMPT_DIR):
+        return styles
+    for fname in sorted(os.listdir(_PROMPT_DIR)):
+        if not fname.lower().endswith(".txt"):
+            continue
+        style_name = fname[:-4]
+        fpath = os.path.join(_PROMPT_DIR, fname)
+        try:
+            for enc in ("utf-8", "gbk", "utf-16", "latin-1"):
+                try:
+                    with open(fpath, "r", encoding=enc) as f:
+                        content = f.read().strip()
+                    break
+                except (UnicodeDecodeError, UnicodeError):
+                    content = ""
+            if content:
+                styles[style_name] = content
+        except Exception as e:
+            print(f"[GeminiImageReverse] 读取提示词文件失败: {fname} -> {e}")
+    return styles
+
+
+def _get_style_keys():
+    """获取当前可用的风格列表，供 INPUT_TYPES 使用"""
+    styles = _scan_prompt_styles()
+    if not styles:
+        return ["(prompt文件夹为空)"]
+    return list(styles.keys())
+
 # 默认反推 Prompt (参考截图)
 DEFAULT_REVERSE_PROMPT = """# FLUX Prompt 反推提示词说明 
  
@@ -83,10 +119,11 @@ class GeminiImageReverseNode:
         return {
             "required": {
                 # === 反推指令 ===
+                "🎨 提示词风格": (_get_style_keys(), {"default": _get_style_keys()[0]}),
                 "📝 反推指令": ("STRING", {
                     "multiline": True,
-                    "default": DEFAULT_REVERSE_PROMPT,
-                    "placeholder": "输入反推指令..."
+                    "default": "",
+                    "placeholder": "留空则使用内置提示词风格，也可手动输入覆盖"
                 }),
                 
                 # === API 配置 ===
@@ -97,7 +134,7 @@ class GeminiImageReverseNode:
                 }),
                 
                 "🌐 镜像站": (mirror_sites, {
-                    "default": "T8"
+                    "default": "柏拉图"
                 }),
                 
                 "🔑 API密钥": ("STRING", {
@@ -150,11 +187,22 @@ class GeminiImageReverseNode:
     def process(self, **kwargs):
         """同步处理入口"""
         # 提取参数
+        instruction = (kwargs.get("📝 反推指令") or "").strip()
+        prompt_style = kwargs.get("🎨 提示词风格")
+
+        if instruction:
+            final_instruction = instruction
+        else:
+            styles = _scan_prompt_styles()
+            final_instruction = styles.get(prompt_style, "")
+            if not final_instruction:
+                final_instruction = DEFAULT_REVERSE_PROMPT
+
         kwargs_map = {
             "mirror_site": kwargs.get("🌐 镜像站"),
             "api_key": kwargs.get("🔑 API密钥"),
             "model": kwargs.get("🤖 模型名称", "gemini-3.1-flash-lite-preview"),
-            "instruction": kwargs.get("📝 反推指令"),
+            "instruction": final_instruction,
             "images": [kwargs.get(f"🖼️ 图像{i}") for i in range(1, 7) if kwargs.get(f"🖼️ 图像{i}") is not None],
             "temperature": kwargs.get("🌡️ 温度"),
             "top_p": kwargs.get("🎲 top_p"),

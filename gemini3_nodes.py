@@ -1,6 +1,6 @@
 """
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-💎 Google Gemini 3 多功能节点
+💎 Google Gemini 多功能节点
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 📝 功能说明：
@@ -66,7 +66,7 @@ if os.path.exists(CONFIG_FILE_PATH):
 
 class Gemini3_Multimodal:
     """
-    Google Gemini 3 多功能节点
+    Google Gemini 多功能节点
     
     整合对话、图像反推、视频反推功能
     支持多API提供商
@@ -89,7 +89,7 @@ class Gemini3_Multimodal:
             t8_models = ["gemini-3-pro-preview-T8", "gemini-3-flash-T8"]
         
         # 镜像站列表
-        mirror_sites = ["comfly", "hk", "us"]
+        mirror_sites = ["comfly", "hk", "us", "柏拉图"]
         
         return {
             "required": {
@@ -105,12 +105,14 @@ class Gemini3_Multimodal:
                     "placeholder": "输入你的问题或指令..."
                 }),
                 
-                "🤖 模型选择": (t8_models, {
-                    "default": t8_models[0] if t8_models else "gemini-3-pro-preview-T8"
+                "🤖 模型选择": ("STRING", {
+                    "default": "gemini-3.1-flash-lite-preview",
+                    "multiline": False,
+                    "placeholder": "手动输入模型名称"
                 }),
                 
                 "🌐 镜像站": (mirror_sites, {
-                    "default": "comfly"
+                    "default": "柏拉图"
                 }),
                 
                 "🔑 API密钥": ("STRING", {
@@ -156,11 +158,8 @@ class Gemini3_Multimodal:
     RETURN_NAMES = ("response",)
     FUNCTION = "process"
     CATEGORY = "🤖dapaoAPI"
-    DESCRIPTION = "Google Gemini 3 多功能 | 作者: @炮老师的小课堂"
+    DESCRIPTION = "Google Gemini 多功能 | 作者: @炮老师的小课堂"
     OUTPUT_NODE = False
-    
-    def __init__(self):
-        self.config = self.load_config()
     
     async def generate_async(
         self,
@@ -309,8 +308,8 @@ class Gemini3_Multimodal:
         # 提取参数
         system_role = kwargs.get("🎯 系统角色", "")
         user_input = kwargs.get("💬 用户输入", "")
-        model = kwargs.get("🤖 模型选择", "gemini-3-pro-preview-T8")
-        mirror_site = kwargs.get("🌐 镜像站", "comfly")
+        model = kwargs.get("🤖 模型选择", "gemini-3.1-flash-lite-preview")
+        mirror_site = kwargs.get("🌐 镜像站", "柏拉图")
         apikey = kwargs.get("🔑 API密钥", "")
         language = kwargs.get("📊 输出语言", "中文")
         
@@ -325,8 +324,7 @@ class Gemini3_Multimodal:
         top_p = kwargs.get("🎲 top_p", 0.90)
         max_tokens = kwargs.get("📝 最大令牌", 2048)
         
-        # 移除模型名称中的-T8后缀
-        actual_model = model.replace("-T8", "")
+        actual_model = model.strip() or "gemini-3.1-flash-lite-preview"
         
         # 获取API密钥
         api_key = get_api_key(mirror_site, apikey)
@@ -368,7 +366,7 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Gemini3_Multimodal": "💎 Gemini 3 多功能 @炮老师的小课堂",
+    "Gemini3_Multimodal": "💎 Gemini 多功能 @炮老师的小课堂",
 }
 
 __all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']
