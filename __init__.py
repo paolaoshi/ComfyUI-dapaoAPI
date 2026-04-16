@@ -133,7 +133,7 @@ BANANA2_ZHENZHEN_MAPPINGS = {
 }
 
 BANANA2_ZHENZHEN_DISPLAY_MAPPINGS = {
-    "DapaoBanana2ZhenzhenNode": "🙈Banana2贞贞/柏拉图@炮老师的小课堂",
+    "DapaoBanana2ZhenzhenNode": "🙈BananaPro贞贞/柏拉图@炮老师的小课堂",
     "DapaoBanana2FlashZhenzhenNode": "🙈Banana2Flash贞贞/柏拉图@炮老师的小课堂",
 }
 

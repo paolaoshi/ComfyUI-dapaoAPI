@@ -137,6 +137,7 @@ class DapaoBanana2FlashZhenzhenNode:
         stream_enabled = bool(kwargs.get("🌊 流式输出", False))
         custom_api_url = kwargs.get("🔗 自定义API地址", "")
         task_id = kwargs.get("🆔 任务ID", "")
+        response_format = kwargs.get("📦 返回格式", "url")
 
         images = [kwargs.get(f"🖼️ 参考图{i}") for i in range(1, 15)]
         # 有参考图就是图像编辑，否则是文生图
@@ -151,6 +152,7 @@ class DapaoBanana2FlashZhenzhenNode:
         try:
             pbar = comfy.utils.ProgressBar(100)
             pbar.update_absolute(10)
+            params = {"async": "true"}
 
             if task_id.strip():
                 return self._query_task_status(base_url, api_key, task_id, pbar)
@@ -189,9 +191,12 @@ class DapaoBanana2FlashZhenzhenNode:
                         "prompt": prompt,
                         "model": model,
                         "aspect_ratio": aspect_ratio,
-                        "image_size": image_size,
-                        "response_format": kwargs.get("📦 返回格式", "url")
+                        "n": 1,
                     }
+                    if model == "gemini-3.1-flash-image-preview":
+                        data["image_size"] = image_size
+                    if response_format:
+                        data["response_format"] = response_format
                     if seed > 0:
                         data["seed"] = str(seed)
 
@@ -203,6 +208,7 @@ class DapaoBanana2FlashZhenzhenNode:
                     response = requests.post(
                         f"{base_url}/v1/images/edits",
                         headers=headers,
+                        params=params,
                         data=data,
                         files=files,
                         timeout=self.timeout,
@@ -215,15 +221,19 @@ class DapaoBanana2FlashZhenzhenNode:
                         "prompt": prompt,
                         "model": model,
                         "aspect_ratio": aspect_ratio,
-                        "image_size": image_size,
-                        "response_format": kwargs.get("📦 返回格式", "url")
+                        "n": 1,
                     }
+                    if model == "gemini-3.1-flash-image-preview":
+                        payload["image_size"] = image_size
+                    if response_format:
+                        payload["response_format"] = response_format
                     if seed > 0:
                         payload["seed"] = seed
 
                     response = requests.post(
                         f"{base_url}/v1/images/generations",
                         headers=headers,
+                        params=params,
                         json=payload,
                         timeout=self.timeout,
                         verify=False

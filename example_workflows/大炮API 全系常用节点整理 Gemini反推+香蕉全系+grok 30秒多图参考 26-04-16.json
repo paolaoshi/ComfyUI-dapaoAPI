@@ -1,0 +1,2344 @@
+{
+  "id": "9d1ef496-3231-43cd-bfda-fda52a6a74a8",
+  "revision": 0,
+  "last_node_id": 46,
+  "last_link_id": 39,
+  "nodes": [
+    {
+      "id": 5,
+      "type": "DapaoGrokVideo30sNode",
+      "pos": [
+        55.50764301001911,
+        998.4666936925275
+      ],
+      "size": [
+        400,
+        448
+      ],
+      "flags": {},
+      "order": 21,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🖼️ 参考图1",
+          "type": "IMAGE",
+          "link": 35
+        },
+        {
+          "name": "🖼️ 参考图2",
+          "type": "IMAGE",
+          "link": 36
+        },
+        {
+          "name": "🖼️ 参考图3",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图4",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图5",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图6",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图7",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🔑 API密钥",
+          "type": "STRING",
+          "widget": {
+            "name": "🔑 API密钥"
+          },
+          "link": 34
+        }
+      ],
+      "outputs": [
+        {
+          "name": "🎬 视频",
+          "type": "VIDEO",
+          "links": [
+            32
+          ]
+        },
+        {
+          "name": "📋 任务ID",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "📄 响应信息",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "🔗 视频URL",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "DapaoGrokVideo30sNode",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": [
+        "图片1的女人和图片2的女人在月球跳舞",
+        "grok-video-3",
+        "9:16",
+        30,
+        "720P",
+        "柏拉图",
+        "",
+        0,
+        "randomize",
+        "",
+        600
+      ]
+    },
+    {
+      "id": 6,
+      "type": "Gemini3_Multimodal",
+      "pos": [
+        -1406.9448965061074,
+        -731.9068692726527
+      ],
+      "size": [
+        400,
+        410
+      ],
+      "flags": {},
+      "order": 15,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🖼️ 图像1",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 1
+        },
+        {
+          "name": "🖼️ 图像2",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像3",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像4",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🎬 视频",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🎵 音频",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": null
+        },
+        {
+          "name": "🎯 系统角色",
+          "type": "STRING",
+          "widget": {
+            "name": "🎯 系统角色"
+          },
+          "link": 2
+        },
+        {
+          "name": "💬 用户输入",
+          "type": "STRING",
+          "widget": {
+            "name": "💬 用户输入"
+          },
+          "link": 3
+        },
+        {
+          "name": "🔑 API密钥",
+          "type": "STRING",
+          "widget": {
+            "name": "🔑 API密钥"
+          },
+          "link": 5
+        }
+      ],
+      "outputs": [
+        {
+          "name": "response",
+          "type": "STRING",
+          "links": [
+            4
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Gemini3_Multimodal",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": [
+        "你是一个专业的AI助手，擅长分析图像、视频和音频内容，并提供详细的描述。",
+        "请详细分析这个内容，包括所有细节",
+        "gemini-3.1-flash-lite-preview",
+        "柏拉图",
+        "",
+        "中文",
+        0.7,
+        0.9,
+        2048
+      ]
+    },
+    {
+      "id": 8,
+      "type": "DapaoBanana2FlashZhenzhenNode",
+      "pos": [
+        -151.05606119967837,
+        -730.5009361772295
+      ],
+      "size": [
+        400,
+        636
+      ],
+      "flags": {},
+      "order": 17,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🖼️ 参考图1",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图2",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图3",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图4",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图5",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图6",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图7",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图8",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图9",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图10",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图11",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图12",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图13",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图14",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🔑 API密钥",
+          "type": "STRING",
+          "widget": {
+            "name": "🔑 API密钥"
+          },
+          "link": 9
+        },
+        {
+          "name": "📝 提示词",
+          "type": "STRING",
+          "widget": {
+            "name": "📝 提示词"
+          },
+          "link": 10
+        }
+      ],
+      "outputs": [
+        {
+          "name": "🖼️ 图像",
+          "type": "IMAGE",
+          "links": [
+            13
+          ]
+        },
+        {
+          "name": "🔗 图片链接",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "🆔 任务ID",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "ℹ️ 响应信息",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "DapaoBanana2FlashZhenzhenNode",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": [
+        "柏拉图",
+        "",
+        "",
+        "gemini-3.1-flash-image-preview",
+        "auto",
+        "2K",
+        1935596355,
+        "randomize",
+        1,
+        false,
+        "",
+        "",
+        "url"
+      ],
+      "color": "#1b4882",
+      "bgcolor": "#07346e"
+    },
+    {
+      "id": 11,
+      "type": "DapaoGeminiImageReverse",
+      "pos": [
+        -2055.296113525015,
+        76.7084739041224
+      ],
+      "size": [
+        402.4569194714734,
+        493.018295687776
+      ],
+      "flags": {},
+      "order": 16,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🖼️ 图像1",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 6
+        },
+        {
+          "name": "🖼️ 图像2",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像3",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像4",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像5",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像6",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🔑 API密钥",
+          "type": "STRING",
+          "widget": {
+            "name": "🔑 API密钥"
+          },
+          "link": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "response",
+          "type": "STRING",
+          "links": [
+            8
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "DapaoGeminiImageReverse",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": [
+        "提示词风格-12维度极致强化",
+        "",
+        "gemini-3.1-flash-lite-preview",
+        "柏拉图",
+        "",
+        "中文",
+        0.7,
+        0.9,
+        8192
+      ]
+    },
+    {
+      "id": 13,
+      "type": "LoadImage",
+      "pos": [
+        -2371.672757793029,
+        -732.9753952647606
+      ],
+      "size": [
+        392.63099311991573,
+        668.8123400936224
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            1
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": [
+        "pasted/image (3).png",
+        "image"
+      ]
+    },
+    {
+      "id": 14,
+      "type": "CR Text",
+      "pos": [
+        -1939.1950698146557,
+        -506.86520526659274
+      ],
+      "size": [
+        523.151245818,
+        373.61575753219563
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "文本",
+          "name": "text",
+          "type": "STRING",
+          "widget": {
+            "name": "text"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "label": "文本",
+          "name": "text",
+          "type": "*",
+          "links": [
+            2
+          ]
+        },
+        {
+          "label": "显示帮助",
+          "name": "show_help",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "title": "文本",
+      "properties": {
+        "Node name for S&R": "CR Text",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": [
+        "任务说明\n你的任务不是直接生成最终海报提示词，而是先对用户输入的自然语言需求进行 理解、整理、纠偏、补全与结构化重写，把用户原始需求转换成一份适合后续海报提示词生成系统使用的标准需求稿。\n\n你的核心目标是：\n\n准确理解用户原始表达\n自动识别用户真正想要的海报目标\n识别参考图角色与信息层级\n澄清模糊表达并做合理结构化补全\n输出一份 清晰、可执行、适合下游模型处理的需求稿\n你输出的重点必须放在：\n\n“帮后续系统更好理解用户输入”\n\n而不是直接写最终英文 Prompt。\n\n一、你的职责边界\n你负责的是：\n\n理解用户需求\n整理用户需求\n补全用户需求结构\n提炼传播主题\n标准化图像角色定义\n标准化视觉任务目标\n输出结构化需求稿\n你不负责：\n\n直接生成最终海报 Prompt\n直接替代后续海报提示词生成器\n过早决定所有视觉细节\n你是一个 需求理解与重构器，不是最终出图器。\n\n二、适用场景\n当用户输入以下类型的内容时，你应启动此模式：\n\n一句话口语化描述\n多个要求混在一起的自然语言\n图像角色说得不清楚\n风格、姿势、构图、产品、文案要求混在同一句中\n用户表达大意明确，但细节不规范\n用户有“词不达意”“跳跃表达”“信息不完整”的情况\n三、核心任务\n你必须从用户原始输入中拆出以下信息：\n\n1. 参考图角色\n识别用户提到的每张图分别是什么。\n例如：\n\n哪张图是产品图\n哪张图是模特图\n哪张图是姿势图\n哪张图是构图图\n哪张图是风格图\n哪张图是排版图\n哪张图是场景图\n如果用户一句话里没有完全说清楚，你要根据上下文做合理推断。\n如仍不明确，应明确标注“推测”。\n\n2. 任务目标\n提炼用户这次真正要做什么海报。\n例如：\n\n产品宣传海报\n电商转化海报\n品牌形象海报\n模特手持产品海报\n参数说明海报\n使用场景海报\n主 KV 海报\n3. 视觉风格\n提取或推断用户想要的风格方向。\n例如：\n\n温馨家居风格\n高级商业风\n杂志风\n科技感\n情绪氛围风\n自然生活方式风\n极简品牌风\n如果用户没明确说出风格，但语言中有明显倾向，也要进行合理提炼。\n\n4. 构图与姿势要求\n识别用户是否强调：\n\n姿势参考\n构图参考\n景别参考\n手持关系\n产品与人物互动方式\n画面站位关系\n如果用户只说“参考图3姿势和构图”，你必须把它转写为：\n\n姿势是高优先级要求\n构图是高优先级要求\n模型需要关注人物身体方向、手势、产品位置、留白区和镜头景别\n5. 文案传播目标\n识别用户真正想表达的主题，而不只是表面文案要求。\n例如：\n\n用户说：\n\n“海报文案要体现女性也能自己修家具”\n你应提炼为：\n\n传播主张：女性也具备独立完成家居修护 / 家具维修的能力\n情绪方向：独立、自信、轻松、可信赖\n文案语气：鼓励型 / 赋能型 / 生活化 / 非说教式\n6. 约束条件\n识别用户是否提到：\n\n电商平台使用\n品牌宣传用途\n是否要求高还原\n是否要求严格参考某张图\n是否要求中文文案\n是否要求双语\n是否要求避免过强促销感\n是否要求保留产品真实外观\n7. 用户没有说全但下游需要知道的内容\n如果用户输入中明显缺失一些关键内容，你可以做 合理默认补全，但必须明确标注为：\n\n默认补全项\n推测项\n未明确但建议补充项\n不要把你的推断伪装成用户明确要求。\n\n四、输出目标\n你必须把用户原始自然语言需求，重写成一份：\n\n更清晰\n更可执行\n更适合后续 Prompt 生成\n更适合图像模型理解\n更不容易误解重点\n的标准需求稿。\n\n五、输出格式（必须严格遵守）\n你必须严格按以下结构输出：\n\n【原始需求理解】\n先用简洁语言概括你对用户需求的理解。\n\n【参考图角色识别】\n按以下格式整理：\n\n图1：[角色]\n图2：[角色]\n图3：[角色]\n图4：[角色]\n如果某张图承担双重用途，要明确写出：\n\n图X：[主角色] + [辅助角色]\n如果有不确定项，要明确标注：\n\n图X：[推测角色]\n【任务目标重构】\n把用户原始目标改写成清晰版本。\n要求做到：\n\n目标明确\n用途明确\n产品、人物、姿势、构图、风格关系明确\n【核心传播主题】\n提炼这张海报真正要传达的核心主题。\n如果用户提到了价值表达、品牌态度、情绪方向、用户利益点，要在这里提炼出来。\n\n【视觉与风格方向】\n整理：\n\n海报类型\n风格方向\n氛围方向\n商业目标\n是否偏电商 / 品牌 / 情绪表达 / 导购\n【高优先级要求】\n列出本次任务最重要的控制项。\n例如：\n\n产品一致性\n模特身份一致性\n姿势迁移\n构图迁移\n文案主题表达\n【需要下游重点处理的内容】\n明确告诉后续海报提示词生成器，本次任务中最容易跑偏、最需要重点控制的部分是什么。\n例如：\n\n手持关系\n姿势迁移\n女性独立修家具的主题表达\n电商平台适配\n温馨家居风格与商业感平衡\n【结构化需求稿】\n最后输出一版可以直接给下游海报提示词元指令使用的标准需求稿。\n\n要求：\n\n语言清晰\n结构紧凑\n不要废话\n保留用户核心意图\n补全必要信息层级\n让后续模型一看就知道该怎么做\n六、重写原则（必须遵守）\n1. 忠于用户原意\n不得擅自改写用户真正想要的目标。\n\n2. 可以补结构，不能乱补意图\n你可以把用户说得很乱的内容整理清楚，但不能擅自替用户添加新的核心目标。\n\n3. 要区分“用户明确要求”和“系统推测补全”\n这两类必须分开写，不能混淆。\n\n4. 优先解决“词不达意”\n如果用户表达模糊，你要把它翻译成后续模型更容易理解的说法。\n\n5. 不直接生成最终 Prompt\n你的输出是“标准需求稿”，不是最终英文海报 Prompt。\n\n6. 重点突出真正关键项\n例如：\n\n产品图是哪张\n模特图是哪张\n姿势是不是高优先级\n文案主题到底要表达什么\n这张海报到底是偏电商还是偏品牌\n七、高质量输出范式\n用户原始输入示例\n图2的产品，图1是模特，生成模特手持产品的宣传海报，严格模仿图3的姿势和构图，电商平台用，温馨家居风格，海报文案要体现女性也能自己修家具\n\n理想输出示例\n【原始需求理解】\n用户希望生成一张适用于电商平台的单张宣传海报，画面中由参考模特手持参考产品，整体采用温馨家居风格，并尽量贴近指定参考图中的姿势与构图。海报文案需要传达“女性也能自己修家具”的主题。\n\n【参考图角色识别】\n图1：模特参考图\n图2：产品参考图\n图3：姿势参考图 + 构图参考图\n【任务目标重构】\n生成一张电商平台可用的单张宣传海报，画面主体为模特手持图2中的产品，模特形象参考图1，姿势与构图尽量贴近图3。整体风格为温馨家居风格，画面应兼顾生活方式氛围与商业传播清晰度。\n\n【核心传播主题】\n海报需要突出“女性也能自己修家具”的表达，即传达女性也可以轻松、独立、自信地完成家居修护或家具维修相关工作，体现产品的易用性、亲和力和生活实用价值。\n\n【视觉与风格方向】\n海报类型：模特互动型产品宣传海报\n风格方向：温馨家居风格\n氛围方向：生活化、可信赖、轻松、自信\n商业目标：适配电商平台传播，兼顾转化与主题表达\n【高优先级要求】\n产品一致性\n模特身份一致性\n姿势迁移\n构图迁移\n手持关系清晰\n女性独立修家具的主题表达\n【需要下游重点处理的内容】\n手持产品动作必须自然且明确\n姿势与构图应尽量贴近图3，而不是只借鉴大概氛围\n海报文案不能只写普通促销语，要体现女性也能自己修家具的主题\n风格应偏温馨家居，但不能失去电商海报应有的商业清晰度\n【结构化需求稿】\n请生成一张适用于电商平台的单张产品宣传海报。\n参考图角色如下：图1为模特身份参考图，图2为产品参考图，图3为姿势与构图参考图。\n画面中需要表现模特手持图2中的产品，产品外观必须严格还原图2，模特形象应参考图1，姿势、手持动作、景别与构图应尽量贴近图3。\n整体风格采用温馨家居风格，画面应呈现生活化、可信赖、轻松、自信的氛围。\n海报传播主题需突出“女性也能自己修家具”，强调女性独立动手能力、产品易上手和生活实用价值。\n请后续重点控制：产品一致性、手持关系、姿势迁移、构图迁移、主题表达与电商平台适配性。\n\n八、最终执行原则\n你必须始终记住：\n\n你不是最终出图的 Prompt 生成器。\n你是 用户自然语言需求的前置优化器。\n\n你的价值在于：\n\n把用户说乱的话整理清楚\n把用户没说清的重点提炼出来\n把图像角色关系梳理清楚\n把传播主题翻译成后续模型能理解的语言\n帮后续海报提示词系统更稳定、更准确地工作\n"
+      ]
+    },
+    {
+      "id": 15,
+      "type": "CR Text",
+      "pos": [
+        -1946.8894436108249,
+        -735.0313036745046
+      ],
+      "size": [
+        520.9959132116498,
+        179.56150114668083
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "文本",
+          "name": "text",
+          "type": "STRING",
+          "widget": {
+            "name": "text"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "label": "文本",
+          "name": "text",
+          "type": "*",
+          "links": [
+            3
+          ]
+        },
+        {
+          "label": "显示帮助",
+          "name": "show_help",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "title": "文本",
+      "properties": {
+        "Node name for S&R": "CR Text",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": [
+        "主体是一个机器人拿着产品再拧螺丝；\n赛博朋克风格，文案是，即使是未来，也需要打螺丝！\n"
+      ]
+    },
+    {
+      "id": 16,
+      "type": "easy showAnything",
+      "pos": [
+        -973.5497527883272,
+        -717.8043179699328
+      ],
+      "size": [
+        332.939429175334,
+        618.4005986600869
+      ],
+      "flags": {},
+      "order": 22,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "输入任何",
+          "name": "anything",
+          "shape": 7,
+          "type": "*",
+          "link": 4
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "*",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "easy showAnything",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": [
+        "根据您的需求，我已经对原始信息进行了梳理与结构化重构，以下是为您整理的标准需求稿：\n\n【原始需求理解】\n用户希望创作一张极具视觉冲击力的海报。画面主体设定为一个机器人正在使用HiKOKI电动工具进行拧螺丝作业。整体风格要求为“赛博朋克风”，旨在通过对比（未来科技感与基础劳动）传达一种幽默且深刻的传播主张：“即使是未来，也需要打螺丝！”\n\n【参考图角色识别】\n*   **图1：产品参考图**（HiKOKI电动螺丝刀，需作为画面中机器人手中持有的核心工具，保持品牌标识和外观细节的准确性）。\n*   **图2（推测）：风格参考图**（由于用户未上传赛博朋克风格图，系统将默认采用高对比度、霓虹光影、金属质感与工业废墟/高科技实验室相结合的视觉语言）。\n\n【任务目标重构】\n创作一张品牌/创意宣传海报，通过“机器人使用现代工具”的场景，将HiKOKI产品的专业感与赛博朋克的世界观结合，体现产品在任何时代背景下都具备的高效、可靠特性。\n\n【核心传播主题】\n*   **传播主张：** “即使是未来，也需要打螺丝！”\n*   **情绪方向：** 科技感、幽默感、硬核工业风、反差感。\n*   **文案语气：** 调侃式、哲理化、硬核。\n\n【视觉与风格方向】\n*   **海报类型：** 创意视觉海报 / 品牌形象海报\n*   **风格方向：** 赛博朋克（Cyberpunk）\n*   **氛围方向：** 高对比度照明（霓虹紫、青色、橙色灯光）、金属质感、烟雾/颗粒感、精密机械细节。\n*   **商业目标：** 品牌形象推广，强调HiKOKI工具的耐用性与专业性。\n\n【高优先级要求】\n*   **产品还原度：** 机器人手中持有的工具必须严格还原图1的HiKOKI外观，包括绿色机身、品牌Logo及电池仓细节。\n*   **主题表达：** 画面必须清晰展示“拧螺丝”的动作，体现工具的实际用途。\n*   **风格统一：** 背景的赛博朋克氛围需与手中的真实工具产生视觉张力，而非割裂。\n\n【需要下游重点处理的内容】\n*   **手持关系：** 机器人的机械手与HiKOKI工具的握持感需自然，避免出现“浮在手中”或比例失调的情况。\n*   **光影融合：** 必须处理好背景的霓虹灯光对产品机身的反射效果，使产品看起来是置身于赛博朋克世界中的真实物体。\n*   **文案排版：** 文案“即使是未来，也需要打螺丝！”应采用符合赛博朋克审美的字体（如带有科技感的无衬线字体或数字故障风字体）。\n\n【结构化需求稿】\n1.  **场景设定：** 画面中心为一名设计精密的赛博朋克风格机器人，正在专注地操作HiKOKI电动工具进行拧螺丝工作。\n2.  **主体要求：** 机器人手持的工具需严格参考图1，确保品牌Logo及工具外观细节清晰可见，保持工业级质感。\n3.  **风格与氛围：** 整体采用赛博朋克风格，背景可包含霓虹灯牌、金属管道、暗色调的高科技实验室或赛博城市街头。光影以冷色调（青蓝）与暖色调（霓虹橙/红）对比为主，增强画面深度。\n4.  **文案信息：** 海报需显著位置加入文案：“即使是未来，也需要打螺丝！”（或英文：Even in the future, we still need to drive screws!）。\n5.  **核心控制项：**\n    *   HiKOKI产品外观的极高还原度。\n    *   机器人与工具的互动逻辑（手部动作的自然度）。\n    *   赛博朋克环境氛围的营造。\n    *   文案与视觉元素的有机融合。"
+      ]
+    },
+    {
+      "id": 17,
+      "type": "MarkdownNote",
+      "pos": [
+        -2939.0033102640004,
+        -622.8534314347265
+      ],
+      "size": [
+        500.0871738913104,
+        336.33992002535115
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "properties": {
+        "ue_properties": {
+          "version": "7.5.2",
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        }
+      },
+      "widgets_values": [
+        "## 👉[大炮API节点地址（一键直达）](https://github.com/paolaoshi/ComfyUI-dapaoAPI)👈\n-------------------\n## 推理一次0.02元（2分钱） banana一次出图大约0.2元（2毛） \n-------------------\n### 柏拉图会比贞贞更便宜一点，贞贞更新会更及时一点，都差不多，按需选择，节点都支持，在线路那边自由切换即可\n-------------------\n## 从下面地址注册一个API令牌，复制到上面紫色节点内\n-------------------\n## 😶‍🌫️柏拉图API注册地址：👉[柏拉图API注册地址（一键直达）](https://api.bltcy.ai/register?aff=b6UC123455)👈\n## 🎿贞贞API注册地址：👉[贞贞API官方注册地址（一键直达）](https://ai.t8star.cn/register?aff=92bf3542729)👈\n-------------------\n## 🐰如果不出图，注意在API密钥那边选Gemini优质分组🐰"
+      ],
+      "color": "#c09430",
+      "bgcolor": "rgba(24,24,27,.9)"
+    },
+    {
+      "id": 18,
+      "type": "PrimitiveString",
+      "pos": [
+        -2944.636925353253,
+        -729.1592269359169
+      ],
+      "size": [
+        500.87372264753355,
+        63.76386015364619
+      ],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            5,
+            7,
+            9,
+            18,
+            23,
+            27,
+            34
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PrimitiveString",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": [
+        "sk-0UolHXMGgKpEIok9pPJdkymYI9O8Gaf72bhz6lhxU5EPgmZn"
+      ],
+      "color": "#af3535",
+      "bgcolor": "rgba(24,24,27,.9)"
+    },
+    {
+      "id": 19,
+      "type": "LoadImage",
+      "pos": [
+        -2360.4925791178593,
+        71.76743320955188
+      ],
+      "size": [
+        273.23035993619715,
+        495.3616364179268
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            6
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": [
+        "Clipboard - 2026-03-31 11.43.22.png",
+        "image"
+      ]
+    },
+    {
+      "id": 20,
+      "type": "easy showAnything",
+      "pos": [
+        -1633.6975725763918,
+        86.79424139896541
+      ],
+      "size": [
+        359.3825163709605,
+        482.6129860393922
+      ],
+      "flags": {},
+      "order": 23,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "输入任何",
+          "name": "anything",
+          "shape": 7,
+          "type": "*",
+          "link": 8
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "*",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "easy showAnything",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": [
+        "这是一张高解析度、具有浓厚胶片质感的真人摄影作品。画面采用广角镜头进行近距离拍摄，呈现出轻微的畸变感与强烈的透视冲击。光影系统基于自然日光，主光源位于画面左上方，产生明亮的逆光效果，光质柔和且带有明显的色散光晕。背景为户外建筑，呈现出暖色调的木质墙面与虚化的冷色调天空，空间纵深感由前景的手部指向性动作引导，背景呈现出自然的浅景深模糊状态。\n\n人物拥有一头乌黑自然的短发，刘海轻盈地覆盖在额前，露出清澈明亮的深棕色双眸，瞳孔在强光下呈现出自然的缩放感。五官精致，皮肤呈现出健康的暖白底色，毛孔与细微纹理清晰可见，鼻梁挺拔，嘴唇微张呈惊讶或呼喊状，唇色自然偏红。身着一件质感厚重的深紫色针织毛衣，纤维纹理清晰，领口围着厚实的浅灰色粗针织围巾，围巾的褶皱与毛衣的厚度感形成鲜明对比，展现出冬季清冷的穿着氛围。\n\n主体姿态为半身前倾，重心向镜头方向偏移，左手自然垂放，右手向镜头方向大幅度伸展，食指笔直指向镜头，产生强烈的视觉侵略性与互动感。指甲修剪整齐，指关节处有自然的皮肤纹理。由于构图紧凑，肢体语言展现出一种充满活力、俏皮且具有即兴感的瞬间情绪张力，肢体动作与面部表情高度同步，体现了拍摄者与被摄者之间亲密的信任距离。\n\n整体画面构图以人物面部与指尖为双焦点，通过前景的伸展手部形成视觉引导线，将观者的注意力直接锁定在人物充满张力的表情之上。色彩基调由深紫、浅灰与暖木色构成，配合胶片特有的颗粒感与高光溢出效果，营造出一种私密、真实且具有极高叙事性的青春生活化氛围，捕捉了转瞬即逝的动态情感瞬间。"
+      ]
+    },
+    {
+      "id": 21,
+      "type": "CR Text",
+      "pos": [
+        -555.6108302749187,
+        -730.5009361772295
+      ],
+      "size": [
+        382.01412100907896,
+        661.0925341308827
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "文本",
+          "name": "text",
+          "type": "STRING",
+          "widget": {
+            "name": "text"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "label": "文本",
+          "name": "text",
+          "type": "*",
+          "links": [
+            10,
+            28
+          ]
+        },
+        {
+          "label": "显示帮助",
+          "name": "show_help",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "title": "文本",
+      "properties": {
+        "Node name for S&R": "CR Text",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": [
+        "这是一张高分辨率的实拍照片，采用大光圈定焦镜头拍摄，呈现出强烈的浅景深视觉效果。画面背景为室外建筑的木质纹理与模糊的蓝天，光线为清晨的自然柔光，色温偏冷调，阳光从上方倾斜投射，在人物面部与衣物边缘形成自然的高光溢出，空气中弥漫着清透的日系胶片质感，皮肤纹理真实细腻，毛孔清晰可见。\n\n人物为年轻女性，拥有精致的鹅蛋脸与深栗色微卷发，刘海轻盈地覆盖在额前，发丝在逆光下呈现出透明的金棕色光泽。双眼皮弧度自然，瞳孔呈深褐色，眼神清澈且充满活力，直视镜头。鼻梁小巧挺拔，鼻尖微微上翘，嘴唇呈现出自然的粉嫩色泽，唇峰圆润，嘴角上扬，表情呈现出惊讶与俏皮的张力。皮肤呈现出健康的冷白色调，质感水润，脸颊两侧带有淡淡的天然腮红。身穿厚实的深紫色高领粗棒针毛衣，毛衣质地蓬松且具有明显的编织纹理，领口叠戴着一条浅灰色厚质针织围巾，围巾的纤维感在光线下清晰可见，衣物边缘的毛绒质感真实，与身体紧密贴合。\n\n人物姿态呈现出极强的互动感，上半身前倾，重心向镜头方向偏移，右手食指笔直指向摄像机镜头，指甲修剪整齐，呈现自然的半透明色泽。手指骨节分明，皮肤纹理细腻，指向动作带有明显的引导性与挑衅意味，身体脊柱呈现自然的微弯弧度，左手握着一台复古胶片相机，相机金属机身与黑色皮革纹理在光线下反射出冷硬的光泽。\n\n画面构图采用近距离特写视角，将人物的惊讶神态与指向动作作为视觉焦点，前景的食指与背景中模糊的木质建筑形成鲜明的空间纵深感。整体氛围洋溢着青春、灵动与私密互动的愉悦感，仿佛定格在某个充满生命力的瞬间，视觉引导力极强。"
+      ]
+    },
+    {
+      "id": 22,
+      "type": "DapaoSafeSaveImage",
+      "pos": [
+        273.9230899346134,
+        -730.5009361772295
+      ],
+      "size": [
+        412.7489351209323,
+        617.545153993281
+      ],
+      "flags": {},
+      "order": 24,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🖼️ 图像",
+          "type": "IMAGE",
+          "link": 13
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "DapaoSafeSaveImage",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": [
+        "dapao",
+        "PNG",
+        100,
+        true,
+        ""
+      ]
+    },
+    {
+      "id": 23,
+      "type": "DapaoSafeSaveImage",
+      "pos": [
+        1112.6401858181534,
+        -719.8729167735032
+      ],
+      "size": [
+        584.9052824870727,
+        608.6207978079972
+      ],
+      "flags": {},
+      "order": 27,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🖼️ 图像",
+          "type": "IMAGE",
+          "link": 29
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "DapaoSafeSaveImage",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": [
+        "dapao",
+        "PNG",
+        100,
+        true,
+        ""
+      ]
+    },
+    {
+      "id": 26,
+      "type": "LoadImage",
+      "pos": [
+        -550.006689743689,
+        46.84409916283762
+      ],
+      "size": [
+        306.0122971531209,
+        566.221210642779
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            15,
+            19
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "90c483c58a6984d587c21279dc3ff4bf.jpg",
+        "image"
+      ]
+    },
+    {
+      "id": 28,
+      "type": "LoadImage",
+      "pos": [
+        -212.60058605697998,
+        50.70363096448476
+      ],
+      "size": [
+        337.4470462159534,
+        582.8888909142677
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            16,
+            20
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "Clipboard - 2026-03-31 11.51.20.png",
+        "image"
+      ]
+    },
+    {
+      "id": 29,
+      "type": "CR Text",
+      "pos": [
+        -542.4299846903906,
+        668.739174884339
+      ],
+      "size": [
+        660.869567182365,
+        179.93311021674117
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "文本",
+          "name": "text",
+          "type": "STRING",
+          "widget": {
+            "name": "text"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "label": "文本",
+          "name": "text",
+          "type": "*",
+          "links": [
+            17
+          ]
+        },
+        {
+          "label": "显示帮助",
+          "name": "show_help",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "title": "文本",
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "CR Text"
+      },
+      "widgets_values": [
+        "保持目标图中人物的面部特征、五官、发型、服装、姿态、构图及背景完全不变。提取参考图2的光影布局与画面质感，对目标图进行重绘渲染。确保参考图2的光源方向、明暗对比、材质表现与目标图人物及环境深度融合，边缘过渡自然，不改变原有主体结构与空间透视。提升整体纹理清晰度与物理真实度。电影级质感，真实光影。"
+      ]
+    },
+    {
+      "id": 30,
+      "type": "DapaoBanana2FlashZhenzhenNode",
+      "pos": [
+        159.0145223112262,
+        54.49902004517129
+      ],
+      "size": [
+        400,
+        636
+      ],
+      "flags": {},
+      "order": 18,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🖼️ 参考图1",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 15
+        },
+        {
+          "name": "🖼️ 参考图2",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 16
+        },
+        {
+          "name": "🖼️ 参考图3",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图4",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图5",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图6",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图7",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图8",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图9",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图10",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图11",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图12",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图13",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图14",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🔑 API密钥",
+          "type": "STRING",
+          "widget": {
+            "name": "🔑 API密钥"
+          },
+          "link": 18
+        },
+        {
+          "name": "📝 提示词",
+          "type": "STRING",
+          "widget": {
+            "name": "📝 提示词"
+          },
+          "link": 17
+        }
+      ],
+      "outputs": [
+        {
+          "name": "🖼️ 图像",
+          "type": "IMAGE",
+          "links": [
+            25
+          ]
+        },
+        {
+          "name": "🔗 图片链接",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "🆔 任务ID",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "ℹ️ 响应信息",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        },
+        "Node name for S&R": "DapaoBanana2FlashZhenzhenNode"
+      },
+      "widgets_values": [
+        "柏拉图",
+        "",
+        "",
+        "gemini-3.1-flash-image-preview",
+        "auto",
+        "2K",
+        1820335280,
+        "randomize",
+        1,
+        false,
+        "",
+        "",
+        "url"
+      ],
+      "color": "#1b4882",
+      "bgcolor": "#07346e"
+    },
+    {
+      "id": 31,
+      "type": "DapaoBanana2ZhenzhenNode",
+      "pos": [
+        1021.6439097938797,
+        59.66371046615544
+      ],
+      "size": [
+        400,
+        660
+      ],
+      "flags": {},
+      "order": 19,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🖼️ 参考图1",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 19
+        },
+        {
+          "name": "🖼️ 参考图2",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 20
+        },
+        {
+          "name": "🖼️ 参考图3",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图4",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图5",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图6",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图7",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图8",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图9",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图10",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图11",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图12",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图13",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图14",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🔑 API密钥",
+          "type": "STRING",
+          "widget": {
+            "name": "🔑 API密钥"
+          },
+          "link": 23
+        },
+        {
+          "name": "📝 提示词",
+          "type": "STRING",
+          "widget": {
+            "name": "📝 提示词"
+          },
+          "link": 30
+        }
+      ],
+      "outputs": [
+        {
+          "name": "🖼️ 图像",
+          "type": "IMAGE",
+          "links": [
+            26
+          ]
+        },
+        {
+          "name": "🔗 图片链接",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "🆔 任务ID",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "ℹ️ 响应信息",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        },
+        "Node name for S&R": "DapaoBanana2ZhenzhenNode"
+      },
+      "widgets_values": [
+        "柏拉图",
+        "",
+        "",
+        "图像编辑",
+        "nano-banana-2",
+        "auto",
+        "2K",
+        1199926428,
+        "randomize",
+        1,
+        false,
+        "",
+        "",
+        "url"
+      ],
+      "color": "#1b4882",
+      "bgcolor": "#07346e"
+    },
+    {
+      "id": 32,
+      "type": "DapaoSafeSaveImage",
+      "pos": [
+        582.032080309902,
+        60.91368716554732
+      ],
+      "size": [
+        412.7489351209323,
+        617.545153993281
+      ],
+      "flags": {},
+      "order": 25,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🖼️ 图像",
+          "type": "IMAGE",
+          "link": 25
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        },
+        "Node name for S&R": "DapaoSafeSaveImage"
+      },
+      "widgets_values": [
+        "dapao",
+        "PNG",
+        100,
+        true,
+        ""
+      ]
+    },
+    {
+      "id": 33,
+      "type": "DapaoSafeSaveImage",
+      "pos": [
+        1445.5497382449573,
+        61.97723232406009
+      ],
+      "size": [
+        410.0463237023117,
+        781.7287976744894
+      ],
+      "flags": {},
+      "order": 26,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🖼️ 图像",
+          "type": "IMAGE",
+          "link": 26
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        },
+        "Node name for S&R": "DapaoSafeSaveImage"
+      },
+      "widgets_values": [
+        "dapao",
+        "PNG",
+        100,
+        true,
+        ""
+      ]
+    },
+    {
+      "id": 35,
+      "type": "DapaoBanana2ZhenzhenNode",
+      "pos": [
+        695.8753364628433,
+        -732.309284249682
+      ],
+      "size": [
+        400,
+        660
+      ],
+      "flags": {},
+      "order": 20,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🖼️ 参考图1",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图2",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图3",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图4",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图5",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图6",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图7",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图8",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图9",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图10",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图11",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图12",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图13",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图14",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🔑 API密钥",
+          "type": "STRING",
+          "widget": {
+            "name": "🔑 API密钥"
+          },
+          "link": 27
+        },
+        {
+          "name": "📝 提示词",
+          "type": "STRING",
+          "widget": {
+            "name": "📝 提示词"
+          },
+          "link": 28
+        }
+      ],
+      "outputs": [
+        {
+          "name": "🖼️ 图像",
+          "type": "IMAGE",
+          "links": [
+            29
+          ]
+        },
+        {
+          "name": "🔗 图片链接",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "🆔 任务ID",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "ℹ️ 响应信息",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        },
+        "Node name for S&R": "DapaoBanana2ZhenzhenNode"
+      },
+      "widgets_values": [
+        "柏拉图",
+        "",
+        "",
+        "图像编辑",
+        "nano-banana-2",
+        "auto",
+        "2K",
+        1638529808,
+        "randomize",
+        1,
+        false,
+        "",
+        "",
+        "url"
+      ],
+      "color": "#1b4882",
+      "bgcolor": "#07346e"
+    },
+    {
+      "id": 36,
+      "type": "CR Text",
+      "pos": [
+        154.02571029043125,
+        741.0208465687303
+      ],
+      "size": [
+        602.0816265286853,
+        108
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "文本",
+          "name": "text",
+          "type": "STRING",
+          "widget": {
+            "name": "text"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "label": "文本",
+          "name": "text",
+          "type": "*",
+          "links": [
+            30
+          ]
+        },
+        {
+          "label": "显示帮助",
+          "name": "show_help",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "title": "文本",
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "CR Text"
+      },
+      "widgets_values": [
+        "图1和图2的人物在巴黎铁塔下抱在一起"
+      ]
+    },
+    {
+      "id": 39,
+      "type": "SaveVideo",
+      "pos": [
+        475.95108645929065,
+        1000.8396380436327
+      ],
+      "size": [
+        744.8272053603087,
+        454.0267584743174
+      ],
+      "flags": {},
+      "order": 28,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "video",
+          "type": "VIDEO",
+          "link": 32
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "SaveVideo"
+      },
+      "widgets_values": [
+        "video/ComfyUI",
+        "auto",
+        "auto"
+      ]
+    },
+    {
+      "id": 40,
+      "type": "LoadImage",
+      "pos": [
+        -527.2867998612637,
+        990.3636499588548
+      ],
+      "size": [
+        263.311036738914,
+        515.4121159727088
+      ],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            35
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "01 (2).jpg",
+        "image"
+      ]
+    },
+    {
+      "id": 41,
+      "type": "LoadImage",
+      "pos": [
+        -244.93147190086518,
+        991.5122598117692
+      ],
+      "size": [
+        269.2567818598791,
+        518.3849885331916
+      ],
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            36
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "pasted/image (28).png",
+        "image"
+      ]
+    },
+    {
+      "id": 45,
+      "type": "MarkdownNote",
+      "pos": [
+        -2965.133092961097,
+        -120.78197468547063
+      ],
+      "size": [
+        513.9507480139146,
+        626.4415611602635
+      ],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "title": "大炮工作流使用说明",
+      "properties": {
+        "ue_properties": {
+          "version": "7.5.2",
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        }
+      },
+      "widgets_values": [
+        "# 🌈              资源说明            🌈\n---\n# ⭐所有免费资源⭐\n# 👉[免费资源](https://dapao-ai.netlify.app/) 👈点击跳转（整合包/公开课/云端）\n\n---\n\n# 🦁大炮满血整合包下载地址🦁\n## 👉[满血整合包](https://wxuyk58beb5.feishu.cn/docx/TJF1dpepNoHtsMxP5MfcNJhnnSf) 👈点击跳转\n（含模型和环境包 300+工作流一键直出）\n\n---\n\n# 🌈跑不动的可以考虑用我的云端🌈\n\n## 👉[仙宫满血云端](https://www.xiangongyun.com/image/detail/5b5aa403-8e9c-4a81-94a3-ce9a13febb47)👈点击跳转\n\n## ⭐RH平台也有我大部分工作流：\n\n## 👉[RH最新工作流](https://www.runninghub.cn/user-center/1843821604546498561/userPost?inviteCode=kol01-rh138)👈点击跳转\n\n\n---\n\n# 🎥我的所有视频🎥\n## -- 💻[bilibili](https://space.bilibili.com/397686377?spm_id_from=333.33.0.0)👈点击跳转 -- 💻[抖音](https://www.douyin.com/user/MS4wLjABAAAAHSDoiXKglmJvAqDOrjZONAx42I_BGnbcHX51hStBIw_LJILooUMeI2Had3Xp5xW2?from_tab_name=main&vid=7517850368684903717)👈点击跳转\n\n---\n\n# 🥩我的B站comfyui免费课🥩\n## -- 🍱[保姆级comfyui入门公开课2026版](https://my.feishu.cn/wiki/OKxiwKkVNiSzLbkZBE5crhTKnQc)👈点击跳转\n# 🥘本工作流演示说明🥘\n\n## -- 🥨[大炮B站主页](https://space.bilibili.com/397686377)👈点击跳转\n"
+      ],
+      "color": "#2a363b",
+      "bgcolor": "#3f5159"
+    },
+    {
+      "id": 46,
+      "type": "Note Plus (mtb)",
+      "pos": [
+        -2976.91768333505,
+        670.3091260798742
+      ],
+      "size": [
+        543.1850589545793,
+        752
+      ],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "properties": {
+        "css": "/** here you can write css**/\nh1 {\n    color: whitesmoke;\n}",
+        "theme": "one_dark",
+        "ue_properties": {
+          "version": "7.5.2",
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        }
+      },
+      "widgets_values": [
+        "# <span style=\"font-family: 'Microsoft YaHei'; font-weight: bold; font-size: 40px; color: #FFAB3B;\">🏄‍炮老师全套资料链接🏄‍</span>\n\n## 👉https://dapao-ai.netlify.app/👈\n\n\n  <img src=\"https://s1.imagehub.cc/images/2025/01/26/0c1538ba59adc45adced814f12e44889.md.jpg\" alt=\"描述图片内容\" style=\"max-width: 100%; height: auto;\">"
+      ],
+      "color": "#721330",
+      "bgcolor": "#862744",
+      "shape": 2
+    }
+  ],
+  "links": [
+    [
+      1,
+      13,
+      0,
+      6,
+      0,
+      "IMAGE"
+    ],
+    [
+      2,
+      14,
+      0,
+      6,
+      6,
+      "STRING"
+    ],
+    [
+      3,
+      15,
+      0,
+      6,
+      7,
+      "STRING"
+    ],
+    [
+      4,
+      6,
+      0,
+      16,
+      0,
+      "STRING"
+    ],
+    [
+      5,
+      18,
+      0,
+      6,
+      8,
+      "STRING"
+    ],
+    [
+      6,
+      19,
+      0,
+      11,
+      0,
+      "IMAGE"
+    ],
+    [
+      7,
+      18,
+      0,
+      11,
+      6,
+      "STRING"
+    ],
+    [
+      8,
+      11,
+      0,
+      20,
+      0,
+      "STRING"
+    ],
+    [
+      9,
+      18,
+      0,
+      8,
+      14,
+      "STRING"
+    ],
+    [
+      10,
+      21,
+      0,
+      8,
+      15,
+      "STRING"
+    ],
+    [
+      13,
+      8,
+      0,
+      22,
+      0,
+      "IMAGE"
+    ],
+    [
+      15,
+      26,
+      0,
+      30,
+      0,
+      "IMAGE"
+    ],
+    [
+      16,
+      28,
+      0,
+      30,
+      1,
+      "IMAGE"
+    ],
+    [
+      17,
+      29,
+      0,
+      30,
+      15,
+      "STRING"
+    ],
+    [
+      18,
+      18,
+      0,
+      30,
+      14,
+      "STRING"
+    ],
+    [
+      19,
+      26,
+      0,
+      31,
+      0,
+      "IMAGE"
+    ],
+    [
+      20,
+      28,
+      0,
+      31,
+      1,
+      "IMAGE"
+    ],
+    [
+      23,
+      18,
+      0,
+      31,
+      14,
+      "STRING"
+    ],
+    [
+      25,
+      30,
+      0,
+      32,
+      0,
+      "IMAGE"
+    ],
+    [
+      26,
+      31,
+      0,
+      33,
+      0,
+      "IMAGE"
+    ],
+    [
+      27,
+      18,
+      0,
+      35,
+      14,
+      "STRING"
+    ],
+    [
+      28,
+      21,
+      0,
+      35,
+      15,
+      "STRING"
+    ],
+    [
+      29,
+      35,
+      0,
+      23,
+      0,
+      "IMAGE"
+    ],
+    [
+      30,
+      36,
+      0,
+      31,
+      15,
+      "STRING"
+    ],
+    [
+      32,
+      5,
+      0,
+      39,
+      0,
+      "VIDEO"
+    ],
+    [
+      34,
+      18,
+      0,
+      5,
+      7,
+      "STRING"
+    ],
+    [
+      35,
+      40,
+      0,
+      5,
+      0,
+      "IMAGE"
+    ],
+    [
+      36,
+      41,
+      0,
+      5,
+      1,
+      "IMAGE"
+    ]
+  ],
+  "groups": [
+    {
+      "id": 1,
+      "title": "gemini多功能展示",
+      "bounding": [
+        -2381.672757793029,
+        -808.6313036745046,
+        1788.1869234972037,
+        754.4682485033665
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 2,
+      "title": "Gemini 图像反推",
+      "bounding": [
+        -2370.4925791178593,
+        -2.993049692863326,
+        1119.2054612558898,
+        594.8815706685549
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 3,
+      "title": "香蕉Pro和香蕉2文生图",
+      "bounding": [
+        -565.6108302749187,
+        -804.1009361772295,
+        2336.1068750483673,
+        744.6925341308827
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 4,
+      "title": "香蕉Pro和香蕉2 图像编辑模式",
+      "bounding": [
+        -560.006689743689,
+        -26.755900837162365,
+        2428.305363109579,
+        885.4281859382426
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 5,
+      "title": "Grok3 video 视频生成 支持多图参考， 支持最长30秒",
+      "bounding": [
+        -555.310928589882,
+        897.5457382570554,
+        1851.7376787263431,
+        636.4807204202358
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 6,
+      "title": "Group",
+      "bounding": [
+        -2954.636925353253,
+        -802.7592269359169,
+        525.7207889805632,
+        526.2457155265415
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 7,
+      "title": "🐝快乐学习  拥抱AI🙈",
+      "bounding": [
+        -2981.420202336097,
+        -230.95775593547063,
+        550.8833217163101,
+        846.8870224442762
+      ],
+      "color": "#14b7cc",
+      "font_size": 40,
+      "flags": {}
+    },
+    {
+      "id": 8,
+      "title": "🐧微信：paolaoshiAICG🐧",
+      "bounding": [
+        -2964.878191277639,
+        520.80633108954,
+        518.6842651367188,
+        80
+      ],
+      "color": "#df6c20",
+      "font_size": 42,
+      "flags": {}
+    },
+    {
+      "id": 9,
+      "title": "大炮API 全系常用节点整理 Gemini反推+香蕉全系+grok 30秒多图参考 26-04-16",
+      "bounding": [
+        -2975.7902379961884,
+        -1059.2657325956777,
+        4424.147652285491,
+        155.3561883884969
+      ],
+      "color": "#f09138",
+      "font_size": 120,
+      "flags": {}
+    },
+    {
+      "id": 10,
+      "title": "推理基本每次几分钱 忽略不计",
+      "bounding": [
+        -2368.673036611158,
+        630.234994191383,
+        1028.5024221514857,
+        90.79152739455253
+      ],
+      "color": "#ff9f1a",
+      "font_size": 60,
+      "flags": {}
+    },
+    {
+      "id": 11,
+      "title": "香蕉pro每次是0.2元",
+      "bounding": [
+        -2367.77374266161,
+        739.0495620864535,
+        1028.5024221514857,
+        90.79152739455253
+      ],
+      "color": "#ff9f1a",
+      "font_size": 60,
+      "flags": {}
+    },
+    {
+      "id": 12,
+      "title": "香蕉2每次是0.1元",
+      "bounding": [
+        -2367.773742661611,
+        845.1662481328858,
+        1028.5024221514857,
+        90.79152739455253
+      ],
+      "color": "#ff9f1a",
+      "font_size": 60,
+      "flags": {}
+    },
+    {
+      "id": 13,
+      "title": "以上是柏拉图网站默认分组的价格",
+      "bounding": [
+        -2365.862743018825,
+        955.5590769094091,
+        1028.5024221514857,
+        90.79152739455253
+      ],
+      "color": "#ff9f1a",
+      "font_size": 60,
+      "flags": {}
+    },
+    {
+      "id": 14,
+      "title": "高峰期不出图需要在密钥那里切换优质分组 双倍价格",
+      "bounding": [
+        -2362.265567220641,
+        1059.877175056751,
+        1548.2943249890957,
+        80
+      ],
+      "color": "#ff9f1a",
+      "font_size": 60,
+      "flags": {}
+    },
+    {
+      "id": 15,
+      "title": "Grok3 video 30秒每次 4.5元 但是经常超时失败~",
+      "bounding": [
+        -2361.3871665674187,
+        1155.31192346791,
+        1548.2943249890957,
+        80
+      ],
+      "color": "#1d93cd",
+      "font_size": 60,
+      "flags": {}
+    }
+  ],
+  "config": {},
+  "extra": {
+    "ue_links": [],
+    "links_added_by_ue": [],
+    "ds": {
+      "scale": 0.41772481694158,
+      "offset": [
+        3590.3881171376092,
+        1460.3981334468176
+      ]
+    },
+    "frontendVersion": "1.43.1",
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4
+}
