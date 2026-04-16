@@ -4,16 +4,12 @@
 支持功能：
 - Seedream 4.0 图像生成（文生图、多图编辑）
 - Seedream 4.5 图像生成（文生图、多图融合、组图生成）
-- 智谱 AI 图像反推（GLM-4V）
-- 智谱 AI 提示词润色（GLM-4）
 - 豆包 LLM对话（Seed-1.6）
-- 智谱 LLM对话（GLM-4 系列）
 - xAI Grok LLM对话（Grok-beta）
 - Google Nano Banana 2 多模态（图像+文本）
 - Google Gemini 3 多模态对话（官方+T8）
 - 通用 API 调用节点（支持任意 HTTP API）
 - 通用图像编辑 API 节点
-- SORA2 视频生成（贞贞API）
 - 灵活的分辨率和宽高比控制
 - 统一的紫色+橙棕色节点主题
 - 大炮提示词模板管理
@@ -46,20 +42,6 @@ from .seedream50_node import (
     NODE_DISPLAY_NAME_MAPPINGS as SEEDREAM50_DISPLAY_MAPPINGS
 )
 
-# 尝试加载 GLM 节点
-try:
-    from .glm_nodes import (
-        NODE_CLASS_MAPPINGS as GLM_MAPPINGS,
-        NODE_DISPLAY_NAME_MAPPINGS as GLM_DISPLAY_MAPPINGS
-    )
-    GLM_AVAILABLE = True
-except ImportError as e:
-    GLM_MAPPINGS = {}
-    GLM_DISPLAY_MAPPINGS = {}
-    GLM_AVAILABLE = False
-    print(f"[dapaoAPI] 警告：GLM 节点加载失败: {e}")
-    print("[dapaoAPI] 提示：请运行 pip install zhipuai 以启用 GLM 功能")
-
 # 加载豆包LLM对话节点
 from .doubao_chat_node import (
     NODE_CLASS_MAPPINGS as DOUBAO_CHAT_MAPPINGS,
@@ -81,12 +63,6 @@ DOUBAO_VIDEO_DISPLAY_MAPPINGS = {
     "DoubaoSeedance2AdvancedNode": "🥘seedance2.0视频高级@炮老师的小课堂"
 }
 
-# 加载智谱LLM对话节点
-from .zhipu_chat_node import (
-    NODE_CLASS_MAPPINGS as ZHIPU_CHAT_MAPPINGS,
-    NODE_DISPLAY_NAME_MAPPINGS as ZHIPU_CHAT_DISPLAY_MAPPINGS
-)
-
 # 加载 Grok LLM对话节点
 from .grok_node import (
     NODE_CLASS_MAPPINGS as GROK_MAPPINGS,
@@ -97,12 +73,6 @@ from .grok_node import (
 from .grok_video_node import (
     NODE_CLASS_MAPPINGS as GROK_VIDEO_MAPPINGS,
     NODE_DISPLAY_NAME_MAPPINGS as GROK_VIDEO_DISPLAY_MAPPINGS
-)
-
-# 加载 GPT 多模态对话节点
-from .gpt_multimodal_node import (
-    NODE_CLASS_MAPPINGS as GPT_MAPPINGS,
-    NODE_DISPLAY_NAME_MAPPINGS as GPT_DISPLAY_MAPPINGS
 )
 
 # 加载魔塔 API 节点
@@ -128,23 +98,6 @@ from .image_edit_api_node import (
     NODE_CLASS_MAPPINGS as IMAGE_EDIT_MAPPINGS,
     NODE_DISPLAY_NAME_MAPPINGS as IMAGE_EDIT_DISPLAY_MAPPINGS
 )
-
-# 加载SORA2视频生成节点
-from .sora2_node import (
-    NODE_CLASS_MAPPINGS as SORA2_MAPPINGS,
-    NODE_DISPLAY_NAME_MAPPINGS as SORA2_DISPLAY_MAPPINGS
-)
-
-# 加载 SORA2 批量视频生成节点
-from .sora2_batch_node import Sora2BatchVideoGenerator
-
-SORA2_BATCH_MAPPINGS = {
-    "Sora2BatchVideoGenerator": Sora2BatchVideoGenerator
-}
-
-SORA2_BATCH_DISPLAY_MAPPINGS = {
-    "Sora2BatchVideoGenerator": "🎨 SORA2批量视频生成 @炮老师的小课堂"
-}
 
 # 加载 Banana 整合版节点
 from .banana_integrated_node import (
@@ -263,20 +216,15 @@ NODE_CLASS_MAPPINGS = {
     **SEEDREAM_MAPPINGS,
     **SEEDREAM45_MAPPINGS,
     **SEEDREAM50_MAPPINGS,
-    **GLM_MAPPINGS,
     **DOUBAO_CHAT_MAPPINGS,
     **DOUBAO_VIDEO_MAPPINGS,
-    **ZHIPU_CHAT_MAPPINGS,
     **GROK_MAPPINGS,
     **GROK_VIDEO_MAPPINGS,
-    **GPT_MAPPINGS,
     **MODELSCOPE_MAPPINGS,
 
     **GEMINI3_MAPPINGS,
     **UNIVERSAL_MAPPINGS,
     **IMAGE_EDIT_MAPPINGS,
-    **SORA2_MAPPINGS,
-    **SORA2_BATCH_MAPPINGS,
     **BANANA_INTEGRATED_MAPPINGS,
     **BANANA2_ZHENZHEN_MAPPINGS,
     **BANANA2_OFFICIAL_MAPPINGS,
@@ -295,20 +243,15 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     **SEEDREAM_DISPLAY_MAPPINGS,
     **SEEDREAM45_DISPLAY_MAPPINGS,
     **SEEDREAM50_DISPLAY_MAPPINGS,
-    **GLM_DISPLAY_MAPPINGS,
     **DOUBAO_CHAT_DISPLAY_MAPPINGS,
     **DOUBAO_VIDEO_DISPLAY_MAPPINGS,
-    **ZHIPU_CHAT_DISPLAY_MAPPINGS,
     **GROK_DISPLAY_MAPPINGS,
     **GROK_VIDEO_DISPLAY_MAPPINGS,
-    **GPT_DISPLAY_MAPPINGS,
     **MODELSCOPE_DISPLAY_MAPPINGS,
 
     **GEMINI3_DISPLAY_MAPPINGS,
     **UNIVERSAL_DISPLAY_MAPPINGS,
     **IMAGE_EDIT_DISPLAY_MAPPINGS,
-    **SORA2_DISPLAY_MAPPINGS,
-    **SORA2_BATCH_DISPLAY_MAPPINGS,
     **BANANA_INTEGRATED_DISPLAY_MAPPINGS,
     **BANANA2_ZHENZHEN_DISPLAY_MAPPINGS,
     **BANANA2_OFFICIAL_DISPLAY_MAPPINGS,
@@ -584,20 +527,13 @@ print("  🎨 大炮 API (dapaoAPI) 节点加载完成!")
 print("=" * 60)
 print(f"  📦 Seedream 4.0 节点：{len(SEEDREAM_MAPPINGS)} 个")
 print(f"  🌟 Seedream 4.5 节点：{len(SEEDREAM45_MAPPINGS)} 个")
-if GLM_AVAILABLE:
-    print(f"  🤖 GLM 智谱节点：{len(GLM_MAPPINGS)} 个")
-else:
-    print("  ⚠️  GLM 节点未启用（需要安装 zhipuai）")
 print(f"  💬 豆包LLM对话：{len(DOUBAO_CHAT_MAPPINGS)} 个")
 print(f"  🎬 豆包视频生成：{len(DOUBAO_VIDEO_MAPPINGS)} 个")
-print(f"  💬 智谱LLM对话：{len(ZHIPU_CHAT_MAPPINGS)} 个")
 print(f"  💬 Grok LLM对话：{len(GROK_MAPPINGS)} 个")
-
 print(f"  💎 Gemini 3多功能：{len(GEMINI3_MAPPINGS)} 个")
 print(f"  💎 Gemini 3对话（官方+T8）：{len(GEMINI3_CHAT_MAPPINGS)} 个")
 print(f"  🌐 通用API调用：{len(UNIVERSAL_MAPPINGS)} 个")
 print(f"  🎨 图像编辑API：{len(IMAGE_EDIT_MAPPINGS)} 个")
-print(f"  🎬 SORA2视频生成：{len(SORA2_MAPPINGS)} 个")
 print(f"  🍌 Banana整合版：{len(BANANA_INTEGRATED_MAPPINGS) + len(BANANA2_ZHENZHEN_MAPPINGS) + len(BANANA2_AABAO_MAPPINGS)} 个")
 print(f"  🎨 大炮提示词模板：{len(PROMPT_MAPPINGS)} 个")
 print(f"  🔍 对比打标节点：{len(COMPARE_TAGGING_MAPPINGS)} 个")

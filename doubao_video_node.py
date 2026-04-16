@@ -138,7 +138,7 @@ class DoubaoVideoGeneration:
     RETURN_TYPES = ("IMAGE", "STRING")
     RETURN_NAMES = ("🎞️ 视频帧", "📂 文件路径")
     FUNCTION = "generate_video"
-    CATEGORY = "🤖dapaoAPI/video"
+    CATEGORY = "🤖dapaoAPI/豆包/视频"
     DESCRIPTION = "调用豆包 Seedance 模型生成视频，支持首尾帧控制 | 作者: @炮老师的小课堂"
 
     def generate_video(self, **kwargs):
