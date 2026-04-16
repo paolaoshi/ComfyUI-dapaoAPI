@@ -51,7 +51,7 @@ class DapaoBanana2FlashZhenzhenNode:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "🌐 API线路": (["zhenzhen", "ip", "hk", "us"], {"default": "zhenzhen"}),
+                "🌐 API线路": (["zhenzhen", "柏拉图", "ip", "hk", "us"], {"default": "zhenzhen"}),
                 "🔑 API密钥": ("STRING", {"default": "", "multiline": False}),
                 "📝 提示词": ("STRING", {"multiline": True, "default": ""}),
                 "🤖 模型版本": (["gemini-3.1-flash-image-preview"], {"default": "gemini-3.1-flash-image-preview"}),
@@ -103,6 +103,7 @@ class DapaoBanana2FlashZhenzhenNode:
         """
         mapping = {
             "zhenzhen": "https://ai.t8star.cn",
+            "柏拉图": "https://api.bltcy.ai",
             "hk": "https://hk-api.gptbest.vip",
             "us": "https://api.gptbest.vip",
             "ip": custom_api_url.strip()

@@ -24,16 +24,16 @@ from .gemini3_client import (
 
 class DapaoGeminiInstructionZhenzhenNode:
     """
-    💓Gemini指令贞贞@炮老师的小课堂
-    
-    专为 T8 渠道定制的 Gemini 元指令调用节点。
-    支持手动输入模型名称，预设 gemini-3-flash-preview。
+    🦉Gemini指令贞贞/柏拉图@炮老师的小课堂
+
+    支持 T8、comfly、hk、us、柏拉图 渠道的 Gemini 元指令调用节点。
+    支持手动输入模型名称，预设 gemini-3.1-flash-lite-preview。
     """
     
     @classmethod
     def INPUT_TYPES(cls):
         # 镜像站列表
-        mirror_sites = ["T8", "comfly", "hk", "us"]
+        mirror_sites = ["T8", "comfly", "hk", "us", "柏拉图"]
         
         return {
             "required": {
@@ -50,11 +50,11 @@ class DapaoGeminiInstructionZhenzhenNode:
                 }),
                 
                 "🤖 模型名称": ("STRING", {
-                    "default": "gemini-3-flash-preview",
+                    "default": "gemini-3.1-flash-lite-preview",
                     "multiline": False,
-                    "placeholder": "手动输入模型名称 (如 gemini-3-flash-preview)"
+                    "placeholder": "手动输入模型名称 (如 gemini-3.1-flash-lite-preview)"
                 }),
-                
+
                 "🌐 镜像站": (mirror_sites, {
                     "default": "T8"
                 }),
@@ -100,7 +100,7 @@ class DapaoGeminiInstructionZhenzhenNode:
     RETURN_NAMES = ("response",)
     FUNCTION = "process"
     CATEGORY = "🤖dapaoAPI/Gemini"
-    DESCRIPTION = "Gemini 指令贞贞 (T8专用) | 作者: @炮老师的小课堂"
+    DESCRIPTION = "Gemini 指令贞贞/柏拉图 | 作者: @炮老师的小课堂"
     OUTPUT_NODE = False
     
     def process(self, **kwargs):
@@ -109,7 +109,7 @@ class DapaoGeminiInstructionZhenzhenNode:
         kwargs_map = {
             "mirror_site": kwargs.get("🌐 镜像站"),
             "api_key": kwargs.get("🔑 API密钥"),
-            "model": kwargs.get("🤖 模型名称", "gemini-3-flash-preview"),
+            "model": kwargs.get("🤖 模型名称", "gemini-3.1-flash-lite-preview"),
             "system_role": kwargs.get("🎯 系统角色"),
             "user_input": kwargs.get("💬 用户输入"),
             "images": [kwargs.get(f"🖼️ 图像{i}") for i in range(1, 5) if kwargs.get(f"🖼️ 图像{i}") is not None],

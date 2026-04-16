@@ -159,6 +159,7 @@ class GrokVideoNode:
                 "🖼️ 参考图6": ("IMAGE",),
                 "🖼️ 参考图7": ("IMAGE",),
                 "🔗 自定义API地址": ("STRING", {"default": ""}),
+                "⏳ 最长等待(秒)": ("INT", {"default": 600, "min": 60, "max": 7200}),
             }
         }
 
@@ -226,7 +227,8 @@ class GrokVideoNode:
         api_key_input = kwargs.get("🔑 API密钥", "")
         seed = kwargs.get("🎲 随机种子", 0)
         custom_url = kwargs.get("🔗 自定义API地址", "")
-        
+        max_wait_time = kwargs.get("⏳ 最长等待(秒)", 600)
+
         # 获取参考图
         all_images = [
             kwargs.get("🖼️ 参考图1"),
@@ -318,8 +320,7 @@ class GrokVideoNode:
             attempts = 0
             max_attempts = 200
             start_time = time.time()
-            max_wait_time = 600
-        
+
             while attempts < max_attempts:
                 current_time = time.time()
                 elapsed_time = current_time - start_time
@@ -445,6 +446,7 @@ class GrokVideo30sNode:
                 "🖼️ 参考图6": ("IMAGE",),
                 "🖼️ 参考图7": ("IMAGE",),
                 "🔗 自定义API地址": ("STRING", {"default": ""}),
+                "⏳ 最长等待(秒)": ("INT", {"default": 600, "min": 60, "max": 7200}),
             }
         }
 
@@ -513,6 +515,7 @@ class GrokVideo30sNode:
         seed = kwargs.get("🎲 随机种子", 0)
         post_control = kwargs.get("🎬 生成后控制", "randomize")
         custom_url = kwargs.get("🔗 自定义API地址", "")
+        max_wait_time = kwargs.get("⏳ 最长等待(秒)", 600)
 
         # 获取参考图（1和2必需，3-7可选）
         all_images = [
@@ -605,7 +608,6 @@ class GrokVideo30sNode:
             attempts = 0
             max_attempts = 200
             start_time = time.time()
-            max_wait_time = 600
 
             while attempts < max_attempts:
                 current_time = time.time()

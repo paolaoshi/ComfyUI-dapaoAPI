@@ -180,8 +180,8 @@ BANANA2_ZHENZHEN_MAPPINGS = {
 }
 
 BANANA2_ZHENZHEN_DISPLAY_MAPPINGS = {
-    "DapaoBanana2ZhenzhenNode": "🙈Banana2贞贞@炮老师的小课堂",
-    "DapaoBanana2FlashZhenzhenNode": "🙈Banana2Flash贞贞@炮老师的小课堂",
+    "DapaoBanana2ZhenzhenNode": "🙈Banana2贞贞/柏拉图@炮老师的小课堂",
+    "DapaoBanana2FlashZhenzhenNode": "🙈Banana2Flash贞贞/柏拉图@炮老师的小课堂",
 }
 
 BANANA2_OFFICIAL_MAPPINGS = {
@@ -228,7 +228,7 @@ try:
         "DapaoGeminiInstructionZhenzhenNode": DapaoGeminiInstructionZhenzhenNode
     }
     GEMINI_ZHENZHEN_DISPLAY_MAPPINGS = {
-        "DapaoGeminiInstructionZhenzhenNode": "💓Gemini指令贞贞@炮老师的小课堂"
+        "DapaoGeminiInstructionZhenzhenNode": "🦉Gemini指令贞贞/柏拉图@炮老师的小课堂"
     }
     GEMINI_OFFICIAL_MAPPINGS = {
         "DapaoGeminiInstructionOfficialNode": DapaoGeminiInstructionOfficialNode

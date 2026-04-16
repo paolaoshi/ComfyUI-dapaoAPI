@@ -30,7 +30,7 @@ class DapaoBanana2ZhenzhenNode:
         return {
             "required": {
                 # API 设置部分
-                "🌐 API线路": (["zhenzhen", "ip", "hk", "us"], {"default": "zhenzhen", "tooltip": "选择 API 线路：\nzhenzhen: 国内线路\nhk: 香港线路\nus: 美国线路\nip: 自定义地址"}),
+                "🌐 API线路": (["zhenzhen", "柏拉图", "ip", "hk", "us"], {"default": "zhenzhen", "tooltip": "选择 API 线路：\nzhenzhen: 国内线路\n柏拉图: 柏拉图镜像站\nhk: 香港线路\nus: 美国线路\nip: 自定义地址"}),
                 "🔑 API密钥": ("STRING", {"default": "", "multiline": False, "tooltip": "请输入您的 API Key"}),
                 
                 # 生成参数部分
@@ -86,6 +86,7 @@ class DapaoBanana2ZhenzhenNode:
         """根据选择获取 API Base URL"""
         base_url_mapping = {
             "zhenzhen": "https://ai.t8star.cn",
+            "柏拉图": "https://api.bltcy.ai",
             "hk": "https://hk-api.gptbest.vip",
             "us": "https://api.gptbest.vip",
             "ip": custom_api_url.strip()

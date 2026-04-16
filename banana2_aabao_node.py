@@ -60,7 +60,7 @@ class DapaoBanana2AabaoNode:
         return {
             "required": {
                 # API 设置部分
-                "🌐 API线路": (["aabao", "ip"], {"default": "aabao", "tooltip": "选择 API 线路：\naabao: Aabao 默认线路 (api.aabao.top)\nip: 自定义地址"}),
+                "🌐 API线路": (["aabao", "柏拉图", "ip"], {"default": "aabao", "tooltip": "选择 API 线路：\naabao: Aabao 默认线路 (api.aabao.top)\n柏拉图: 柏拉图镜像站\nip: 自定义地址"}),
                 "🔑 API密钥": ("STRING", {"default": "", "multiline": False, "tooltip": "请输入您的 API Key"}),
                 
                 # 生成参数部分
@@ -109,6 +109,7 @@ class DapaoBanana2AabaoNode:
         """根据选择获取 API Base URL"""
         base_url_mapping = {
             "aabao": "https://api.aabao.top",
+            "柏拉图": "https://api.bltcy.ai",
             "ip": custom_api_url.strip()
         }
         

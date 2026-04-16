@@ -37,7 +37,7 @@ from .gemini3_file_client import GeminiFileClient, save_audio_to_file
 CONFIG_FILE_PATH = os.path.join(os.path.dirname(__file__), 'gemini3_config.json')
 
 # 加载配置
-API_PROVIDERS = ["Google官方", "T8"]
+API_PROVIDERS = ["Google官方", "T8", "柏拉图"]
 DEFAULT_PROVIDER = "Google官方"
 ALL_MODELS = ["gemini-3-pro-preview", "gemini-3-flash", "gemini-2.5-flash", "gemini-2.5-pro"]
 PROVIDER_MODELS = {}
@@ -98,7 +98,7 @@ class Gemini3MultimodalChatNode:
             all_models = ["gemini-3-pro-preview", "gemini-3-flash"]
         
         # API 来源提供商（用于T8）
-        api_sources = ["comfly", "hk", "us"]
+        api_sources = ["comfly", "hk", "us", "柏拉图"]
         
         return {
             "required": {
@@ -132,6 +132,12 @@ class Gemini3MultimodalChatNode:
                     "default": "",
                     "multiline": False,
                     "placeholder": "输入你的 T8Star API Key (选择T8时使用)"
+                }),
+
+                "🔑 柏拉图 API Key": ("STRING", {
+                    "default": "",
+                    "multiline": False,
+                    "placeholder": "输入你的 柏拉图 API Key (选择柏拉图时使用)"
                 }),
                 
                 "📊 输出语言": (["中文", "英文"], {
@@ -168,7 +174,7 @@ class Gemini3MultimodalChatNode:
                 
                 "🌐 镜像站": (api_sources, {
                     "default": "comfly",
-                    "tooltip": "仅在选择T8时有效"
+                    "tooltip": "仅在选择T8时有效，选择柏拉图时可忽略"
                 }),
             }
         }
@@ -177,19 +183,22 @@ class Gemini3MultimodalChatNode:
     RETURN_NAMES = ("response",)
     FUNCTION = "process"
     CATEGORY = "🤖dapaoAPI/Gemini"
-    DESCRIPTION = "Gemini 3 多模态对话 | 作者: @炮老师的小课堂"
+    DESCRIPTION = "Gemini 3 多模态对话（多三方支持） | 作者: @炮老师的小课堂"
     OUTPUT_NODE = False
     
     def __init__(self):
         self.google_api_key = ''
         self.t8star_api_key = ''
-    
-    def save_api_key(self, google_key=None, t8star_key=None):
+        self.bltcy_api_key = ''
+
+    def save_api_key(self, google_key=None, t8star_key=None, bltcy_key=None):
         """仅更新内存中的API密钥，不保存到文件"""
         if google_key and google_key.strip():
             self.google_api_key = google_key.strip()
         if t8star_key and t8star_key.strip():
             self.t8star_api_key = t8star_key.strip()
+        if bltcy_key and bltcy_key.strip():
+            self.bltcy_api_key = bltcy_key.strip()
     
     def get_api_config(self, api_source: str, mirror_site: str = "comfly"):
         """获取API配置"""
@@ -198,6 +207,12 @@ class Gemini3MultimodalChatNode:
                 "base_url": "https://generativelanguage.googleapis.com",
                 "provider": "google",
                 "api_key": self.google_api_key
+            }
+        elif api_source == "柏拉图":
+            return {
+                "base_url": "https://api.bltcy.ai",
+                "provider": "柏拉图",
+                "api_key": self.bltcy_api_key
             }
         else:  # T8
             # 从配置文件获取镜像站URL
@@ -358,6 +373,7 @@ class Gemini3MultimodalChatNode:
         model = kwargs.get("🤖 模型选择", "gemini-3-pro-preview")
         google_api_key = kwargs.get("🔑 Google API Key", "")
         t8star_api_key = kwargs.get("🔑 T8Star API Key", "")
+        bltcy_api_key = kwargs.get("🔑 柏拉图 API Key", "")
         language = kwargs.get("📊 输出语言", "中文")
         mirror_site = kwargs.get("🌐 镜像站", "comfly")
         
@@ -373,7 +389,7 @@ class Gemini3MultimodalChatNode:
         max_tokens = kwargs.get("📝 最大令牌", 2048)
         
         # 更新API密钥
-        self.save_api_key(google_api_key, t8star_api_key)
+        self.save_api_key(google_api_key, t8star_api_key, bltcy_api_key)
         
         # 获取API配置
         api_config = self.get_api_config(api_source, mirror_site)
@@ -475,7 +491,7 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Gemini3MultimodalChatNode": "💎 Gemini 3 多模态对话（官方+T8）@炮老师的小课堂",
+    "Gemini3MultimodalChatNode": "💎 Gemini 3 多模态对话（多三方支持）@炮老师的小课堂",
 }
 
 __all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']

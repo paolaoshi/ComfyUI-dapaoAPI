@@ -44,7 +44,8 @@ def get_api_key(api_provider: str, api_key_override: str = "") -> Optional[str]:
     env_var_map = {
         "google": "GEMINI_API_KEY",
         "comfly": "COMFLY_API_KEY",
-        "T8": "T8_API_KEY"
+        "T8": "T8_API_KEY",
+        "柏拉图": "BLTCY_API_KEY"
     }
     env_var_name = env_var_map.get(api_provider)
     if env_var_name:

@@ -78,7 +78,7 @@ class GeminiImageReverseNode:
     @classmethod
     def INPUT_TYPES(cls):
         # 镜像站列表
-        mirror_sites = ["T8", "comfly", "hk", "us"]
+        mirror_sites = ["T8", "comfly", "hk", "us", "柏拉图"]
         
         return {
             "required": {
@@ -91,7 +91,7 @@ class GeminiImageReverseNode:
                 
                 # === API 配置 ===
                 "🤖 模型名称": ("STRING", {
-                    "default": "gemini-3-flash-preview",
+                    "default": "gemini-3.1-flash-lite-preview",
                     "multiline": False,
                     "placeholder": "手动输入模型名称"
                 }),
@@ -153,7 +153,7 @@ class GeminiImageReverseNode:
         kwargs_map = {
             "mirror_site": kwargs.get("🌐 镜像站"),
             "api_key": kwargs.get("🔑 API密钥"),
-            "model": kwargs.get("🤖 模型名称", "gemini-3-flash-preview"),
+            "model": kwargs.get("🤖 模型名称", "gemini-3.1-flash-lite-preview"),
             "instruction": kwargs.get("📝 反推指令"),
             "images": [kwargs.get(f"🖼️ 图像{i}") for i in range(1, 7) if kwargs.get(f"🖼️ 图像{i}") is not None],
             "temperature": kwargs.get("🌡️ 温度"),

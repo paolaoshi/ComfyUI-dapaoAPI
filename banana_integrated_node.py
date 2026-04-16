@@ -59,7 +59,7 @@ class BananaIntegratedNode:
             "required": {
                 # API提供商选择
                 "🌐 API来源": (
-                    ["Google官方", "T8Star"],
+                    ["Google官方", "T8Star", "柏拉图"],
                     {"default": "Google官方"}
                 ),
                 
@@ -88,6 +88,13 @@ class BananaIntegratedNode:
                     "default": "",
                     "multiline": False,
                     "placeholder": "输入你的 T8Star API Key (选择T8Star时使用)"
+                }),
+
+                # 柏拉图 API密钥
+                "🔑 柏拉图 API Key": ("STRING", {
+                    "default": "",
+                    "multiline": False,
+                    "placeholder": "输入你的 柏拉图 API Key (选择柏拉图时使用)"
                 }),
                 
                 # 随机种子
@@ -149,6 +156,7 @@ class BananaIntegratedNode:
         # 不再从配置文件加载API密钥，确保安全性
         self.google_api_key = ''
         self.t8star_api_key = ''
+        self.bltcy_api_key = ''
         self.last_seed = -1
     
     def get_api_config(self, api_provider, image_size="2K", is_image_edit=False):
@@ -159,12 +167,11 @@ class BananaIntegratedNode:
                 "model": "gemini-3-pro-image-preview",
                 "provider": "google"
             }
-        else:  # T8Star
-            # T8Star 统一使用 generations 接口 (支持多模态)
-            # 参考官方Comfly节点，使用 gptbest.vip 域名以获得更快的速度
+        else:
             endpoint = "https://api.gptbest.vip/v1/images/generations"
+            if api_provider == "柏拉图":
+                endpoint = "https://api.bltcy.ai/v1/images/generations"
 
-            # 根据尺寸选择模型
             model = "nano-banana-2"
             if image_size == "4K":
                 model = "nano-banana-2-4k"
@@ -172,15 +179,17 @@ class BananaIntegratedNode:
             return {
                 "endpoint": endpoint,
                 "model": model,
-                "provider": "t8star"
+                "provider": "bltcy" if api_provider == "柏拉图" else "t8star"
             }
     
-    def save_api_key(self, google_key=None, t8star_key=None):
+    def save_api_key(self, google_key=None, t8star_key=None, bltcy_key=None):
         """仅更新内存中的API密钥，不保存到文件"""
         if google_key and google_key.strip():
             self.google_api_key = google_key.strip()
         if t8star_key and t8star_key.strip():
             self.t8star_api_key = t8star_key.strip()
+        if bltcy_key and bltcy_key.strip():
+            self.bltcy_api_key = bltcy_key.strip()
     
     def add_random_variation(self, prompt, seed=0):
         """
@@ -525,6 +534,7 @@ class BananaIntegratedNode:
         image_size = kwargs.get("📏 图像尺寸", "2K")
         google_api_key = kwargs.get("🔑 Google API Key", "")
         t8star_api_key = kwargs.get("🔑 T8Star API Key", "")
+        bltcy_api_key = kwargs.get("🔑 柏拉图 API Key", "")
         
         seed = kwargs.get("🎲 随机种子", -1)
         seed_control = kwargs.get("🎯 种子控制", "随机")
@@ -566,7 +576,7 @@ class BananaIntegratedNode:
         print(f"[BananaIntegrated] 🎲 种子模式: {seed_control}, 使用种子: {effective_seed}")
         
         # 更新并保存API密钥
-        self.save_api_key(google_api_key, t8star_api_key)
+        self.save_api_key(google_api_key, t8star_api_key, bltcy_api_key)
         
         # 获取API配置
         is_image_edit = valid_image_count > 0
@@ -577,6 +587,8 @@ class BananaIntegratedNode:
             return (self.create_default_image(aspect_ratio, image_size), "❌ 错误: 请提供 Google API Key")
         elif api_provider == "T8Star" and not self.t8star_api_key:
             return (self.create_default_image(aspect_ratio, image_size), "❌ 错误: 请提供 T8Star API Key")
+        elif api_provider == "柏拉图" and not self.bltcy_api_key:
+            return (self.create_default_image(aspect_ratio, image_size), "❌ 错误: 请提供 柏拉图 API Key")
         
         try:
             # 构建请求
@@ -588,6 +600,8 @@ class BananaIntegratedNode:
             headers = {"Content-Type": "application/json"}
             if api_provider == "T8Star":
                 headers["Authorization"] = f"Bearer {self.t8star_api_key}"
+            elif api_provider == "柏拉图":
+                headers["Authorization"] = f"Bearer {self.bltcy_api_key}"
             
             url = api_config["endpoint"]
             if api_provider == "Google官方":
@@ -598,8 +612,8 @@ class BananaIntegratedNode:
             # 创建Session对象
             session = requests.Session()
             
-            # 如果是T8Star，强制不使用代理，并增加超时
-            if api_provider == "T8Star":
+            # 如果是 T8Star / 柏拉图，强制不使用代理，并增加超时
+            if api_provider in ["T8Star", "柏拉图"]:
                 session.trust_env = False  # 禁用环境变量中的代理设置
                 # 4K模型生成较慢，自动增加超时时间
                 if image_size == "4K":
