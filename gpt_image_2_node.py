@@ -1,3 +1,4 @@
+import math
 import torch
 import requests
 import json
@@ -7,6 +8,19 @@ from io import BytesIO
 from PIL import Image
 import numpy as np
 import comfy.utils
+from comfy.utils import common_upscale
+
+
+def downscale_input(image):
+    samples = image.movedim(-1, 1)
+    total_pixels = int(1536 * 1024)
+    scale_by = math.sqrt(total_pixels / (samples.shape[3] * samples.shape[2]))
+    if scale_by >= 1:
+        return image
+    width = round(samples.shape[3] * scale_by)
+    height = round(samples.shape[2] * scale_by)
+    scaled = common_upscale(samples, width, height, "lanczos", "disabled")
+    return scaled.movedim(1, -1)
 
 
 def tensor2pil(image):
@@ -119,7 +133,8 @@ class DapaoGPTImage2Node:
         return pil2tensor(image)
 
     def _prepare_image_file(self, image_tensor, index):
-        pil_image = tensor2pil(image_tensor)[0]
+        scaled_image = downscale_input(image_tensor[0:1])
+        pil_image = tensor2pil(scaled_image)[0]
         if pil_image.mode not in ["RGBA", "RGB"]:
             pil_image = pil_image.convert("RGBA")
         buffer = BytesIO()
@@ -311,7 +326,7 @@ class DapaoGPTImage2Node:
     def _poll_task(self, base_url, api_key, task_id, response_info, pbar):
         max_attempts = 60
         for attempt in range(max_attempts):
-            time.sleep(10)
+            time.sleep(5)
             try:
                 response = requests.get(
                     f"{base_url}/v1/images/tasks/{task_id}",
@@ -483,9 +498,9 @@ class DapaoGPTImage2Node:
 
 
 NODE_CLASS_MAPPINGS = {
-    "🙅GPT_image_2@炮老师的小课堂": DapaoGPTImage2Node,
+    "🙅GPT_image_2_异步@炮老师的小课堂": DapaoGPTImage2Node,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "🙅GPT_image_2@炮老师的小课堂": "🙅GPT_image_2@炮老师的小课堂",
+    "🙅GPT_image_2_异步@炮老师的小课堂": "🙅GPT_image_2_异步@炮老师的小课堂",
 }

@@ -1,0 +1,2000 @@
+{
+  "id": "9e4fc1d2-d1b3-4c53-84ac-0cebafe4b490",
+  "revision": 0,
+  "last_node_id": 38,
+  "last_link_id": 44,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "MarkdownNote",
+      "pos": [
+        -5333.229398933102,
+        -1191.2545060857015
+      ],
+      "size": [
+        500.0871738913104,
+        336.33992002535115
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "properties": {
+        "ue_properties": {
+          "version": "7.5.2",
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        }
+      },
+      "widgets_values": [
+        "## 👉[大炮API节点地址（一键直达）](https://github.com/paolaoshi/ComfyUI-dapaoAPI)👈\n-------------------\n### 柏拉图会比贞贞更便宜一点，贞贞更新会更及时一点，都差不多，按需选择，节点都支持，在线路那边自由切换即可\n-------------------\n## 从下面地址注册一个API令牌，复制到上面紫色节点内\n-------------------\n## 😶‍🌫️柏拉图API注册地址：👉[柏拉图API注册地址（一键直达）](https://api.bltcy.ai/register?aff=b6UC123455)👈\n## 🎿贞贞API注册地址：👉[贞贞API官方注册地址（一键直达）](https://ai.t8star.cn/register?aff=92bf3542729)👈\n-------------------\n## 🐰如果不出图，注意在API密钥那边选Gemini优质分组🐰"
+      ],
+      "color": "#c09430",
+      "bgcolor": "rgba(24,24,27,.9)"
+    },
+    {
+      "id": 2,
+      "type": "PrimitiveString",
+      "pos": [
+        -5334.644954022355,
+        -1488.0772215868901
+      ],
+      "size": [
+        500.87372264753355,
+        63.76386015364619
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            1,
+            4,
+            5,
+            6,
+            43
+          ]
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        },
+        "Node name for S&R": "PrimitiveString"
+      },
+      "widgets_values": [
+        "sk-aQd39pz7SKl0n3dasFFaUPG1Q9KLNRQzOw4YuWyY1g0JEJlj"
+      ],
+      "color": "#af3535",
+      "bgcolor": "rgba(24,24,27,.9)"
+    },
+    {
+      "id": 3,
+      "type": "PrimitiveString",
+      "pos": [
+        -5332.279189046626,
+        -1321.2441326478763
+      ],
+      "size": [
+        500.87372264753355,
+        63.76386015364619
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            25,
+            26,
+            27,
+            28
+          ]
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        },
+        "Node name for S&R": "PrimitiveString"
+      },
+      "widgets_values": [
+        "sk-5JkA1Jc1wsV4L7KtjRhKqCXap5sHE4tbFkfqgWSVvd05kiuJ"
+      ],
+      "color": "#af3535",
+      "bgcolor": "rgba(24,24,27,.9)"
+    },
+    {
+      "id": 4,
+      "type": "🙅GPT_image_2_异步@炮老师的小课堂",
+      "pos": [
+        -4346.117800328627,
+        -1485.9722048048766
+      ],
+      "size": [
+        400,
+        556
+      ],
+      "flags": {},
+      "order": 15,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🖼️ 参考图1",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图2",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图3",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图4",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "📝 提示词",
+          "type": "STRING",
+          "widget": {
+            "name": "📝 提示词"
+          },
+          "link": 10
+        },
+        {
+          "name": "🔑 API密钥",
+          "type": "STRING",
+          "widget": {
+            "name": "🔑 API密钥"
+          },
+          "link": 4
+        }
+      ],
+      "outputs": [
+        {
+          "name": "🖼️ 图像",
+          "type": "IMAGE",
+          "links": [
+            7
+          ]
+        },
+        {
+          "name": "🔗 图片链接",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "🆔 任务ID",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "📋 响应信息",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "🙅GPT_image_2_异步@炮老师的小课堂"
+      },
+      "widgets_values": [
+        "柏拉图",
+        "文生图",
+        "",
+        "",
+        "gpt-image-2",
+        "auto",
+        "auto",
+        "auto",
+        "high",
+        "png",
+        "auto",
+        1,
+        "url",
+        161065541,
+        "randomize",
+        600,
+        "",
+        ""
+      ]
+    },
+    {
+      "id": 5,
+      "type": "🙅GPT_image_2_官方稳定@炮老师的小课堂",
+      "pos": [
+        -3559.546116353631,
+        -1485.9722048048766
+      ],
+      "size": [
+        400,
+        560
+      ],
+      "flags": {},
+      "order": 16,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🖼️ 图像",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🎭 遮罩",
+          "shape": 7,
+          "type": "MASK",
+          "link": null
+        },
+        {
+          "name": "📝 提示词",
+          "type": "STRING",
+          "widget": {
+            "name": "📝 提示词"
+          },
+          "link": 11
+        },
+        {
+          "name": "🔑 API密钥",
+          "shape": 7,
+          "type": "STRING",
+          "widget": {
+            "name": "🔑 API密钥"
+          },
+          "link": 5
+        }
+      ],
+      "outputs": [
+        {
+          "name": "🖼️ 图像",
+          "type": "IMAGE",
+          "links": [
+            8
+          ]
+        },
+        {
+          "name": "🔗 图片链接",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "📋 响应信息",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "🙅GPT_image_2_官方稳定@炮老师的小课堂"
+      },
+      "widgets_values": [
+        "柏拉图",
+        "",
+        "",
+        1,
+        "auto",
+        "auto",
+        "auto",
+        "png",
+        100,
+        "auto",
+        true,
+        "",
+        300,
+        5,
+        5,
+        900,
+        610332029460593,
+        "randomize",
+        ""
+      ]
+    },
+    {
+      "id": 6,
+      "type": "🙅GPT_image_2_综合@炮老师的小课堂",
+      "pos": [
+        -2810.4682872936296,
+        -1485.9722048048766
+      ],
+      "size": [
+        400,
+        460
+      ],
+      "flags": {},
+      "order": 17,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🖼️ 参考图1",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图2",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图3",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图4",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "📝 提示词",
+          "type": "STRING",
+          "widget": {
+            "name": "📝 提示词"
+          },
+          "link": 12
+        },
+        {
+          "name": "🔑 API密钥",
+          "type": "STRING",
+          "widget": {
+            "name": "🔑 API密钥"
+          },
+          "link": 6
+        }
+      ],
+      "outputs": [
+        {
+          "name": "🖼️ 图像",
+          "type": "IMAGE",
+          "links": [
+            9
+          ]
+        },
+        {
+          "name": "📋 响应信息",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "🔗 图片链接",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "💬 对话记录",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "🙅GPT_image_2_综合@炮老师的小课堂"
+      },
+      "widgets_values": [
+        "柏拉图",
+        "",
+        "",
+        "gpt-image-2",
+        "auto",
+        "auto",
+        "auto",
+        "png",
+        "auto",
+        712462453972567,
+        "randomize",
+        true,
+        600,
+        ""
+      ]
+    },
+    {
+      "id": 7,
+      "type": "🙅GPT智能对话@炮老师的小课堂",
+      "pos": [
+        -1671.6878264118104,
+        -1485.9722048048766
+      ],
+      "size": [
+        377.72727272727275,
+        481.6363636363635
+      ],
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🖼️ 图像1",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 2
+        },
+        {
+          "name": "🖼️ 图像2",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像3",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像4",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🔑 API密钥",
+          "type": "STRING",
+          "widget": {
+            "name": "🔑 API密钥"
+          },
+          "link": 1
+        }
+      ],
+      "outputs": [
+        {
+          "name": "💭 AI回复",
+          "type": "STRING",
+          "links": [
+            3
+          ]
+        },
+        {
+          "name": "📄 完整响应",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "ℹ️ 处理信息",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "🙅GPT智能对话@炮老师的小课堂"
+      },
+      "widgets_values": [
+        "你是一个专业、友好、乐于助人的 AI 助手，能够结合用户提供的文字与图像进行准确分析和回答。",
+        "详细描述这张图片",
+        "gpt-5.4-mini",
+        "柏拉图",
+        "",
+        "中文",
+        "",
+        0.7,
+        0.9,
+        4096,
+        180
+      ]
+    },
+    {
+      "id": 8,
+      "type": "LoadImage",
+      "pos": [
+        -1988.4790517890833,
+        -1485.9722048048766
+      ],
+      "size": [
+        278.47000000000025,
+        496.71000000000004
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            2
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "01 (2).jpg",
+        "image"
+      ],
+      "color": "#70244c",
+      "bgcolor": "#5c1038"
+    },
+    {
+      "id": 9,
+      "type": "easy showAnything",
+      "pos": [
+        -1262.7349608799937,
+        -1485.9722048048766
+      ],
+      "size": [
+        311.21500000000015,
+        497.2950000000001
+      ],
+      "flags": {},
+      "order": 23,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "输入任何",
+          "name": "anything",
+          "shape": 7,
+          "type": "*",
+          "link": 3
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "*",
+          "links": null
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "easy showAnything"
+      },
+      "widgets_values": [
+        "这张图片整体呈现出一种**强烈的幻想感、舞台感和奇幻氛围**，像是介于“古风、洛丽塔、奇幻写真和数字艺术合成”之间的作品。下面我从几个方面详细描述：\n\n---\n\n## 1. 画面主体\n画面中央是一位**站立的人物**，显然是主要视觉焦点。她的身体略微侧转，姿态优雅，带有一种安静而神秘的气质。人物头部偏向左侧，脸部被明显打码处理，无法辨认具体五官。\n\n她有一头**浅金色或银白色的长发**，发丝较为蓬松凌乱，部分头发在风中自然散开，整体营造出一种飘逸感。头发的颜色与背景形成鲜明对比，使人物在画面中非常突出。\n\n---\n\n## 2. 服装细节\n人物穿着一套非常精致、华丽的服装，整体风格偏向**深色宫廷风/幻想风服饰**：\n\n- 主色调是**黑色、深蓝色**，带有一点古典和神秘感。\n- 衣服上有**金色刺绣或装饰纹样**，增加了华贵感。\n- 胸前有明显的**宝石项链或胸饰**，中心是一颗鲜艳的蓝色宝石，下面还垂着红色装饰，看起来像是古风首饰。\n- 袖口和裙摆等位置有**白色蕾丝/褶边**，让整体造型更细致，也带有一些柔美和戏剧感。\n- 腰间和衣身上还有一些**链条、挂饰和金属装饰**，增强了复杂度与层次感。\n\n从整体风格看，这套服装既像是**幻想角色装扮**，也有一点**舞台服饰或角色扮演（cosplay）**的感觉。\n\n---\n\n## 3. 姿态与氛围\n人物的姿态并不夸张，而是比较自然地站立，身体微微前倾或侧倾，给人一种**沉静、优雅、略带疏离感**的印象。她的右手似乎垂在身体一侧，左手附近可以看到一些**细长的白色线状物**，像是丝线、装饰丝带，或者某种特效元素。\n\n整个人物没有强烈动作，但因为发丝、服装和背景气氛的烘托，画面依然充满动感和戏剧性。\n\n---\n\n## 4. 背景环境\n背景非常醒目，是这张图最具冲击力的部分之一：\n\n- 左侧背景偏向**深蓝色夜空**，有云层和星点般的光斑。\n- 右侧则是**橙红色的夕阳或火焰般的天空**，强烈而温暖。\n- 背景中密集生长着大量**芦苇或高草**，在风中形成一片起伏的剪影。\n- 天空与草丛都带有明显的**艺术化处理**，颜色饱和度较高，氛围偏梦幻。\n- 整个场景像是在**黄昏时分的荒野、湿地或芦苇荡**中拍摄的。\n\n这种冷暖色的对比非常强烈：  \n**左边冷蓝，右边暖橙**，形成视觉张力，让人物更显得像置身于一个非现实的世界。\n\n---\n\n## 5. 特效与画面风格\n画面中叠加了大量**金色光点、闪光粒子、烟雾或云雾效果**：\n\n- 人物周围和身前有许多**闪烁的金色星尘**，像魔法粒子。\n- 下方和边缘处有明显的**白灰色烟雾**，增加朦胧感。\n- 整体色彩浓烈，明暗反差大，像经过了艺术后期处理。\n- 这种效果让人物看起来仿佛不是单纯站在现实场景中，而是处在某种**魔法场景、梦境或异世界**之中。\n\n---\n\n## 6. 画面构图\n构图上，人物占据画面中心偏右的位置，几乎从上到下贯穿了整张图，形成非常强的纵向主体感。背景中的天空和芦苇围绕人物展开，形成“环境包裹主体”的效果。\n\n- 上半部分：天空、云层、星光\n- 中间：人物头部、胸饰、上身服装\n- 下半部分：长裙、烟雾、光点与草丛\n\n这种布局让整张图很有**视觉层次**，同时也增强了神秘叙事感。\n\n---\n\n## 7. 整体感受\n如果用几个词来概括，这张图给人的感觉是：\n\n- **华丽**\n- **神秘**\n- **梦幻**\n- **奇幻**\n- **戏剧化**\n- **带有魔法感**\n- **冷暖对撞明显**\n\n它像是一张融合了**写真、角色扮演、艺术摄影和数字特效**的作品，人物本身仿佛是某个幻想世界中的角色，站在暮色与星光之间。\n\n---\n\n如果你愿意，我还可以继续帮你：\n1. **把这张图写成更文艺的描述**  \n2. **提炼成适合发朋友圈/小红书的文案**  \n3. **分析这张图的风格关键词，方便你找类似图片**"
+      ]
+    },
+    {
+      "id": 10,
+      "type": "CR Text",
+      "pos": [
+        -4787.234540469085,
+        -1485.9722048048766
+      ],
+      "size": [
+        407.5025608350006,
+        610.4972571149999
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "文本",
+          "name": "text",
+          "type": "STRING",
+          "widget": {
+            "name": "text"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "label": "文本",
+          "name": "text",
+          "type": "*",
+          "links": [
+            10,
+            11,
+            12
+          ]
+        },
+        {
+          "label": "显示帮助",
+          "name": "show_help",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "title": "文本",
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "CR Text"
+      },
+      "widgets_values": [
+        "```json\n{\n  \"prompt_metadata\": {\n    \"original_input\": \"一群大学女生在宿舍自拍\",\n    \"generation_style\": \"contemporary smartphone photography\",\n    \"primary_focus\": \"candid group selfie with environmental storytelling\"\n  },\n  \"subject\": {\n    \"type\": \"group of young women\",\n    \"description\": \"4-6 Chinese university students, age 18-22, diverse appearances within East Asian beauty standards, natural youthful skin with occasional blemishes, genuine expressions ranging from playful to slightly awkward, comfortable casual poses suggesting close friendship\",\n    \"pose_and_action\": \"clustered together in classic selfie formation, some leaning forward, others tucked behind, arms extended or using selfie stick, heads tilted at various angles, spontaneous mid-laughter or exaggerated pout poses, slight motion blur from movement\",\n    \"expression_and_emotion\": \"uninhibited joy, inside jokes visible in shared glances, occasional closed eyes from laughter, authentic unposed moments mixed with practiced selfie awareness\",\n    \"clothing_and_styling\": {\n      \"outfit\": \"casual dormitory attire - oversized hoodies, pajama sets, graphic t-shirts, comfortable sweatpants, mix of current fast fashion trends and personal favorites\",\n      \"accessories\": [\"hair clips and scrunchies\", \"minimal jewelry\", \"eyeglasses on some\", \"wireless earbuds around neck\", \"smartphone cases with charms\"],\n      \"hair\": \"varied styles - ponytails, loose natural hair, morning bedhead, some with face-framing strands, dyed highlights on one or two\",\n      \"makeup\": \"minimal to light daily makeup, some bare-faced, lip tint, natural brows, occasional acne patches visible\"\n    }\n  },\n  \"environment\": {\n    \"location\": \"Chinese university dormitory room\",\n    \"setting_description\": \"compact shared living space, bunk beds with personalized bedding, string lights and photos decorating walls, cluttered desks with textbooks and laptops, laundry drying rack, small refrigerator, mirror with sticky notes, window with university view\",\n    \"time_of_day\": \"evening or late afternoon, artificial lighting mixed with fading daylight\",\n    \"weather_and_atmosphere\": \"indoor cozy atmosphere, slightly humid warm air, sense of temporary privacy and freedom\",\n    \"props_and_objects\": [\"smartphone held by front person\", \"scattered cosmetics on desk\", \"instant camera photos taped to wall\", \"plush toys on bed\", \"folded clothes\", \"takeout containers\", \"academic planners\", \"shared snacks\"],\n    \"spatial_layout\": \"tight intimate framing, ceiling visible, walls closing in creating cozy compression, multiple planes of depth with background details\"\n  },\n  \"photography\": {\n    \"camera_angle\": \"arm's length selfie perspective, slight upward angle typical of front camera, wide-angle distortion at edges\",\n    \"shot_type\": \"medium close-up group shot, faces dominating frame with environment peeking around\",\n    \"lens_and_focal_length\": \"smartphone ultra-wide front camera equivalent, 24mm with characteristic edge distortion\",\n    \"depth_of_field\": \"deep focus from small sensor, everything relatively sharp, slight softness from motion or low light\",\n    \"lighting\": {\n      \"type\": \"mixed ambient and phone screen glow\",\n      \"direction\": \"frontal fill from phone screen, overhead dormitory fluorescent, warm desk lamp\",\n      \"quality\": \"uneven lighting with shadows under chins, highlights on closest faces, typical indoor selfie conditions\",\n      \"color_temperature\": \"mixed warm and cool sources creating color variation across faces\"\n    },\n    \"composition\": \"centered group with slight asymmetry, faces arranged in triangular cluster, background elements providing context without distraction\",\n    \"camera_settings\": \"auto smartphone exposure, possible slight overexposure from face detection, HDR processing visible\"\n  },\n  \"color_and_mood\": {\n    \"color_palette\": [\"warm skin tones\", \"LED string light amber\", \"cool fluorescent white\", \"pastel bedding\", \"phone screen blue glow\"],\n    \"color_grading\": \"natural smartphone processing, slight saturation boost, skin tone smoothing algorithms, authentic contemporary look\",\n    \"mood_and_atmosphere\": \"youthful intimacy, fleeting freedom between responsibilities, friendship documentation, unguarded authenticity, generational ritual\",\n    \"visual_tone\": \"warm and immediate, slightly noisy from low light, genuinely contemporary without aesthetic pretension\"\n  },\n  \"style_and_quality\": {\n    \"artistic_style\": \"unfiltered social media documentation, Gen Z visual culture, anti-aesthetic authenticity\",\n    \"reference_artists\": [\"contemporary youth photography\", \"Instagram and Xiaohongshu visual language\"],\n    \"rendering_quality\": \"smartphone camera quality, slight compression artifacts, authentic noise pattern, unpolished realism\",\n    \"post_processing\": \"minimal or default phone filters, possible beauty mode subtlety, timestamp or interface elements optional\",\n    \"resolution_and_detail\": \"adequate for screen viewing, slight softness acceptable, authentic to capture method\"\n  },\n  \"technical_parameters\": {\n    \"aspect_ratio\": \"9:16 vertical or 4:5 square crop typical of social platforms\",\n    \"image_quality\": \"authentic smartphone capture, realistic lighting challenges, genuine moment preservation\",\n    \"negative_prompt_suggestions\": [\"professional studio lighting\", \"perfect symmetry\", \"model poses\", \"empty pristine room\", \"professional camera quality\", \"vintage aesthetic\", \"overly processed beauty filters\"]\n  }\n}\n```"
+      ],
+      "color": "#186290",
+      "bgcolor": "#044e7c"
+    },
+    {
+      "id": 11,
+      "type": "SaveImage",
+      "pos": [
+        -3904.9458818240887,
+        -1485.9722048048766
+      ],
+      "size": [
+        318.23074822499984,
+        564.9587535649998
+      ],
+      "flags": {},
+      "order": 24,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 7
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "%date:yyyy-MM-dd%/VX-paolaoshiAICG_"
+      ],
+      "color": "#1a5b98",
+      "bgcolor": "#064784"
+    },
+    {
+      "id": 12,
+      "type": "SaveImage",
+      "pos": [
+        -3134.0717554390835,
+        -1485.9722048048766
+      ],
+      "size": [
+        304.2974209599997,
+        517.7997997449997
+      ],
+      "flags": {},
+      "order": 25,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 8
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "%date:yyyy-MM-dd%/VX-paolaoshiAICG_"
+      ],
+      "color": "#1a5b98",
+      "bgcolor": "#064784"
+    },
+    {
+      "id": 13,
+      "type": "SaveImage",
+      "pos": [
+        -2387.148402769082,
+        -1485.9722048048766
+      ],
+      "size": [
+        364.31790764000016,
+        493.1485284299997
+      ],
+      "flags": {},
+      "order": 26,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 9
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "%date:yyyy-MM-dd%/VX-paolaoshiAICG_"
+      ],
+      "color": "#1a5b98",
+      "bgcolor": "#064784"
+    },
+    {
+      "id": 14,
+      "type": "🙅GPT智能对话@炮老师的小课堂",
+      "pos": [
+        -1665.1820845192603,
+        -764.6565603316477
+      ],
+      "size": [
+        377.72727272727275,
+        481.6363636363635
+      ],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🖼️ 图像1",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 13
+        },
+        {
+          "name": "🖼️ 图像2",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像3",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 图像4",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🔑 API密钥",
+          "type": "STRING",
+          "widget": {
+            "name": "🔑 API密钥"
+          },
+          "link": 28
+        }
+      ],
+      "outputs": [
+        {
+          "name": "💭 AI回复",
+          "type": "STRING",
+          "links": [
+            24
+          ]
+        },
+        {
+          "name": "📄 完整响应",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "ℹ️ 处理信息",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "🙅GPT智能对话@炮老师的小课堂"
+      },
+      "widgets_values": [
+        "你是一个专业、友好、乐于助人的 AI 助手，能够结合用户提供的文字与图像进行准确分析和回答。",
+        "详细描述这张图片",
+        "gpt-5.4-mini",
+        "zhenzhen",
+        "",
+        "中文",
+        "",
+        0.7,
+        0.9,
+        4096,
+        180
+      ]
+    },
+    {
+      "id": 15,
+      "type": "🙅GPT_image_2_异步@炮老师的小课堂",
+      "pos": [
+        -4339.612058436079,
+        -764.6565603316477
+      ],
+      "size": [
+        400,
+        556
+      ],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🖼️ 参考图1",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图2",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图3",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图4",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "📝 提示词",
+          "type": "STRING",
+          "widget": {
+            "name": "📝 提示词"
+          },
+          "link": 15
+        },
+        {
+          "name": "🔑 API密钥",
+          "type": "STRING",
+          "widget": {
+            "name": "🔑 API密钥"
+          },
+          "link": 25
+        }
+      ],
+      "outputs": [
+        {
+          "name": "🖼️ 图像",
+          "type": "IMAGE",
+          "links": [
+            21
+          ]
+        },
+        {
+          "name": "🔗 图片链接",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "🆔 任务ID",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "📋 响应信息",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "🙅GPT_image_2_异步@炮老师的小课堂"
+      },
+      "widgets_values": [
+        "zhenzhen",
+        "文生图",
+        "",
+        "",
+        "gpt-image-2",
+        "auto",
+        "auto",
+        "auto",
+        "high",
+        "png",
+        "auto",
+        1,
+        "url",
+        1361667196,
+        "randomize",
+        600,
+        "",
+        ""
+      ]
+    },
+    {
+      "id": 16,
+      "type": "🙅GPT_image_2_官方稳定@炮老师的小课堂",
+      "pos": [
+        -3553.0403744610794,
+        -764.6565603316477
+      ],
+      "size": [
+        400,
+        560
+      ],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🖼️ 图像",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🎭 遮罩",
+          "shape": 7,
+          "type": "MASK",
+          "link": null
+        },
+        {
+          "name": "📝 提示词",
+          "type": "STRING",
+          "widget": {
+            "name": "📝 提示词"
+          },
+          "link": 17
+        },
+        {
+          "name": "🔑 API密钥",
+          "shape": 7,
+          "type": "STRING",
+          "widget": {
+            "name": "🔑 API密钥"
+          },
+          "link": 26
+        }
+      ],
+      "outputs": [
+        {
+          "name": "🖼️ 图像",
+          "type": "IMAGE",
+          "links": [
+            22
+          ]
+        },
+        {
+          "name": "🔗 图片链接",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "📋 响应信息",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "🙅GPT_image_2_官方稳定@炮老师的小课堂"
+      },
+      "widgets_values": [
+        "zhenzhen",
+        "",
+        "",
+        1,
+        "auto",
+        "auto",
+        "auto",
+        "png",
+        100,
+        "auto",
+        true,
+        "",
+        300,
+        5,
+        5,
+        900,
+        480841225995948,
+        "randomize",
+        ""
+      ]
+    },
+    {
+      "id": 17,
+      "type": "🙅GPT_image_2_综合@炮老师的小课堂",
+      "pos": [
+        -2803.9625454010784,
+        -764.6565603316477
+      ],
+      "size": [
+        400,
+        460
+      ],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🖼️ 参考图1",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图2",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图3",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图4",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "📝 提示词",
+          "type": "STRING",
+          "widget": {
+            "name": "📝 提示词"
+          },
+          "link": 19
+        },
+        {
+          "name": "🔑 API密钥",
+          "type": "STRING",
+          "widget": {
+            "name": "🔑 API密钥"
+          },
+          "link": 27
+        }
+      ],
+      "outputs": [
+        {
+          "name": "🖼️ 图像",
+          "type": "IMAGE",
+          "links": [
+            23
+          ]
+        },
+        {
+          "name": "📋 响应信息",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "🔗 图片链接",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "💬 对话记录",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "🙅GPT_image_2_综合@炮老师的小课堂"
+      },
+      "widgets_values": [
+        "zhenzhen",
+        "",
+        "",
+        "gpt-image-2",
+        "auto",
+        "auto",
+        "auto",
+        "png",
+        "auto",
+        1021700714699056,
+        "randomize",
+        true,
+        600,
+        ""
+      ]
+    },
+    {
+      "id": 18,
+      "type": "SaveImage",
+      "pos": [
+        -3898.440139931537,
+        -764.6565603316477
+      ],
+      "size": [
+        318.23074822499984,
+        564.9587535649998
+      ],
+      "flags": {},
+      "order": 19,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 21
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "%date:yyyy-MM-dd%/VX-paolaoshiAICG_"
+      ],
+      "color": "#1a5b98",
+      "bgcolor": "#064784"
+    },
+    {
+      "id": 19,
+      "type": "CR Text",
+      "pos": [
+        -4780.728798576539,
+        -764.6565603316477
+      ],
+      "size": [
+        407.5025608350006,
+        610.4972571149999
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "文本",
+          "name": "text",
+          "type": "STRING",
+          "widget": {
+            "name": "text"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "label": "文本",
+          "name": "text",
+          "type": "*",
+          "links": [
+            15,
+            17,
+            19
+          ]
+        },
+        {
+          "label": "显示帮助",
+          "name": "show_help",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "title": "文本",
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "CR Text"
+      },
+      "widgets_values": [
+        "```json\n{\n  \"prompt_metadata\": {\n    \"original_input\": \"一群大学女生在宿舍自拍\",\n    \"generation_style\": \"contemporary smartphone photography\",\n    \"primary_focus\": \"candid group selfie with environmental storytelling\"\n  },\n  \"subject\": {\n    \"type\": \"group of young women\",\n    \"description\": \"4-6 Chinese university students, age 18-22, diverse appearances within East Asian beauty standards, natural youthful skin with occasional blemishes, genuine expressions ranging from playful to slightly awkward, comfortable casual poses suggesting close friendship\",\n    \"pose_and_action\": \"clustered together in classic selfie formation, some leaning forward, others tucked behind, arms extended or using selfie stick, heads tilted at various angles, spontaneous mid-laughter or exaggerated pout poses, slight motion blur from movement\",\n    \"expression_and_emotion\": \"uninhibited joy, inside jokes visible in shared glances, occasional closed eyes from laughter, authentic unposed moments mixed with practiced selfie awareness\",\n    \"clothing_and_styling\": {\n      \"outfit\": \"casual dormitory attire - oversized hoodies, pajama sets, graphic t-shirts, comfortable sweatpants, mix of current fast fashion trends and personal favorites\",\n      \"accessories\": [\"hair clips and scrunchies\", \"minimal jewelry\", \"eyeglasses on some\", \"wireless earbuds around neck\", \"smartphone cases with charms\"],\n      \"hair\": \"varied styles - ponytails, loose natural hair, morning bedhead, some with face-framing strands, dyed highlights on one or two\",\n      \"makeup\": \"minimal to light daily makeup, some bare-faced, lip tint, natural brows, occasional acne patches visible\"\n    }\n  },\n  \"environment\": {\n    \"location\": \"Chinese university dormitory room\",\n    \"setting_description\": \"compact shared living space, bunk beds with personalized bedding, string lights and photos decorating walls, cluttered desks with textbooks and laptops, laundry drying rack, small refrigerator, mirror with sticky notes, window with university view\",\n    \"time_of_day\": \"evening or late afternoon, artificial lighting mixed with fading daylight\",\n    \"weather_and_atmosphere\": \"indoor cozy atmosphere, slightly humid warm air, sense of temporary privacy and freedom\",\n    \"props_and_objects\": [\"smartphone held by front person\", \"scattered cosmetics on desk\", \"instant camera photos taped to wall\", \"plush toys on bed\", \"folded clothes\", \"takeout containers\", \"academic planners\", \"shared snacks\"],\n    \"spatial_layout\": \"tight intimate framing, ceiling visible, walls closing in creating cozy compression, multiple planes of depth with background details\"\n  },\n  \"photography\": {\n    \"camera_angle\": \"arm's length selfie perspective, slight upward angle typical of front camera, wide-angle distortion at edges\",\n    \"shot_type\": \"medium close-up group shot, faces dominating frame with environment peeking around\",\n    \"lens_and_focal_length\": \"smartphone ultra-wide front camera equivalent, 24mm with characteristic edge distortion\",\n    \"depth_of_field\": \"deep focus from small sensor, everything relatively sharp, slight softness from motion or low light\",\n    \"lighting\": {\n      \"type\": \"mixed ambient and phone screen glow\",\n      \"direction\": \"frontal fill from phone screen, overhead dormitory fluorescent, warm desk lamp\",\n      \"quality\": \"uneven lighting with shadows under chins, highlights on closest faces, typical indoor selfie conditions\",\n      \"color_temperature\": \"mixed warm and cool sources creating color variation across faces\"\n    },\n    \"composition\": \"centered group with slight asymmetry, faces arranged in triangular cluster, background elements providing context without distraction\",\n    \"camera_settings\": \"auto smartphone exposure, possible slight overexposure from face detection, HDR processing visible\"\n  },\n  \"color_and_mood\": {\n    \"color_palette\": [\"warm skin tones\", \"LED string light amber\", \"cool fluorescent white\", \"pastel bedding\", \"phone screen blue glow\"],\n    \"color_grading\": \"natural smartphone processing, slight saturation boost, skin tone smoothing algorithms, authentic contemporary look\",\n    \"mood_and_atmosphere\": \"youthful intimacy, fleeting freedom between responsibilities, friendship documentation, unguarded authenticity, generational ritual\",\n    \"visual_tone\": \"warm and immediate, slightly noisy from low light, genuinely contemporary without aesthetic pretension\"\n  },\n  \"style_and_quality\": {\n    \"artistic_style\": \"unfiltered social media documentation, Gen Z visual culture, anti-aesthetic authenticity\",\n    \"reference_artists\": [\"contemporary youth photography\", \"Instagram and Xiaohongshu visual language\"],\n    \"rendering_quality\": \"smartphone camera quality, slight compression artifacts, authentic noise pattern, unpolished realism\",\n    \"post_processing\": \"minimal or default phone filters, possible beauty mode subtlety, timestamp or interface elements optional\",\n    \"resolution_and_detail\": \"adequate for screen viewing, slight softness acceptable, authentic to capture method\"\n  },\n  \"technical_parameters\": {\n    \"aspect_ratio\": \"9:16 vertical or 4:5 square crop typical of social platforms\",\n    \"image_quality\": \"authentic smartphone capture, realistic lighting challenges, genuine moment preservation\",\n    \"negative_prompt_suggestions\": [\"professional studio lighting\", \"perfect symmetry\", \"model poses\", \"empty pristine room\", \"professional camera quality\", \"vintage aesthetic\", \"overly processed beauty filters\"]\n  }\n}\n```"
+      ],
+      "color": "#186290",
+      "bgcolor": "#044e7c"
+    },
+    {
+      "id": 20,
+      "type": "SaveImage",
+      "pos": [
+        -3127.566013546532,
+        -764.6565603316477
+      ],
+      "size": [
+        304.2974209599997,
+        517.7997997449997
+      ],
+      "flags": {},
+      "order": 20,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 22
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "%date:yyyy-MM-dd%/VX-paolaoshiAICG_"
+      ],
+      "color": "#1a5b98",
+      "bgcolor": "#064784"
+    },
+    {
+      "id": 21,
+      "type": "SaveImage",
+      "pos": [
+        -2380.6426608765305,
+        -764.6565603316477
+      ],
+      "size": [
+        364.31790764000016,
+        493.1485284299997
+      ],
+      "flags": {},
+      "order": 21,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 23
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "%date:yyyy-MM-dd%/VX-paolaoshiAICG_"
+      ],
+      "color": "#1a5b98",
+      "bgcolor": "#064784"
+    },
+    {
+      "id": 22,
+      "type": "LoadImage",
+      "pos": [
+        -1981.973309896533,
+        -764.6565603316477
+      ],
+      "size": [
+        278.47000000000025,
+        496.71000000000004
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            13
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "01 (2).jpg",
+        "image"
+      ],
+      "color": "#70244c",
+      "bgcolor": "#5c1038"
+    },
+    {
+      "id": 23,
+      "type": "easy showAnything",
+      "pos": [
+        -1256.2292189874433,
+        -764.6565603316477
+      ],
+      "size": [
+        311.21500000000015,
+        497.2950000000001
+      ],
+      "flags": {},
+      "order": 22,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "输入任何",
+          "name": "anything",
+          "shape": 7,
+          "type": "*",
+          "link": 24
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "*",
+          "links": null
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "easy showAnything"
+      },
+      "widgets_values": [
+        "这是一张风格非常强烈、带有奇幻与暗黑美学气质的角色肖像图。整体画面像是“二次元+写实+特效合成”的艺术海报，氛围感很浓。\n\n### 画面主体\n画面中央是一位年轻女性角色，呈半身到全身的纵向构图。她微微前倾，身体带一点倾斜角度，给人一种安静、冷峻又略带疏离的感觉。她的脸部朝向镜头，视线被黑色眼罩或遮挡物覆盖，看不到眼睛，因此更增强了神秘感。\n\n### 人物外观\n- **头发**：长而凌乱的白金色头发，发丝很轻盈，有很多散落的碎发和层次感，显得飘逸而不规则。\n- **面部特征**：肤色偏白，五官精致，嘴唇微张，神情平静，带一点忧郁或冷淡。\n- **眼部**：最显著的是黑色的眼罩/遮挡，横跨双眼区域，让人物有一种“失明”“神秘武者”或“被诅咒”的视觉联想。\n- **服装**：她穿着一件深蓝黑色的华丽长裙/礼服，带有东方风格和奇幻装饰元素。\n  - 领口和胸前有金色镶边与刺绣图案。\n  - 胸口中央有一枚非常醒目的蓝色宝石胸饰，周围配有金色花纹和小红色坠饰。\n  - 袖子宽大，袖口有白色内衬或蕾丝边，整体兼具古典与幻想气质。\n  - 腰间和裙摆处有一些金属链饰、流苏和装饰珠，增加了华丽感。\n- **姿态**：她左手自然下垂，右侧身体略侧，姿态优雅但不张扬，像是站在风中。\n\n### 背景环境\n背景是一片充满戏剧性的自然场景：\n- **天空**：左上方天空偏深蓝，像夜幕或深夜；右侧天空则偏橙红，像夕阳或火光映照，形成强烈的冷暖对比。\n- **植物**：周围是一大片高高的芦苇或野草，颜色呈红橙色，在风中弯曲摇曳，强化了秋天、黄昏或末世感。\n- **雾气/烟雾**：画面下方和人物周围有大量灰白色烟雾或云雾，像从地面升起，营造出朦胧、梦幻的效果。\n- **光点**：空中散布着许多金色发光粒子，像星尘、萤火或魔法碎光，增强了奇幻感。\n\n### 画面风格\n这张图的风格很明显偏向：\n- **奇幻角色设定图**\n- **暗黑童话**\n- **华丽和神秘并存**\n- **带有强烈电影感的海报式构图**\n\n色彩上，主要使用了：\n- **冷色**：深蓝、黑色\n- **暖色**：橙红、金黄\n- **中性色**：灰白烟雾\n\n这种强烈对比让角色非常突出，同时使画面既梦幻又有一点压迫感。\n\n### 整体观感\n这张图给人的感觉像是一个来自异世界的神秘角色，站在黄昏的荒野中，周身被星尘与雾气包围。她看起来优雅、危险、不可接近，同时又有一种脆弱感和悲剧色彩。\n\n如果你愿意，我还可以继续帮你：\n1. **提炼成一句话简介**\n2. **写成更文学化的描写**\n3. **分析图片的风格、构图、色彩**\n4. **尝试判断这是AI绘图还是实拍/合成风格**"
+      ]
+    },
+    {
+      "id": 34,
+      "type": "🙅GPT_image_2_综合@炮老师的小课堂",
+      "pos": [
+        -553.2350388898967,
+        -1479.910952924361
+      ],
+      "size": [
+        400,
+        460
+      ],
+      "flags": {},
+      "order": 18,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🖼️ 参考图1",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 44
+        },
+        {
+          "name": "🖼️ 参考图2",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图3",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🖼️ 参考图4",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "🔑 API密钥",
+          "type": "STRING",
+          "widget": {
+            "name": "🔑 API密钥"
+          },
+          "link": 43
+        }
+      ],
+      "outputs": [
+        {
+          "name": "🖼️ 图像",
+          "type": "IMAGE",
+          "links": [
+            42
+          ]
+        },
+        {
+          "name": "📋 响应信息",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "🔗 图片链接",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "💬 对话记录",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "🙅GPT_image_2_综合@炮老师的小课堂"
+      },
+      "widgets_values": [
+        "柏拉图",
+        "背景换成海边人物保持不变",
+        "",
+        "gpt-image-2",
+        "auto",
+        "auto",
+        "auto",
+        "png",
+        "auto",
+        405146126703395,
+        "randomize",
+        true,
+        600,
+        ""
+      ]
+    },
+    {
+      "id": 35,
+      "type": "SaveImage",
+      "pos": [
+        -129.91515436534996,
+        -1479.910952924361
+      ],
+      "size": [
+        364.31790764000016,
+        493.1485284299997
+      ],
+      "flags": {},
+      "order": 27,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 42
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "%date:yyyy-MM-dd%/VX-paolaoshiAICG_"
+      ],
+      "color": "#1a5b98",
+      "bgcolor": "#064784"
+    },
+    {
+      "id": 36,
+      "type": "LoadImage",
+      "pos": [
+        -887.8632623699992,
+        -1477.1484860496107
+      ],
+      "size": [
+        295.9544999999998,
+        512.3189999999993
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            44
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "01 (2).jpg",
+        "image"
+      ]
+    },
+    {
+      "id": 37,
+      "type": "MarkdownNote",
+      "pos": [
+        -5357.492182032709,
+        -714.7371227283244
+      ],
+      "size": [
+        513.9507480139146,
+        626.4415611602635
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "title": "大炮工作流使用说明",
+      "properties": {
+        "ue_properties": {
+          "version": "7.5.2",
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        }
+      },
+      "widgets_values": [
+        "# 🌈              资源说明            🌈\n---\n# ⭐所有免费资源⭐\n# 👉[免费资源](https://dapao-ai.netlify.app/) 👈点击跳转（整合包/公开课/云端）\n\n---\n\n# 🦁大炮满血整合包下载地址🦁\n## 👉[满血整合包](https://wxuyk58beb5.feishu.cn/docx/TJF1dpepNoHtsMxP5MfcNJhnnSf) 👈点击跳转\n（含模型和环境包 300+工作流一键直出）\n\n---\n\n# 🌈跑不动的可以考虑用我的云端🌈\n\n## 👉[仙宫满血云端](https://www.xiangongyun.com/image/detail/5b5aa403-8e9c-4a81-94a3-ce9a13febb47)👈点击跳转\n\n## ⭐RH平台也有我大部分工作流：\n\n## 👉[RH最新工作流](https://www.runninghub.cn/user-center/1843821604546498561/userPost?inviteCode=kol01-rh138)👈点击跳转\n\n\n---\n\n# 🎥我的所有视频🎥\n## -- 💻[bilibili](https://space.bilibili.com/397686377?spm_id_from=333.33.0.0)👈点击跳转 -- 💻[抖音](https://www.douyin.com/user/MS4wLjABAAAAHSDoiXKglmJvAqDOrjZONAx42I_BGnbcHX51hStBIw_LJILooUMeI2Had3Xp5xW2?from_tab_name=main&vid=7517850368684903717)👈点击跳转\n\n---\n\n# 🥩我的B站comfyui免费课🥩\n## -- 🍱[保姆级comfyui入门公开课2026版](https://my.feishu.cn/wiki/OKxiwKkVNiSzLbkZBE5crhTKnQc)👈点击跳转\n# 🥘本工作流演示说明🥘\n\n## -- 🥨[大炮B站主页](https://space.bilibili.com/397686377)👈点击跳转\n"
+      ],
+      "color": "#2a363b",
+      "bgcolor": "#3f5159"
+    },
+    {
+      "id": 38,
+      "type": "Note Plus (mtb)",
+      "pos": [
+        -5371.368180667173,
+        74.26582344025631
+      ],
+      "size": [
+        531.6835465291026,
+        447
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "properties": {
+        "css": "/** here you can write css**/\nh1 {\n    color: whitesmoke;\n}",
+        "theme": "one_dark",
+        "ue_properties": {
+          "version": "7.5.2",
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        }
+      },
+      "widgets_values": [
+        "# <span style=\"font-family: 'Microsoft YaHei'; font-weight: bold; font-size: 40px; color: #FFAB3B;\">🏄‍炮老师全套资料链接🏄‍</span>\n\n## 👉 https://dapao-ai.netlify.app/ 👈\n\n  <img style=\"max-width: 100%; height: auto;\" alt=\"描述图片内容\" src=\"https://s1.imagehub.cc/images/2025/12/14/758bbbb249032a79cb85d07026354752.md.jpg\">"
+      ],
+      "color": "#8e2bc3",
+      "bgcolor": "#3a124f",
+      "shape": 2
+    }
+  ],
+  "links": [
+    [
+      1,
+      2,
+      0,
+      7,
+      4,
+      "STRING"
+    ],
+    [
+      2,
+      8,
+      0,
+      7,
+      0,
+      "IMAGE"
+    ],
+    [
+      3,
+      7,
+      0,
+      9,
+      0,
+      "STRING"
+    ],
+    [
+      4,
+      2,
+      0,
+      4,
+      5,
+      "STRING"
+    ],
+    [
+      5,
+      2,
+      0,
+      5,
+      3,
+      "STRING"
+    ],
+    [
+      6,
+      2,
+      0,
+      6,
+      5,
+      "STRING"
+    ],
+    [
+      7,
+      4,
+      0,
+      11,
+      0,
+      "IMAGE"
+    ],
+    [
+      8,
+      5,
+      0,
+      12,
+      0,
+      "IMAGE"
+    ],
+    [
+      9,
+      6,
+      0,
+      13,
+      0,
+      "IMAGE"
+    ],
+    [
+      10,
+      10,
+      0,
+      4,
+      4,
+      "STRING"
+    ],
+    [
+      11,
+      10,
+      0,
+      5,
+      2,
+      "STRING"
+    ],
+    [
+      12,
+      10,
+      0,
+      6,
+      4,
+      "STRING"
+    ],
+    [
+      13,
+      22,
+      0,
+      14,
+      0,
+      "IMAGE"
+    ],
+    [
+      15,
+      19,
+      0,
+      15,
+      4,
+      "STRING"
+    ],
+    [
+      17,
+      19,
+      0,
+      16,
+      2,
+      "STRING"
+    ],
+    [
+      19,
+      19,
+      0,
+      17,
+      4,
+      "STRING"
+    ],
+    [
+      21,
+      15,
+      0,
+      18,
+      0,
+      "IMAGE"
+    ],
+    [
+      22,
+      16,
+      0,
+      20,
+      0,
+      "IMAGE"
+    ],
+    [
+      23,
+      17,
+      0,
+      21,
+      0,
+      "IMAGE"
+    ],
+    [
+      24,
+      14,
+      0,
+      23,
+      0,
+      "STRING"
+    ],
+    [
+      25,
+      3,
+      0,
+      15,
+      5,
+      "STRING"
+    ],
+    [
+      26,
+      3,
+      0,
+      16,
+      3,
+      "STRING"
+    ],
+    [
+      27,
+      3,
+      0,
+      17,
+      5,
+      "STRING"
+    ],
+    [
+      28,
+      3,
+      0,
+      14,
+      4,
+      "STRING"
+    ],
+    [
+      42,
+      34,
+      0,
+      35,
+      0,
+      "IMAGE"
+    ],
+    [
+      43,
+      2,
+      0,
+      34,
+      4,
+      "STRING"
+    ],
+    [
+      44,
+      36,
+      0,
+      34,
+      0,
+      "IMAGE"
+    ]
+  ],
+  "groups": [
+    {
+      "id": 1,
+      "title": "柏拉图密钥",
+      "bounding": [
+        -5344.644954022355,
+        -1561.67722158689,
+        520.8737226475332,
+        147.3638601536462
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 2,
+      "title": "贞贞密钥",
+      "bounding": [
+        -5342.279189046626,
+        -1394.8441326478762,
+        520.8737226475332,
+        147.3638601536462
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 3,
+      "title": "柏拉图分组",
+      "bounding": [
+        -4797.234540469085,
+        -1559.5722048048765,
+        3855.714579589092,
+        694.0972571149999
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 4,
+      "title": "贞贞分组",
+      "bounding": [
+        -4790.728798576539,
+        -838.2565603316477,
+        3855.7145795890956,
+        694.0972571149999
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 5,
+      "title": "图像编辑分组",
+      "bounding": [
+        -897.8632623699992,
+        -1553.5109529243605,
+        1142.266015644651,
+        598.6814668747496
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 6,
+      "title": "大炮API-GPT-image2全系功能 好好看注释使用说明",
+      "bounding": [
+        -4801.822887789139,
+        -1753.2013938561067,
+        3340.3780933299913,
+        159.31278596999982
+      ],
+      "color": "#47daff",
+      "font_size": 120,
+      "flags": {}
+    },
+    {
+      "id": 7,
+      "title": "官方稳定节点走的是按token，每张图价格不一样，4K更贵，平均2k图差不多3毛 按需使用分组",
+      "bounding": [
+        -4781.164148068618,
+        -111.74680106078642,
+        3450.772917044991,
+        106.7948601249999
+      ],
+      "color": "#b544d5",
+      "font_size": 80,
+      "flags": {}
+    },
+    {
+      "id": 8,
+      "title": "并且为了保证出图稳定，新建令牌要加入openai官-优质分组才可以 正常情况下都是默认分组 一张图4分钱",
+      "bounding": [
+        -4782.387328561534,
+        11.563457029198903,
+        3450.772917044991,
+        106.7948601249999
+      ],
+      "color": "#b544d5",
+      "font_size": 80,
+      "flags": {}
+    },
+    {
+      "id": 9,
+      "title": "🐝快乐学习  拥抱AI🙈",
+      "bounding": [
+        -5373.779291407709,
+        -824.9129039783244,
+        550.8833217163101,
+        846.8870224442762
+      ],
+      "color": "#14b7cc",
+      "font_size": 40,
+      "flags": {}
+    },
+    {
+      "id": 10,
+      "title": "🐧微信：paolaoshiAICG🐧",
+      "bounding": [
+        -5357.237280349251,
+        -73.14881695331381,
+        518.6842651367188,
+        80
+      ],
+      "color": "#df6c20",
+      "font_size": 42,
+      "flags": {}
+    }
+  ],
+  "config": {},
+  "extra": {
+    "ue_links": [],
+    "links_added_by_ue": [],
+    "ds": {
+      "scale": 0.42409761837248483,
+      "offset": [
+        5622.735829963197,
+        1943.5046558410384
+      ]
+    },
+    "frontendVersion": "1.43.1",
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4
+}
