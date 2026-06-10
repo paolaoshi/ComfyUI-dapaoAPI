@@ -1,7 +1,7 @@
 import { app } from "../../../scripts/app.js";
 
-const TAG = "[Dapao RH All Image UI]";
-const RH_NODE_TYPES = new Set(["DapaoRHAllImageNode", "DapaoRHAllImageConcurrentNode"]);
+const TAG = "[Dapao RH Price UI]";
+const RH_NODE_TYPES = new Set(["DapaoRHAllImageNode", "DapaoRHAllImageConcurrentNode", "DapaoRHAllVideoSeedanceNode"]);
 
 const PRICE_MAP = {
     "全能图片G-2|官方稳定版|文生图|1k|low": "¥0.06/次",
@@ -96,7 +96,11 @@ function normalizeQuality(value, node) {
 }
 
 function getPriceText(node) {
-    const model = getValue(node, "🤖 模型", "全能图片G-2");
+    const currentModel = getValue(node, "🤖 模型", "");
+    if (node?.comfyClass === "DapaoRHAllVideoSeedanceNode" || node?.type === "DapaoRHAllVideoSeedanceNode" || currentModel.startsWith("SEEDANCE2.0")) {
+        return getVideoPriceText(node);
+    }
+    const model = currentModel || "全能图片G-2";
     const channel = getValue(node, "🏷️ 渠道", "官方稳定版");
     const mode = getValue(node, "🔀 模式", "文生图");
     const resolution = normalizeResolution(getValue(node, "🧩 分辨率", "模型默认"), node);
@@ -114,6 +118,16 @@ function getPriceText(node) {
     return `约¥${(Number(match[1]) * taskCount).toFixed(2)}/${taskCount}次`;
 }
 
+function getVideoPriceText(node) {
+    const model = getValue(node, "🤖 模型", "SEEDANCE2.0");
+    const duration = String(getValue(node, "⏱️ 时长(秒)", "5"));
+    const unit = model === "SEEDANCE2.0-FAST" ? 0.5 : 0.6;
+    if (duration === "-1") return `¥${unit.toFixed(1)}/秒`;
+    const seconds = Number(duration);
+    if (!Number.isFinite(seconds) || seconds <= 0) return `¥${unit.toFixed(1)}/秒`;
+    return `约¥${(unit * seconds).toFixed(2)}/${seconds}秒`;
+}
+
 function wrapWidgetCallback(node, widget) {
     if (!widget || widget._dapaoRhPriceWrapped) return;
     const original = widget.callback;
@@ -127,7 +141,7 @@ function wrapWidgetCallback(node, widget) {
 
 function setupPriceBadge(node) {
     if (!node?.widgets) return;
-    ["🤖 模型", "🏷️ 渠道", "🔀 模式", "🧩 分辨率", "🎨 画质", "📝 提示词", "🔢 任务数量"].forEach((name) => {
+    ["🤖 模型", "🏷️ 渠道", "🔀 模式", "🧩 分辨率", "🎨 画质", "📝 提示词", "🔢 任务数量", "⏱️ 时长(秒)"].forEach((name) => {
         wrapWidgetCallback(node, getWidget(node, name));
     });
     node.setDirtyCanvas(true, true);

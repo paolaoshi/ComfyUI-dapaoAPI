@@ -266,7 +266,7 @@ class DapaoRHAllImageNode:
     RETURN_TYPES = ("IMAGE", "STRING", "STRING")
     RETURN_NAMES = ("🖼️ 图像", "🔗 图片链接", "📋 响应信息")
     FUNCTION = "generate"
-    CATEGORY = "🤖dapaoAPI/RH全能图片"
+    CATEGORY = "🤖dapaoAPI/🦄RH功能专区🦄"
     DESCRIPTION = "RunningHub RH 全能图片系列：文生图、图生图、多参考图生成 @炮老师的小课堂"
     OUTPUT_NODE = False
 

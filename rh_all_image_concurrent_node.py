@@ -153,7 +153,7 @@ class DapaoRHAllImageConcurrentNode(DapaoRHAllImageNode):
     RETURN_TYPES = ("IMAGE", "STRING", "STRING")
     RETURN_NAMES = ("🖼️ 图像批次", "🔗 图片链接", "📋 响应信息")
     FUNCTION = "generate_concurrent"
-    CATEGORY = "🤖dapaoAPI/RH全能图片"
+    CATEGORY = "🤖dapaoAPI/🦄RH功能专区🦄"
     DESCRIPTION = "RunningHub RH 全能图片系列多并发批量生成 @炮老师的小课堂"
     OUTPUT_NODE = False
 
