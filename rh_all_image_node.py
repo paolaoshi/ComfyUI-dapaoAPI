@@ -432,7 +432,8 @@ class DapaoRHAllImageNode:
         final_ratio = config["default_ratio"] if ratio == "模型默认" else ratio
         if final_ratio not in config["ratios"]:
             raise ValueError(f"当前端点不支持画面比例 {final_ratio}，可选：{', '.join(config['ratios'])}")
-        payload["aspectRatio"] = final_ratio
+        if final_ratio != "empty":
+            payload["aspectRatio"] = final_ratio
 
         final_resolution = config["default_resolution"] if resolution == "模型默认" else resolution
         if final_resolution not in config["resolutions"]:

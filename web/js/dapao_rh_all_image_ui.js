@@ -1,6 +1,7 @@
 import { app } from "../../../scripts/app.js";
 
 const TAG = "[Dapao RH All Image UI]";
+const RH_NODE_TYPES = new Set(["DapaoRHAllImageNode", "DapaoRHAllImageConcurrentNode"]);
 
 const PRICE_MAP = {
     "全能图片G-2|官方稳定版|文生图|1k|low": "¥0.06/次",
@@ -63,6 +64,19 @@ function getValue(node, name, fallback = "") {
     return widget?.value ?? fallback;
 }
 
+function isInputLinked(node, name) {
+    const input = node?.inputs?.find((item) => item.name === name);
+    return input?.link != null;
+}
+
+function getEffectiveTaskCount(node) {
+    const promptText = String(getValue(node, "📝 提示词", ""));
+    const promptLines = promptText.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    if (promptLines.length > 1) return Math.min(100, promptLines.length);
+    if (isInputLinked(node, "📝 提示词")) return 1;
+    return Number(getValue(node, "🔢 任务数量", 1)) || 1;
+}
+
 function normalizeResolution(value, node) {
     if (value && value !== "模型默认") return value;
     const model = getValue(node, "🤖 模型", "全能图片G-2");
@@ -89,7 +103,15 @@ function getPriceText(node) {
     const quality = normalizeQuality(getValue(node, "🎨 画质", "模型默认"), node);
     const key = `${model}|${channel}|${mode}|${resolution}|${quality}`;
     const noQualityKey = `${model}|${channel}|${mode}|${resolution}|none`;
-    return PRICE_MAP[key] || PRICE_MAP[noQualityKey] || "价格待补";
+    const unitPrice = PRICE_MAP[key] || PRICE_MAP[noQualityKey];
+    if (!unitPrice) return "价格待补";
+
+    const taskCount = getEffectiveTaskCount(node);
+    if (taskCount <= 1) return unitPrice;
+
+    const match = unitPrice.match(/¥([0-9.]+)\/次/);
+    if (!match) return `${unitPrice} x${taskCount}`;
+    return `约¥${(Number(match[1]) * taskCount).toFixed(2)}/${taskCount}次`;
 }
 
 function wrapWidgetCallback(node, widget) {
@@ -105,7 +127,7 @@ function wrapWidgetCallback(node, widget) {
 
 function setupPriceBadge(node) {
     if (!node?.widgets) return;
-    ["🤖 模型", "🏷️ 渠道", "🔀 模式", "🧩 分辨率", "🎨 画质"].forEach((name) => {
+    ["🤖 模型", "🏷️ 渠道", "🔀 模式", "🧩 分辨率", "🎨 画质", "📝 提示词", "🔢 任务数量"].forEach((name) => {
         wrapWidgetCallback(node, getWidget(node, name));
     });
     node.setDirtyCanvas(true, true);
@@ -163,7 +185,7 @@ function drawPriceBadge(node, ctx) {
 app.registerExtension({
     name: "Dapao.RHAllImage.PriceBadge",
     async beforeRegisterNodeDef(nodeType, nodeData) {
-        if (nodeData.name !== "DapaoRHAllImageNode") return;
+        if (!RH_NODE_TYPES.has(nodeData.name)) return;
 
         const onNodeCreated = nodeType.prototype.onNodeCreated;
         nodeType.prototype.onNodeCreated = function () {
