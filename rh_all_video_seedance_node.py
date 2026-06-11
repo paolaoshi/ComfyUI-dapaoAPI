@@ -9,6 +9,7 @@ RH 全能视频 Seedance2.0 节点
 import io
 import json
 import os
+import re
 import tempfile
 import time
 import traceback
@@ -153,6 +154,11 @@ class DapaoRHAllVideoSeedanceNode(DapaoRHAllImageNode):
         for i in range(1, 4):
             optional[f"🎵 参考音频{i}"] = ("AUDIO", {"tooltip": f"多模态视频参考音频{i}，最多3个。"})
         optional.update({
+            "asset_ids": ("STRING", {
+                "default": "",
+                "forceInput": True,
+                "tooltip": "素材库 asset_id，可接 RH Seedance2.0素材ID/合并 输出；支持逗号或换行分隔。图生视频最多2个，多模态视频会自动按素材类型分流。",
+            }),
             "🌐 首帧公网URL": ("STRING", {"default": "", "placeholder": "可选：不用图像输入时填写首帧图片 URL"}),
             "🌐 尾帧公网URL": ("STRING", {"default": "", "placeholder": "可选：不用图像输入时填写尾帧图片 URL"}),
             "🖼️ 参考图URL列表": ("STRING", {"multiline": True, "default": "", "placeholder": "多模态视频可选：一行一个图片 URL"}),
@@ -197,6 +203,45 @@ class DapaoRHAllVideoSeedanceNode(DapaoRHAllImageNode):
     @staticmethod
     def _split_lines(text):
         return [line.strip() for line in (text or "").splitlines() if line.strip()]
+
+    @staticmethod
+    def _parse_asset_ids(raw_value):
+        if raw_value is None:
+            return []
+        if isinstance(raw_value, list):
+            items = raw_value
+        else:
+            text = str(raw_value).strip()
+            if not text:
+                return []
+            if text.startswith("["):
+                try:
+                    parsed = json.loads(text)
+                    items = parsed if isinstance(parsed, list) else [text]
+                except Exception:
+                    items = re.split(r"[\n,，]+", text)
+            else:
+                items = re.split(r"[\n,，]+", text)
+
+        asset_ids = []
+        for item in items:
+            text = str(item or "").strip()
+            if not text:
+                continue
+            if text.startswith("asset://"):
+                text = text[8:]
+            if text:
+                asset_ids.append(text)
+        return asset_ids
+
+    @staticmethod
+    def _asset_id_to_url(asset_id):
+        asset_id = str(asset_id or "").strip()
+        if not asset_id:
+            return ""
+        if asset_id.startswith("asset://"):
+            return asset_id
+        return f"asset://{asset_id}"
 
     @staticmethod
     def _split_slot_items(text):
@@ -308,6 +353,35 @@ class DapaoRHAllVideoSeedanceNode(DapaoRHAllImageNode):
             return self._upload_bytes(api_key, content, f"{name}.wav", "audio/wav", timeout)
         return ""
 
+    def _query_asset_type(self, api_key, asset_id, timeout):
+        response = self._post_json(f"{BASE_URL}/assets/query", api_key, {"assetId": asset_id}, timeout)
+        data = response.get("data") or {}
+        asset_type = str(data.get("assetType") or "").strip().lower()
+        if not asset_type:
+            raise ValueError(f"素材 {asset_id} 没有返回 assetType，无法判断应接入图片、视频还是音频槽位。")
+        return asset_type
+
+    def _asset_urls_by_type(self, kwargs, api_key, timeout):
+        asset_ids = self._parse_asset_ids(kwargs.get("asset_ids"))
+        image_urls = []
+        video_urls = []
+        audio_urls = []
+        if not asset_ids:
+            return image_urls, video_urls, audio_urls
+
+        type_to_bucket = {
+            "image": image_urls,
+            "video": video_urls,
+            "audio": audio_urls,
+        }
+        for asset_id in asset_ids:
+            asset_type = self._query_asset_type(api_key, asset_id, timeout)
+            bucket = type_to_bucket.get(asset_type)
+            if bucket is None:
+                raise ValueError(f"素材 {asset_id} 的 assetType 不支持：{asset_type or 'unknown'}。")
+            bucket.append(self._asset_id_to_url(asset_id))
+        return image_urls, video_urls, audio_urls
+
     def _collect_reference_urls(self, kwargs, api_key, timeout):
         image_urls = []
         video_urls = []
@@ -343,6 +417,15 @@ class DapaoRHAllVideoSeedanceNode(DapaoRHAllImageNode):
         audio_urls.extend(self._split_lines(kwargs.get("🎵 参考音频URL列表", "")))
         audio_urls = [url for url in audio_urls if url][:3]
 
+        return image_urls, video_urls, audio_urls
+
+    def _collect_multimodal_urls(self, kwargs, api_key, timeout):
+        image_urls, video_urls, audio_urls = self._collect_reference_urls(kwargs, api_key, timeout)
+        asset_image_urls, asset_video_urls, asset_audio_urls = self._asset_urls_by_type(kwargs, api_key, timeout)
+
+        image_urls = (image_urls + asset_image_urls)[:9]
+        video_urls = (video_urls + asset_video_urls)[:3]
+        audio_urls = (audio_urls + asset_audio_urls)[:3]
         return image_urls, video_urls, audio_urls
 
     def _build_conversion_slots(self, kwargs, config):
@@ -469,6 +552,21 @@ class DapaoRHAllVideoSeedanceNode(DapaoRHAllImageNode):
         elif function == "图生视频":
             first_url = (kwargs.get("🌐 首帧公网URL", "") or "").strip()
             last_url = (kwargs.get("🌐 尾帧公网URL", "") or "").strip()
+            asset_ids = self._parse_asset_ids(kwargs.get("asset_ids"))
+            asset_urls = [self._asset_id_to_url(asset_id) for asset_id in asset_ids]
+            if len(asset_urls) > 2:
+                raise ValueError("图生视频的 asset_ids 最多支持 2 个：第 1 个作为首帧，第 2 个作为尾帧。")
+            if asset_urls:
+                first_image = kwargs.get("🎬 首帧图")
+                if first_image is None:
+                    first_image = kwargs.get("🖼️ 参考图1")
+                if first_url or first_image is not None:
+                    raise ValueError("asset_ids 的第 1 个素材会作为首帧，请不要同时接入首帧图、参考图1或填写首帧公网URL。")
+                first_url = asset_urls[0]
+            if len(asset_urls) > 1:
+                if last_url or kwargs.get("🏁 尾帧图") is not None:
+                    raise ValueError("asset_ids 的第 2 个素材会作为尾帧，请不要同时接入尾帧图或填写尾帧公网URL。")
+                last_url = asset_urls[1]
             if not first_url:
                 first_image = kwargs.get("🎬 首帧图")
                 if first_image is None:
@@ -484,7 +582,7 @@ class DapaoRHAllVideoSeedanceNode(DapaoRHAllImageNode):
             payload["realPersonMode"] = real_person_mode
             payload["conversionSlots"] = self._build_conversion_slots(kwargs, config)
         elif function == "多模态视频":
-            image_urls, video_urls, audio_urls = self._collect_reference_urls(kwargs, api_key, timeout)
+            image_urls, video_urls, audio_urls = self._collect_multimodal_urls(kwargs, api_key, timeout)
             if image_urls:
                 payload["imageUrls"] = image_urls
             if video_urls:
