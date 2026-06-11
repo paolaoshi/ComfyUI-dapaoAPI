@@ -1,7 +1,7 @@
 import { app } from "../../../scripts/app.js";
 
 const TAG = "[Dapao RH Price UI]";
-const RH_NODE_TYPES = new Set(["DapaoRHAllImageNode", "DapaoRHAllImageConcurrentNode", "DapaoRHAllVideoSeedanceNode"]);
+const RH_NODE_TYPES = new Set(["DapaoRHAllImageNode", "DapaoRHAllImageConcurrentNode", "DapaoRHAllVideoSeedanceNode", "DapaoRHAllVideoV31Node"]);
 
 const PRICE_MAP = {
     "全能图片G-2|官方稳定版|文生图|1k|low": "¥0.06/次",
@@ -54,6 +54,28 @@ const PRICE_MAP = {
     "全能图片PRO|低价渠道版|图生图|4k|none": "¥0.50/次",
 };
 
+const VIDEO_V31_PRICE_MAP = {
+    "V3.1-FAST|低价渠道版|文生视频": "¥1.5",
+    "V3.1-FAST|低价渠道版|图生视频": "¥1.5",
+    "V3.1-FAST|低价渠道版|首尾帧生视频": "¥1.5",
+    "V3.1-PRO|低价渠道版|文生视频": "¥0.9",
+    "V3.1-PRO|低价渠道版|图生视频": "¥0.8",
+    "V3.1-PRO|低价渠道版|首尾帧生视频": "¥0.9",
+    "V3.1-LITE|低价渠道版|文生视频": "价格待补",
+    "V3.1-LITE|低价渠道版|图生视频": "价格待补",
+    "V3.1-FAST|官方稳定版|文生视频": "¥2.35",
+    "V3.1-FAST|官方稳定版|图生视频": "¥2.35",
+    "V3.1-FAST|官方稳定版|参考生视频": "¥4.03",
+    "V3.1-FAST|官方稳定版|视频扩展": "¥6.56",
+    "V3.1-PRO|官方稳定版|文生视频": "¥4.7",
+    "V3.1-PRO|官方稳定版|图生视频": "¥4.7",
+    "V3.1-PRO|官方稳定版|参考生视频": "¥9.4",
+    "V3.1-PRO|官方稳定版|视频扩展": "¥17.4",
+    "V3.1-LITE|官方稳定版|文生视频": "¥0.32/秒",
+    "V3.1-LITE|官方稳定版|图生视频": "¥0.32/秒",
+    "V3.1-LITE|官方稳定版|首尾帧生视频": "¥2.52",
+};
+
 function getWidget(node, name) {
     if (!node?.widgets) return null;
     return node.widgets.find((w) => w.name === name) || null;
@@ -97,6 +119,9 @@ function normalizeQuality(value, node) {
 
 function getPriceText(node) {
     const currentModel = getValue(node, "🤖 模型", "");
+    if (node?.comfyClass === "DapaoRHAllVideoV31Node" || node?.type === "DapaoRHAllVideoV31Node" || currentModel.startsWith("V3.1-")) {
+        return getVideoV31PriceText(node);
+    }
     if (node?.comfyClass === "DapaoRHAllVideoSeedanceNode" || node?.type === "DapaoRHAllVideoSeedanceNode" || currentModel.startsWith("SEEDANCE2.0")) {
         return getVideoPriceText(node);
     }
@@ -128,6 +153,21 @@ function getVideoPriceText(node) {
     return `约¥${(unit * seconds).toFixed(2)}/${seconds}秒`;
 }
 
+function getVideoV31PriceText(node) {
+    const model = getValue(node, "🤖 模型", "V3.1-FAST");
+    const channel = getValue(node, "🏷️ 渠道", "官方稳定版");
+    const mode = getValue(node, "🎛️ 功能", "文生视频");
+    const price = VIDEO_V31_PRICE_MAP[`${model}|${channel}|${mode}`];
+    if (!price) return "暂无接口";
+    if (price === "价格待补") return price;
+    if (!price.endsWith("/秒")) return price;
+    const seconds = Number(getValue(node, "⏱️ 时长(秒)", "8"));
+    if (!Number.isFinite(seconds) || seconds <= 0) return price;
+    const unit = Number((price.match(/¥([0-9.]+)\/秒/) || [])[1]);
+    if (!Number.isFinite(unit)) return price;
+    return `约¥${(unit * seconds).toFixed(2)}/${seconds}秒`;
+}
+
 function wrapWidgetCallback(node, widget) {
     if (!widget || widget._dapaoRhPriceWrapped) return;
     const original = widget.callback;
@@ -141,7 +181,7 @@ function wrapWidgetCallback(node, widget) {
 
 function setupPriceBadge(node) {
     if (!node?.widgets) return;
-    ["🤖 模型", "🏷️ 渠道", "🔀 模式", "🧩 分辨率", "🎨 画质", "📝 提示词", "🔢 任务数量", "⏱️ 时长(秒)"].forEach((name) => {
+    ["🤖 模型", "🏷️ 渠道", "🔀 模式", "🎛️ 功能", "🧩 分辨率", "🎨 画质", "📝 提示词", "🔢 任务数量", "⏱️ 时长(秒)"].forEach((name) => {
         wrapWidgetCallback(node, getWidget(node, name));
     });
     node.setDirtyCanvas(true, true);
