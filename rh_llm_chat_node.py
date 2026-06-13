@@ -8,7 +8,11 @@ RH LLM 智能对话节点
 import base64
 import io
 import json
+import os
 import re
+import shutil
+import subprocess
+import tempfile
 import time
 import traceback
 
@@ -23,6 +27,8 @@ LLM_MODELS_URL = "https://llm.runninghub.ai/v1/models"
 DEFAULT_MODEL = "google/gemini-3.1-flash-lite-preview"
 MODEL_CACHE_TTL_SECONDS = 3600
 REASONING_CHOICES = ["none", "low", "medium", "high"]
+MAX_VIDEO_BYTES = 10 * 1024 * 1024
+MAX_VIDEO_DURATION = 15
 
 _MODEL_CACHE = {"expires_at": 0.0, "models": None}
 
@@ -123,6 +129,132 @@ def _tensor_to_data_uris(image_tensor):
     return data_uris
 
 
+def _copy_file_like_to_temp(file_obj):
+    if not hasattr(file_obj, "read"):
+        return None
+    try:
+        if hasattr(file_obj, "seek"):
+            file_obj.seek(0)
+        handle = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
+        with handle:
+            handle.write(file_obj.read())
+        return handle.name
+    except Exception:
+        return None
+
+
+def _extract_video_path(video):
+    cleanup_paths = []
+    if isinstance(video, str) and os.path.exists(video):
+        return video, cleanup_paths
+    if isinstance(video, dict):
+        for key in ("file_path", "path", "filename"):
+            value = video.get(key)
+            if isinstance(value, str) and os.path.exists(value):
+                return value, cleanup_paths
+
+    file_obj = getattr(video, "_VideoFromFile__file", None)
+    if isinstance(file_obj, str) and os.path.exists(file_obj):
+        return file_obj, cleanup_paths
+    copied = _copy_file_like_to_temp(file_obj)
+    if copied:
+        cleanup_paths.append(copied)
+        return copied, cleanup_paths
+
+    for attr in ("path", "file"):
+        value = getattr(video, attr, None)
+        if isinstance(value, str) and os.path.exists(value):
+            return value, cleanup_paths
+
+    if hasattr(video, "get_stream_source"):
+        try:
+            value = video.get_stream_source()
+            if isinstance(value, str) and os.path.exists(value):
+                return value, cleanup_paths
+        except Exception:
+            pass
+
+    if hasattr(video, "save_to"):
+        try:
+            handle = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
+            handle.close()
+            video.save_to(handle.name)
+            if os.path.exists(handle.name):
+                cleanup_paths.append(handle.name)
+                return handle.name, cleanup_paths
+        except Exception:
+            pass
+
+    return None, cleanup_paths
+
+
+def _compress_video(input_path):
+    ffmpeg = shutil.which("ffmpeg")
+    if not ffmpeg:
+        return None
+
+    output_path = os.path.join(
+        tempfile.gettempdir(),
+        f"dapao_rh_llm_video_{int(time.time() * 1000)}.mp4",
+    )
+    command = [
+        ffmpeg,
+        "-y",
+        "-i",
+        input_path,
+        "-t",
+        str(MAX_VIDEO_DURATION),
+        "-fs",
+        str(MAX_VIDEO_BYTES),
+        "-vcodec",
+        "libx264",
+        "-preset",
+        "veryfast",
+        "-crf",
+        "28",
+        "-acodec",
+        "aac",
+        output_path,
+    ]
+    try:
+        subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+    except Exception as e:
+        _log_info(f"视频压缩失败，无法自动缩小视频：{type(e).__name__}")
+        return None
+
+    if os.path.exists(output_path) and os.path.getsize(output_path) <= MAX_VIDEO_BYTES:
+        return output_path
+    return None
+
+
+def _video_to_data_uri(video):
+    path, cleanup_paths = _extract_video_path(video)
+    if not path:
+        raise RuntimeError("无法从 VIDEO 输入解析到本地视频文件路径。")
+
+    try:
+        use_path = path
+        if os.path.getsize(use_path) > MAX_VIDEO_BYTES:
+            compressed = _compress_video(use_path)
+            if not compressed:
+                raise RuntimeError("视频超过 10MB，且未找到 ffmpeg 或压缩失败，无法发送给 RH LLM。")
+            cleanup_paths.append(compressed)
+            use_path = compressed
+
+        if os.path.getsize(use_path) > MAX_VIDEO_BYTES:
+            raise RuntimeError("视频处理后仍超过 10MB，无法发送给 RH LLM。")
+
+        with open(use_path, "rb") as handle:
+            encoded = base64.b64encode(handle.read()).decode("ascii")
+        return f"data:video/mp4;base64,{encoded}"
+    finally:
+        for cleanup_path in cleanup_paths:
+            try:
+                os.remove(cleanup_path)
+            except Exception:
+                pass
+
+
 class DapaoRHLLMChatNode:
     @classmethod
     def INPUT_TYPES(cls):
@@ -195,6 +327,7 @@ class DapaoRHLLMChatNode:
                 "🖼️ 图像6": ("IMAGE",),
                 "🖼️ 图像7": ("IMAGE",),
                 "🖼️ 图像8": ("IMAGE",),
+                "🎬 视频": ("VIDEO",),
                 "➕ 额外参数JSON": ("STRING", {
                     "multiline": True,
                     "default": "{}",
@@ -212,7 +345,7 @@ class DapaoRHLLMChatNode:
     RETURN_NAMES = ("💭 AI回复", "📄 完整响应", "ℹ️ 处理信息")
     FUNCTION = "chat"
     CATEGORY = "🤖dapaoAPI/🦄RH功能专区🦄"
-    DESCRIPTION = "RH LLM 智能对话：RunningHub OpenAI 兼容接口，支持文本和多图分析 @炮老师的小课堂"
+    DESCRIPTION = "RH LLM 智能对话：RunningHub OpenAI 兼容接口，支持文本、多图和视频分析 @炮老师的小课堂"
     OUTPUT_NODE = False
 
     @staticmethod
@@ -285,7 +418,7 @@ class DapaoRHLLMChatNode:
         raise last_error
 
     @staticmethod
-    def _build_messages(system_role, user_input, image_urls):
+    def _build_messages(system_role, user_input, image_urls, video_url=None):
         messages = []
         if (system_role or "").strip():
             messages.append({"role": "system", "content": system_role.strip()})
@@ -295,6 +428,14 @@ class DapaoRHLLMChatNode:
             for url in image_urls:
                 content.append({"type": "image_url", "image_url": {"url": url}})
             messages.append({"role": "user", "content": content})
+        elif video_url:
+            messages.append({
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": user_input or ""},
+                    {"type": "video_url", "video_url": {"url": video_url}},
+                ],
+            })
         else:
             messages.append({"role": "user", "content": user_input or ""})
         return messages
@@ -331,6 +472,15 @@ class DapaoRHLLMChatNode:
             image_urls.extend(_tensor_to_data_uris(image_tensor))
         return image_urls
 
+    def _collect_video(self, kwargs, has_images):
+        video = kwargs.get("🎬 视频")
+        if video is None:
+            return None
+        if has_images:
+            _log_info("同时输入了图像和视频：按参考节点逻辑优先使用图像，忽略视频。")
+            return None
+        return _video_to_data_uri(video)
+
     @staticmethod
     def _load_extra_params(extra_json):
         text = (extra_json or "{}").strip()
@@ -366,9 +516,10 @@ class DapaoRHLLMChatNode:
 
             start_time = time.time()
             image_urls = self._collect_images(kwargs)
+            video_url = self._collect_video(kwargs, bool(image_urls))
             payload = {
                 "model": model,
-                "messages": self._build_messages(system_role, user_input, image_urls),
+                "messages": self._build_messages(system_role, user_input, image_urls, video_url),
                 "max_tokens": int(max_tokens),
                 "temperature": float(temperature),
                 "top_p": float(top_p),
@@ -378,7 +529,7 @@ class DapaoRHLLMChatNode:
             }
             payload.update(self._load_extra_params(extra_json))
 
-            _log_info(f"开始请求模型：{model}，图像数量：{len(image_urls)}")
+            _log_info(f"开始请求模型：{model}，图像数量：{len(image_urls)}，视频：{'是' if video_url else '否'}")
             result = self._post_json_with_retry(payload, api_key, timeout)
             response_text = _clean_think_tags(self._extract_text(result))
             if not response_text:
@@ -389,6 +540,7 @@ class DapaoRHLLMChatNode:
                 "✅ RH LLM 智能对话完成\n"
                 f"🤖 模型ID：{model}\n"
                 f"🖼️ 图像数量：{len(image_urls)}\n"
+                f"🎬 视频输入：{'是' if video_url else '否'}\n"
                 f"🌡️ 温度：{temperature}\n"
                 f"📝 最大输出令牌：{max_tokens}\n"
                 f"🎲 Top_P：{top_p}\n"
