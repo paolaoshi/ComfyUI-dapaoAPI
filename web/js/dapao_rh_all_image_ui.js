@@ -1,7 +1,7 @@
 import { app } from "../../../scripts/app.js";
 
 const TAG = "[Dapao RH Price UI]";
-const RH_NODE_TYPES = new Set(["DapaoRHAllImageNode", "DapaoRHAllImageConcurrentNode", "DapaoRHAllVideoSeedanceNode", "DapaoRHAllVideoV31Node"]);
+const RH_NODE_TYPES = new Set(["DapaoRHAllImageNode", "DapaoRHAllImageConcurrentNode", "DapaoRHAllVideoSeedanceNode", "DapaoRHAllVideoV31Node", "DapaoRHAllVideoXVideo3Node"]);
 
 const PRICE_MAP = {
     "全能图片G-2|官方稳定版|文生图|1k|low": "¥0.06/次",
@@ -76,6 +76,17 @@ const VIDEO_V31_PRICE_MAP = {
     "V3.1-LITE|官方稳定版|首尾帧生视频": "¥2.52",
 };
 
+const VIDEO_XVIDEO3_CONFIGS = {
+    "X-video3-v1.5|低价渠道版|文生视频": { unit: 0.04, showRatio: true, showResolution: true, showDuration: true, ratios: ["2:3", "3:2", "1:1", "16:9", "9:16"], resolutions: ["720p", "480p"], durations: ["6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "20", "25", "30"] },
+    "X-video3-v1.5|低价渠道版|图生视频": { unit: 0.04, showRatio: true, showResolution: true, showDuration: true, showImages: true, maxImages: 7, ratios: ["2:3", "3:2", "1:1", "16:9", "9:16"], resolutions: ["720p", "480p"], durations: ["6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "20", "25", "30"] },
+    "X-video3|官方稳定版|文生视频": { durationPrices: { "6": "¥1.89", "10": "¥3.15" }, showRatio: true, showResolution: true, showDuration: true, ratios: ["16:9", "9:16", "1:1"], resolutions: ["720p", "480p"], durations: ["6", "10"] },
+    "X-video3|官方稳定版|图生视频": { durationPrices: { "6": "¥1.89", "10": "¥3.15" }, showResolution: true, showDuration: true, showImages: true, singleImage: true, resolutions: ["720p", "480p"], durations: ["6", "10"] },
+    "X-video3|官方稳定版|视频编辑": { editUnit: 0.41, showResolution: true, showVideo: true, showEditDuration: true, resolutions: ["720p", "480p"], editDurations: ["1", "2", "3", "4", "5", "6", "7", "8"] },
+    "X-video3|官方稳定版|多图参考生视频": { durationPrices: { "6": "¥1.89", "10": "¥3.15" }, showResolution: true, showDuration: true, showImages: true, maxImages: 7, resolutions: ["720p", "480p"], durations: ["6", "10"] },
+    "X-video3|官方稳定版|视频续写": { durationPrices: { "6": "¥1.89", "10": "¥3.15" }, showDuration: true, showVideo: true, durations: ["6", "10"] },
+    "X-video3-v1.5|官方稳定版|图生视频": { resolutionUnits: { "480p": 0.56, "720p": 0.95 }, showResolution: true, showDuration: true, showImages: true, singleImage: true, resolutions: ["480p", "720p"], durations: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"] },
+};
+
 function getWidget(node, name) {
     if (!node?.widgets) return null;
     return node.widgets.find((w) => w.name === name) || null;
@@ -119,6 +130,9 @@ function normalizeQuality(value, node) {
 
 function getPriceText(node) {
     const currentModel = getValue(node, "🤖 模型", "");
+    if (node?.comfyClass === "DapaoRHAllVideoXVideo3Node" || node?.type === "DapaoRHAllVideoXVideo3Node" || currentModel.startsWith("X-video3")) {
+        return getVideoXVideo3PriceText(node);
+    }
     if (node?.comfyClass === "DapaoRHAllVideoV31Node" || node?.type === "DapaoRHAllVideoV31Node" || currentModel.startsWith("V3.1-")) {
         return getVideoV31PriceText(node);
     }
@@ -168,11 +182,102 @@ function getVideoV31PriceText(node) {
     return `约¥${(unit * seconds).toFixed(2)}/${seconds}秒`;
 }
 
+function getVideoXVideo3Config(node) {
+    const model = getValue(node, "🤖 模型", "X-video3");
+    const channel = getValue(node, "🏷️ 渠道", "官方稳定版");
+    const mode = getValue(node, "🎛️ 功能", "文生视频");
+    return VIDEO_XVIDEO3_CONFIGS[`${model}|${channel}|${mode}`] || null;
+}
+
+function getVideoXVideo3PriceText(node) {
+    const config = getVideoXVideo3Config(node);
+    if (!config) return "暂无接口";
+    const duration = String(getValue(node, "⏱️ 时长(秒)", "6"));
+    const seconds = Number(duration);
+    if (config.durationPrices) return config.durationPrices[duration] || "暂无接口";
+    if (config.editUnit) {
+        const editSeconds = Number(getValue(node, "🎞️ 参考视频时长(秒)", "6"));
+        if (!Number.isFinite(editSeconds) || editSeconds <= 0) return `¥${config.editUnit}/秒`;
+        return `约¥${(config.editUnit * editSeconds).toFixed(2)}/${editSeconds}秒`;
+    }
+    if (config.unit) {
+        if (!Number.isFinite(seconds) || seconds <= 0) return `¥${config.unit}/秒`;
+        return `约¥${(config.unit * seconds).toFixed(2)}/${seconds}秒`;
+    }
+    if (config.resolutionUnits) {
+        const resolution = getValue(node, "🧩 分辨率", "720p");
+        const unit = config.resolutionUnits[resolution];
+        if (!unit) return "暂无接口";
+        if (!Number.isFinite(seconds) || seconds <= 0) return `¥${unit}/秒`;
+        return `约¥${(unit * seconds).toFixed(2)}/${seconds}秒`;
+    }
+    return config.fixed || "价格待补";
+}
+
+function isXVideo3Node(node) {
+    return node?.comfyClass === "DapaoRHAllVideoXVideo3Node" || node?.type === "DapaoRHAllVideoXVideo3Node";
+}
+
+function setWidgetHidden(node, name, hidden) {
+    const widget = getWidget(node, name);
+    if (!widget || widget.hidden === hidden) return;
+    widget.hidden = hidden;
+    node.setDirtyCanvas(true, true);
+}
+
+function setWidgetOptions(node, name, options) {
+    const widget = getWidget(node, name);
+    if (!widget || !Array.isArray(options) || options.length === 0) return;
+    widget.options = widget.options || {};
+    widget.options.values = options;
+    if (!options.includes(String(widget.value))) {
+        widget.value = options[0];
+    }
+}
+
+function setInputHidden(node, name, hidden) {
+    const input = node?.inputs?.find((item) => item.name === name);
+    if (!input || input.hidden === hidden) return;
+    input.hidden = hidden;
+    node.setDirtyCanvas(true, true);
+}
+
+function updateXVideo3Visibility(node) {
+    if (!isXVideo3Node(node)) return;
+    const config = getVideoXVideo3Config(node);
+    const showImages = Boolean(config?.showImages);
+    const showVideo = Boolean(config?.showVideo);
+    const maxImages = config?.singleImage ? 1 : (config?.maxImages || 0);
+
+    setWidgetOptions(node, "📐 视频比例", config?.ratios);
+    setWidgetOptions(node, "🧩 分辨率", config?.resolutions);
+    setWidgetOptions(node, "⏱️ 时长(秒)", config?.durations);
+    setWidgetOptions(node, "🎞️ 参考视频时长(秒)", config?.editDurations);
+
+    setWidgetHidden(node, "📐 视频比例", !config?.showRatio);
+    setWidgetHidden(node, "🧩 分辨率", !config?.showResolution);
+    setWidgetHidden(node, "⏱️ 时长(秒)", !config?.showDuration);
+    setWidgetHidden(node, "🎞️ 参考视频时长(秒)", !config?.showEditDuration);
+    setWidgetHidden(node, "🌐 首帧公网URL", !showImages);
+    setWidgetHidden(node, "🖼️ 参考图URL列表", !showImages || config?.singleImage);
+    setWidgetHidden(node, "🌐 视频公网URL", !showVideo);
+
+    setInputHidden(node, "🎬 首帧图", !showImages);
+    for (let i = 1; i <= 7; i++) {
+        setInputHidden(node, `🖼️ 参考图${i}`, !showImages || i > maxImages);
+    }
+    setInputHidden(node, "🎞️ 输入视频", !showVideo);
+
+    if (node.computeSize) node.setSize(node.computeSize());
+    node.setDirtyCanvas(true, true);
+}
+
 function wrapWidgetCallback(node, widget) {
     if (!widget || widget._dapaoRhPriceWrapped) return;
     const original = widget.callback;
     widget.callback = function (...args) {
         const result = original?.apply(this, args);
+        updateXVideo3Visibility(node);
         node.setDirtyCanvas(true, true);
         return result;
     };
@@ -181,9 +286,10 @@ function wrapWidgetCallback(node, widget) {
 
 function setupPriceBadge(node) {
     if (!node?.widgets) return;
-    ["🤖 模型", "🏷️ 渠道", "🔀 模式", "🎛️ 功能", "🧩 分辨率", "🎨 画质", "📝 提示词", "🔢 任务数量", "⏱️ 时长(秒)"].forEach((name) => {
+    ["🤖 模型", "🏷️ 渠道", "🔀 模式", "🎛️ 功能", "🧩 分辨率", "🎨 画质", "📝 提示词", "🔢 任务数量", "⏱️ 时长(秒)", "📐 视频比例", "🎞️ 参考视频时长(秒)"].forEach((name) => {
         wrapWidgetCallback(node, getWidget(node, name));
     });
+    updateXVideo3Visibility(node);
     node.setDirtyCanvas(true, true);
 }
 
