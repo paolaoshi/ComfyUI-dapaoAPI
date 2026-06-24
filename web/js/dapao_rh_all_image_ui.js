@@ -1,7 +1,7 @@
 import { app } from "../../../scripts/app.js";
 
 const TAG = "[Dapao RH Price UI]";
-const RH_NODE_TYPES = new Set(["DapaoRHAllImageNode", "DapaoRHAllImageConcurrentNode", "DapaoRHAllVideoSeedanceNode", "DapaoRHAllVideoV31Node", "DapaoRHAllVideoXVideo3Node"]);
+const RH_NODE_TYPES = new Set(["DapaoRHAllImageNode", "DapaoRHAllImageConcurrentNode", "DapaoRHAllVideoSeedanceNode", "DapaoRHSeedance20MiniNode", "DapaoRHAllVideoV31Node", "DapaoRHAllVideoXVideo3Node"]);
 
 const PRICE_MAP = {
     "全能图片G-2|官方稳定版|文生图|1k|low": "¥0.06/次",
@@ -87,6 +87,37 @@ const VIDEO_XVIDEO3_CONFIGS = {
     "X-video3-v1.5|官方稳定版|图生视频": { resolutionUnits: { "480p": 0.56, "720p": 0.95 }, showResolution: true, showDuration: true, showImages: true, singleImage: true, resolutions: ["480p", "720p"], durations: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"] },
 };
 
+const VIDEO_SEEDANCE20_MINI_NO_REF_UNITS = {
+    "480p": 0.30,
+    "720p": 0.60,
+    "1080p": 0.88,
+    "2k": 1.02,
+    "4k": 1.23,
+};
+
+const VIDEO_SEEDANCE20_MINI_REF_UNITS = {
+    "480p": { base: 0.20, extra: 0 },
+    "720p": { base: 0.40, extra: 0 },
+    "1080p": { base: 0.40, extra: 0.28 },
+    "2k": { base: 0.40, extra: 0.42 },
+    "4k": { base: 0.40, extra: 0.63 },
+};
+
+const VIDEO_SEEDANCE20_MINI_MIN_SECONDS = {
+    "4": 7,
+    "5": 9,
+    "6": 10,
+    "7": 12,
+    "8": 14,
+    "9": 15,
+    "10": 17,
+    "11": 19,
+    "12": 20,
+    "13": 22,
+    "14": 24,
+    "15": 25,
+};
+
 function getWidget(node, name) {
     if (!node?.widgets) return null;
     return node.widgets.find((w) => w.name === name) || null;
@@ -130,6 +161,9 @@ function normalizeQuality(value, node) {
 
 function getPriceText(node) {
     const currentModel = getValue(node, "🤖 模型", "");
+    if (node?.comfyClass === "DapaoRHSeedance20MiniNode" || node?.type === "DapaoRHSeedance20MiniNode") {
+        return getVideoSeedance20MiniPriceText(node);
+    }
     if (node?.comfyClass === "DapaoRHAllVideoXVideo3Node" || node?.type === "DapaoRHAllVideoXVideo3Node" || currentModel.startsWith("X-video3")) {
         return getVideoXVideo3PriceText(node);
     }
@@ -182,6 +216,41 @@ function getVideoV31PriceText(node) {
     return `约¥${(unit * seconds).toFixed(2)}/${seconds}秒`;
 }
 
+function hasSeedance20MiniReferenceVideo(node) {
+    if (Number(getValue(node, "🎞️ 参考视频总时长(秒)", 0)) > 0) return true;
+    if (String(getValue(node, "🎞️ 参考视频URL列表", "")).trim()) return true;
+    for (let i = 1; i <= 3; i++) {
+        if (isInputLinked(node, `🎞️ 参考视频${i}`)) return true;
+    }
+    return false;
+}
+
+function getVideoSeedance20MiniPriceText(node) {
+    const mode = getValue(node, "🎛️ 功能", "文生视频");
+    const resolution = getValue(node, "🧩 分辨率", "720p");
+    const duration = String(getValue(node, "⏱️ 时长(秒)", "5"));
+    const seconds = Number(duration);
+    const hasReferenceVideo = mode === "多模态视频" && hasSeedance20MiniReferenceVideo(node);
+
+    if (!hasReferenceVideo) {
+        const unit = VIDEO_SEEDANCE20_MINI_NO_REF_UNITS[resolution];
+        if (!unit) return "价格待补";
+        if (!Number.isFinite(seconds) || seconds <= 0) return `¥${unit}/秒`;
+        return `约¥${(unit * seconds).toFixed(2)}/${seconds}秒`;
+    }
+
+    const config = VIDEO_SEEDANCE20_MINI_REF_UNITS[resolution];
+    if (!config) return "价格待补";
+    if (!Number.isFinite(seconds) || seconds <= 0) {
+        return config.extra ? `基础¥${config.base}/秒 + 附加¥${config.extra}/秒` : `¥${config.base}/秒`;
+    }
+    const inputSeconds = Math.max(0, Number(getValue(node, "🎞️ 参考视频总时长(秒)", 0)) || 0);
+    const minSeconds = VIDEO_SEEDANCE20_MINI_MIN_SECONDS[duration] || seconds;
+    const baseSeconds = Math.max(inputSeconds + seconds, minSeconds);
+    const total = baseSeconds * config.base + seconds * config.extra;
+    return `约¥${total.toFixed(2)}/${seconds}秒`;
+}
+
 function getVideoXVideo3Config(node) {
     const model = getValue(node, "🤖 模型", "X-video3");
     const channel = getValue(node, "🏷️ 渠道", "官方稳定版");
@@ -216,6 +285,10 @@ function getVideoXVideo3PriceText(node) {
 
 function isXVideo3Node(node) {
     return node?.comfyClass === "DapaoRHAllVideoXVideo3Node" || node?.type === "DapaoRHAllVideoXVideo3Node";
+}
+
+function isSeedance20MiniNode(node) {
+    return node?.comfyClass === "DapaoRHSeedance20MiniNode" || node?.type === "DapaoRHSeedance20MiniNode";
 }
 
 function setWidgetHidden(node, name, hidden) {
@@ -272,12 +345,39 @@ function updateXVideo3Visibility(node) {
     node.setDirtyCanvas(true, true);
 }
 
+function updateSeedance20MiniVisibility(node) {
+    if (!isSeedance20MiniNode(node)) return;
+    const mode = getValue(node, "🎛️ 功能", "文生视频");
+    const multimodal = mode === "多模态视频";
+
+    setWidgetHidden(node, "🧍 真人模式", !multimodal);
+    setWidgetHidden(node, "🔄 素材转换槽位", !multimodal);
+    setWidgetHidden(node, "🎞️ 参考视频总时长(秒)", !multimodal);
+    setWidgetHidden(node, "🔎 联网搜索", multimodal);
+    setWidgetHidden(node, "🖼️ 参考图URL列表", !multimodal);
+    setWidgetHidden(node, "🎞️ 参考视频URL列表", !multimodal);
+    setWidgetHidden(node, "🎵 参考音频URL列表", !multimodal);
+    setWidgetHidden(node, "🔄 更多素材转换槽位", !multimodal);
+
+    for (let i = 1; i <= 9; i++) {
+        setInputHidden(node, `🖼️ 参考图${i}`, !multimodal);
+    }
+    for (let i = 1; i <= 3; i++) {
+        setInputHidden(node, `🎞️ 参考视频${i}`, !multimodal);
+        setInputHidden(node, `🎵 参考音频${i}`, !multimodal);
+    }
+
+    if (node.computeSize) node.setSize(node.computeSize());
+    node.setDirtyCanvas(true, true);
+}
+
 function wrapWidgetCallback(node, widget) {
     if (!widget || widget._dapaoRhPriceWrapped) return;
     const original = widget.callback;
     widget.callback = function (...args) {
         const result = original?.apply(this, args);
         updateXVideo3Visibility(node);
+        updateSeedance20MiniVisibility(node);
         node.setDirtyCanvas(true, true);
         return result;
     };
@@ -286,10 +386,11 @@ function wrapWidgetCallback(node, widget) {
 
 function setupPriceBadge(node) {
     if (!node?.widgets) return;
-    ["🤖 模型", "🏷️ 渠道", "🔀 模式", "🎛️ 功能", "🧩 分辨率", "🎨 画质", "📝 提示词", "🔢 任务数量", "⏱️ 时长(秒)", "📐 视频比例", "🎞️ 参考视频时长(秒)"].forEach((name) => {
+    ["🤖 模型", "🏷️ 渠道", "🔀 模式", "🎛️ 功能", "🧩 分辨率", "🎨 画质", "📝 提示词", "🔢 任务数量", "⏱️ 时长(秒)", "📐 视频比例", "🎞️ 参考视频时长(秒)", "🎞️ 参考视频总时长(秒)", "🎞️ 参考视频URL列表"].forEach((name) => {
         wrapWidgetCallback(node, getWidget(node, name));
     });
     updateXVideo3Visibility(node);
+    updateSeedance20MiniVisibility(node);
     node.setDirtyCanvas(true, true);
 }
 
