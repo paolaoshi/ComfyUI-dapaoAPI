@@ -1,0 +1,238 @@
+- generic [ref=e1]:
+  - main [ref=e9]:
+    - generic [ref=e10]:
+      - generic "进度条由 rgthree 设计。右键点击可打开 rgthree 菜单。" [ref=e12]: Idle
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - generic [ref=e19]: ↹ Resize Feed
+          - generic:
+            - generic "Controls the maximum size of the image feed panel (25vh)":
+              - generic: Feed Size...
+              - slider: "25"
+            - generic "Controls the number of columns in the feed (4 columns). Click label to set custom value.":
+              - generic: Column count...
+              - slider: "4"
+        - generic [ref=e20]:
+          - button "清空" [ref=e21] [cursor=pointer]
+          - button "❌" [ref=e22] [cursor=pointer]
+      - generic [ref=e23]:
+        - text: .. .. .. ▼ ▼
+        - generic:
+          - generic [ref=e26]:
+            - group [ref=e30]:
+              - button "Unsaved Workflow • 关闭" [pressed] [ref=e31] [cursor=pointer]:
+                - generic [ref=e33]:
+                  - generic [ref=e34]: Unsaved Workflow
+                  - generic [ref=e35]:
+                    - generic [ref=e36]: •
+                    - button "关闭" [ref=e37]:
+                      - generic [ref=e38]: 
+            - button "创建空白工作流" [ref=e39] [cursor=pointer]:
+              - generic [ref=e40]: 
+          - generic:
+            - navigation [ref=e42]:
+              - generic [ref=e43]:
+                - generic [ref=e44]:
+                  - button "资产（a）" [ref=e50] [cursor=pointer]
+                  - button "节点库（n）" [ref=e54] [cursor=pointer]
+                  - button "模型库（m）" [ref=e58] [cursor=pointer]
+                  - button "工作流（w）" [ref=e62] [cursor=pointer]
+                  - button "应用" [ref=e66] [cursor=pointer]
+                  - button "节点与组" [ref=e70] [cursor=pointer]:
+                    - generic [ref=e71]: 
+                  - 'button "MTB: Browse inputs and outputs directories." [ref=e74] [cursor=pointer]':
+                    - generic [ref=e75]: 
+                  - button "RunningHub 节点面板 (Ctrl+Shift+R)" [ref=e78] [cursor=pointer]:
+                    - generic [ref=e79]: 
+                  - button "模板" [ref=e82] [cursor=pointer]
+                - generic [ref=e86]:
+                  - button "帮助中心" [ref=e87] [cursor=pointer]:
+                    - generic [ref=e88]: 
+                  - button "底部面板" [ref=e91] [cursor=pointer]
+                  - button "键盘快捷键 (Ctrl + Shift + k)" [ref=e95] [cursor=pointer]
+                  - button "设置 (Ctrl + ,)" [ref=e99] [cursor=pointer]
+            - generic:
+              - complementary "侧边栏" [ref=e363]:
+                - generic [ref=e365]:
+                  - generic [ref=e366]:
+                    - toolbar [ref=e367]:
+                      - generic "节点" [ref=e369]
+                    - generic [ref=e370]:
+                      - combobox "搜索..." [active] [ref=e374]
+                      - generic [ref=e375]:
+                        - button "排序" [ref=e376] [cursor=pointer]
+                        - button "筛选" [ref=e378] [cursor=pointer]
+                    - tablist [ref=e382]:
+                      - tab "全部节点" [selected] [ref=e383] [cursor=pointer]
+                      - tab "蓝图" [ref=e384] [cursor=pointer]
+                  - tabpanel "全部节点" [ref=e390]:
+                    - generic [ref=e391]:
+                      - heading "已收藏" [level=3] [ref=e392]
+                      - generic [ref=e393]: 暂无收藏
+                      - generic [ref=e394]:
+                        - heading "子图蓝图" [level=3] [ref=e395]
+                        - tree [ref=e396]:
+                          - treeitem "Comfy 蓝图" [level=1] [ref=e398] [cursor=pointer]
+                      - generic [ref=e402]:
+                        - heading "合作伙伴节点" [level=3] [ref=e403]
+                        - tree [ref=e404]:
+                          - generic [ref=e405]:
+                            - treeitem "partner" [level=1] [ref=e406] [cursor=pointer]
+                            - treeitem "RunningHub" [level=1] [ref=e410] [cursor=pointer]
+                      - generic [ref=e414]:
+                        - heading "Comfy 节点" [level=3] [ref=e415]
+                        - tree [ref=e416]:
+                          - generic [ref=e417]:
+                            - treeitem "模型" [level=1] [ref=e418] [cursor=pointer]
+                            - treeitem "图像" [level=1] [ref=e422] [cursor=pointer]
+                            - treeitem "实验性" [level=1] [ref=e426] [cursor=pointer]
+                            - treeitem "高级" [level=1] [ref=e430] [cursor=pointer]
+                            - treeitem "通用" [level=1] [ref=e434] [cursor=pointer]
+                            - treeitem "文本" [level=1] [ref=e438] [cursor=pointer]
+                            - treeitem "音频" [level=1] [ref=e442] [cursor=pointer]
+                            - treeitem "视频" [level=1] [ref=e446] [cursor=pointer]
+                            - treeitem "3d" [level=1] [ref=e450] [cursor=pointer]
+                            - treeitem "模型微调" [level=1] [ref=e454] [cursor=pointer]
+                            - treeitem "partner" [level=1] [ref=e458] [cursor=pointer]
+                            - treeitem "EasyUse" [level=1] [ref=e462] [cursor=pointer]
+                            - treeitem "Impact节点" [level=1] [ref=e466] [cursor=pointer]
+                            - treeitem "💥KJ节点" [level=1] [ref=e470] [cursor=pointer]
+                            - treeitem "工具" [level=1] [ref=e474] [cursor=pointer]
+                            - treeitem "🛠️Essen节点包" [level=1] [ref=e478] [cursor=pointer]
+                            - treeitem "😺dz节点" [level=1] [ref=e482] [cursor=pointer]
+                            - treeitem "🎈老狗" [level=1] [ref=e486] [cursor=pointer]
+                            - treeitem "🛩️RG节点" [level=1] [ref=e490] [cursor=pointer]
+                            - treeitem "实用工具" [level=1] [ref=e494] [cursor=pointer]
+                      - generic [ref=e498]:
+                        - heading "扩展" [level=3] [ref=e499]
+                        - tree [ref=e500]:
+                          - generic [ref=e501]:
+                            - treeitem "EasyUse" [level=1] [ref=e502] [cursor=pointer]
+                            - treeitem "__frontend_only__" [level=1] [ref=e506] [cursor=pointer]
+                            - treeitem "🎈老狗" [level=1] [ref=e510] [cursor=pointer]
+                            - treeitem "实用工具" [level=1] [ref=e514] [cursor=pointer]
+                            - treeitem "🎡MTB节点" [level=1] [ref=e518] [cursor=pointer]
+                            - treeitem "🛩️RG节点" [level=1] [ref=e522] [cursor=pointer]
+                            - treeitem "图像" [level=1] [ref=e526] [cursor=pointer]
+                            - treeitem "模型" [level=1] [ref=e530] [cursor=pointer]
+                            - treeitem "音频" [level=1] [ref=e534] [cursor=pointer]
+                            - treeitem "🔝全局输入" [level=1] [ref=e538] [cursor=pointer]
+                            - treeitem "🖼️图像保存工具" [level=1] [ref=e542] [cursor=pointer]
+                            - treeitem "数学" [level=1] [ref=e546] [cursor=pointer]
+                            - treeitem "工具" [level=1] [ref=e550] [cursor=pointer]
+                            - treeitem "🐍隐藏" [level=1] [ref=e554] [cursor=pointer]
+                            - treeitem "🤖dapaoAPI" [level=1] [ref=e558] [cursor=pointer]
+                            - treeitem "采样" [level=1] [ref=e562] [cursor=pointer]
+                            - treeitem "🎞️视频关键帧插值" [level=1] [ref=e566] [cursor=pointer]
+                            - treeitem "bootleg" [level=1] [ref=e570] [cursor=pointer]
+                            - treeitem "Impact节点" [level=1] [ref=e574] [cursor=pointer]
+                            - treeitem "局部重绘" [level=1] [ref=e578] [cursor=pointer]
+                            - treeitem "💥KJ节点" [level=1] [ref=e582] [cursor=pointer]
+                            - treeitem "条件" [level=1] [ref=e586] [cursor=pointer]
+                            - treeitem "高级" [level=1] [ref=e590] [cursor=pointer]
+                            - treeitem "_for_testing" [level=1] [ref=e594] [cursor=pointer]
+                            - treeitem "HotReload" [level=1] [ref=e598] [cursor=pointer]
+                            - treeitem "linshi" [level=1] [ref=e602] [cursor=pointer]
+                            - treeitem "临时API调用" [level=1] [ref=e606] [cursor=pointer]
+                            - treeitem "llama-cpp-vlm" [level=1] [ref=e610] [cursor=pointer]
+                            - treeitem "🍭大炮-llama-cpp" [level=1] [ref=e614] [cursor=pointer]
+                            - treeitem "逻辑" [level=1] [ref=e618] [cursor=pointer]
+                            - treeitem "🎞️LTX视频" [level=1] [ref=e622] [cursor=pointer]
+                            - treeitem "Latent" [level=1] [ref=e626] [cursor=pointer]
+                            - treeitem "提示词" [level=1] [ref=e630] [cursor=pointer]
+                            - treeitem "api 节点" [level=1] [ref=e634] [cursor=pointer]
+                            - treeitem "LTXV" [level=1] [ref=e638] [cursor=pointer]
+                            - treeitem "Fluxtapoz" [level=1] [ref=e642] [cursor=pointer]
+                            - treeitem "Memory Management" [level=1] [ref=e646] [cursor=pointer]
+                            - treeitem "Painter" [level=1] [ref=e650] [cursor=pointer]
+                            - treeitem "视频" [level=1] [ref=e654] [cursor=pointer]
+                            - treeitem "显存" [level=1] [ref=e658] [cursor=pointer]
+                            - treeitem "VideoInfo" [level=1] [ref=e662] [cursor=pointer]
+                            - treeitem "Prince" [level=1] [ref=e666] [cursor=pointer]
+                            - treeitem "postprocessing" [level=1] [ref=e670] [cursor=pointer]
+                            - treeitem "🍭大炮-Qwen3VL" [level=1] [ref=e674] [cursor=pointer]
+                            - treeitem "🧪AILab" [level=1] [ref=e678] [cursor=pointer]
+                            - treeitem "🔍SeedVR2 视频高清放大器" [level=1] [ref=e682] [cursor=pointer]
+                            - treeitem "艺术探索" [level=1] [ref=e686] [cursor=pointer]
+                            - treeitem "遮罩" [level=1] [ref=e690] [cursor=pointer]
+                            - treeitem "⌨️各种工具" [level=1] [ref=e694] [cursor=pointer]
+                            - treeitem "🎥视频助手🅥🅗🅢" [level=1] [ref=e698] [cursor=pointer]
+                            - treeitem "WanAnimatePreprocess" [level=1] [ref=e702] [cursor=pointer]
+                            - treeitem "🎞️WAN视频生成器" [level=1] [ref=e706] [cursor=pointer]
+                            - treeitem "ControlNet预处理器" [level=1] [ref=e710] [cursor=pointer]
+                            - treeitem "😂动态肖像" [level=1] [ref=e714] [cursor=pointer]
+                            - treeitem "whisper" [level=1] [ref=e718] [cursor=pointer]
+                            - treeitem "zhenzhen" [level=1] [ref=e722] [cursor=pointer]
+                            - treeitem "Zhenzhen" [level=1] [ref=e726] [cursor=pointer]
+                            - treeitem "🧩 CR节点" [level=1] [ref=e730] [cursor=pointer]
+                            - treeitem "🔂AlekPet翻译节点" [level=1] [ref=e734] [cursor=pointer]
+                            - treeitem "🛠️Essen节点包" [level=1] [ref=e738] [cursor=pointer]
+                            - treeitem "👨InstantID面部应用" [level=1] [ref=e742] [cursor=pointer]
+                            - treeitem "😺dz节点" [level=1] [ref=e746] [cursor=pointer]
+                            - treeitem "AFL" [level=1] [ref=e750] [cursor=pointer]
+                            - treeitem "RunningHub" [level=1] [ref=e754] [cursor=pointer]
+                            - treeitem "TTP" [level=1] [ref=e758] [cursor=pointer]
+                            - treeitem "批量处理" [level=1] [ref=e762] [cursor=pointer]
+                            - treeitem "🤖Dapao-Toolbox" [level=1] [ref=e766] [cursor=pointer]
+                            - treeitem "DazzleNodes" [level=1] [ref=e770] [cursor=pointer]
+                            - treeitem "Derfu节点" [level=1] [ref=e774] [cursor=pointer]
+                            - treeitem "面部修复CodeFormer" [level=1] [ref=e778] [cursor=pointer]
+                            - treeitem "孤海工具箱" [level=1] [ref=e782] [cursor=pointer]
+                            - treeitem "孤海工具" [level=1] [ref=e786] [cursor=pointer]
+                            - treeitem "孤海-Kontext" [level=1] [ref=e790] [cursor=pointer]
+                            - treeitem "孤海定制" [level=1] [ref=e794] [cursor=pointer]
+                            - treeitem "Qwen3-TTS" [level=1] [ref=e798] [cursor=pointer]
+                            - treeitem "Qwen3TTS" [level=1] [ref=e802] [cursor=pointer]
+                            - treeitem "🧩RES4LYF" [level=1] [ref=e806] [cursor=pointer]
+                            - treeitem "SSTool" [level=1] [ref=e810] [cursor=pointer]
+                            - treeitem "WAS节点" [level=1] [ref=e814] [cursor=pointer]
+              - separator [ref=e818]
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic [ref=e103]:
+                          - button "进入应用模式" [ref=e104] [cursor=pointer]
+                          - button "工作流操作" [ref=e106] [cursor=pointer]:
+                            - generic [ref=e107]: 图形
+                        - text: 
+                    - generic [ref=e109]:
+                      - generic [ref=e111]:
+                        - button "🤖大炮ComfyUI🤖" [ref=e112] [cursor=pointer]
+                        - button "🧹清理" [ref=e113] [cursor=pointer]
+                        - generic [ref=e114]:
+                          - button "🛩️RG节点" [ref=e115] [cursor=pointer]
+                          - button "󰃀" [ref=e124] [cursor=pointer]
+                        - button "Show Image Feed 🐍" [disabled] [ref=e128]:
+                          - generic [ref=e129]: 󰋹
+                          - text: 显示图像流 🐍
+                      - region [ref=e132]:
+                        - generic [ref=e134]:
+                          - generic [ref=e135]: .. .. ..
+                          - generic [ref=e136]:
+                            - generic "批次数量" [ref=e137]:
+                              - generic [ref=e138]:
+                                - textbox "批次数量" [ref=e139]: "1"
+                                - generic [ref=e140]:
+                                  - button "增加" [ref=e141] [cursor=pointer]
+                                  - button "减小" [disabled]
+                            - button "运行" [ref=e142] [cursor=pointer]
+                            - button "运行" [ref=e144] [cursor=pointer]
+                          - button "取消当前任务" [disabled]
+                          - button "0 个活动任务 展开任务队列" [ref=e145] [cursor=pointer]:
+                            - generic [ref=e146]: 0 个活动任务
+                            - generic [ref=e147]: 展开任务队列
+                      - button "开关属性面板" [ref=e149] [cursor=pointer]
+                - generic:
+                  - toolbar "画布工具栏" [ref=e151]:
+                    - button "画布模式" [ref=e152] [cursor=pointer]
+                    - button "适应视图 (.)" [ref=e158] [cursor=pointer]
+                    - button "缩放控制" [ref=e160] [cursor=pointer]:
+                      - generic [ref=e161]: 100%
+                    - button "显示小地图 (ALT + SHIFT + M)" [ref=e165] [cursor=pointer]
+                    - button "隐藏链接" [ref=e167] [cursor=pointer]
+                  - text: 
+    - text: 
+  - text: ×
+  - button [ref=e171] [cursor=pointer]

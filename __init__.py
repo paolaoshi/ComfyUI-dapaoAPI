@@ -19,6 +19,7 @@
 版本：v1.7.4
 """
 
+import asyncio
 import aiohttp.web
 import server
 from pathlib import Path
@@ -213,6 +214,14 @@ from .rh_batch_llm_prompt_node import (
     NODE_DISPLAY_NAME_MAPPINGS as RH_BATCH_LLM_PROMPT_DISPLAY_MAPPINGS
 )
 
+# 加载 RH 应用节点
+from .rh_app_node import (
+    NODE_CLASS_MAPPINGS as RH_APP_MAPPINGS,
+    NODE_DISPLAY_NAME_MAPPINGS as RH_APP_DISPLAY_MAPPINGS,
+    fetch_rh_app_schema,
+    upload_rh_app_file,
+)
+
 # 加载 GPT 智能对话节点
 from .gpt_smart_chat_node import (
     NODE_CLASS_MAPPINGS as GPT_SMART_CHAT_MAPPINGS,
@@ -365,6 +374,7 @@ NODE_CLASS_MAPPINGS = {
     **RH_VIDEO_ENHANCE_MAPPINGS,
     **RH_LLM_CHAT_MAPPINGS,
     **RH_BATCH_LLM_PROMPT_MAPPINGS,
+    **RH_APP_MAPPINGS,
     **GPT_SMART_CHAT_MAPPINGS,
     **APIMART_MULTIMODAL_CHAT_MAPPINGS,
     **APIMART_SEEDANCE2_MAPPINGS,
@@ -413,6 +423,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     **RH_VIDEO_ENHANCE_DISPLAY_MAPPINGS,
     **RH_LLM_CHAT_DISPLAY_MAPPINGS,
     **RH_BATCH_LLM_PROMPT_DISPLAY_MAPPINGS,
+    **RH_APP_DISPLAY_MAPPINGS,
     **GPT_SMART_CHAT_DISPLAY_MAPPINGS,
     **APIMART_MULTIMODAL_CHAT_DISPLAY_MAPPINGS,
     **APIMART_SEEDANCE2_DISPLAY_MAPPINGS,
@@ -439,6 +450,64 @@ USER_TEMPLATES_MANAGER = DapaoUserTemplatesManager()
 
 # Base directory for this extension
 EXTENSION_DIR = Path(__file__).parent
+
+
+@server.PromptServer.instance.routes.post("/dapao/rh-app/schema")
+async def get_rh_app_schema(request: aiohttp.web.Request):
+    body = {}
+    try:
+        body = await request.json()
+        result = await asyncio.to_thread(
+            fetch_rh_app_schema,
+            body.get("api_channel", "国内版"),
+            body.get("api_key", ""),
+            body.get("webapp_id", ""),
+            30,
+        )
+        return aiohttp.web.json_response(result)
+    except Exception as error:
+        message = str(error)
+        api_key = str(body.get("api_key", "") or "")
+        if api_key:
+            message = message.replace(api_key, "***")
+        return aiohttp.web.json_response({"error": message}, status=400)
+
+
+@server.PromptServer.instance.routes.post("/dapao/rh-app/upload")
+async def upload_rh_app_media(request: aiohttp.web.Request):
+    values = {}
+    file_content = b""
+    filename = "upload.bin"
+    mime_type = "application/octet-stream"
+    try:
+        reader = await request.multipart()
+        while True:
+            field = await reader.next()
+            if field is None:
+                break
+            if field.name == "file":
+                file_content = await field.read(decode=False)
+                filename = Path(field.filename or filename).name
+                mime_type = field.headers.get("Content-Type") or mime_type
+            else:
+                values[field.name] = await field.text()
+
+        file_name = await asyncio.to_thread(
+            upload_rh_app_file,
+            values.get("api_channel", "国内版"),
+            values.get("api_key", ""),
+            file_content,
+            filename,
+            mime_type,
+            180,
+        )
+        return aiohttp.web.json_response({"fileName": file_name, "originalName": filename})
+    except Exception as error:
+        message = str(error)
+        api_key = str(values.get("api_key", "") or "")
+        if api_key:
+            message = message.replace(api_key, "***")
+        return aiohttp.web.json_response({"error": message}, status=400)
 
 @server.PromptServer.instance.routes.get("/dapao/categories")
 async def get_dapao_categories(request: aiohttp.web.Request):
@@ -706,6 +775,7 @@ print(f"  🎉 RH 全能视频 V3.1：{len(RH_ALL_VIDEO_V31_MAPPINGS)} 个")
 print(f"  🎉 RH 全能视频 X-video3：{len(RH_ALL_VIDEO_XVIDEO3_MAPPINGS)} 个")
 print(f"  📦 RH Seedance2.0素材：{len(RH_SEEDANCE_ASSET_MAPPINGS)} 个")
 print(f"  🎉 RH 视频超清：{len(RH_VIDEO_ENHANCE_MAPPINGS)} 个")
+print(f"  🪲 RH 应用：{len(RH_APP_MAPPINGS)} 个")
 print(f"  🍌 Banana整合版：{len(BANANA_INTEGRATED_MAPPINGS) + len(BANANA2_ZHENZHEN_MAPPINGS)} 个")
 print(f"  🎨 大炮提示词模板：{len(PROMPT_MAPPINGS)} 个")
 print(f"  🔍 对比打标节点：{len(COMPARE_TAGGING_MAPPINGS)} 个")

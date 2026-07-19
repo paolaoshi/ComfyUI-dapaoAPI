@@ -1,0 +1,103 @@
+- generic [active] [ref=e1]:
+  - main [ref=e9]:
+    - generic [ref=e10]:
+      - generic "进度条由 rgthree 设计。右键点击可打开 rgthree 菜单。" [ref=e12]: Idle
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - generic [ref=e19]: ↹ Resize Feed
+          - generic:
+            - generic "Controls the maximum size of the image feed panel (25vh)":
+              - generic: Feed Size...
+              - slider: "25"
+            - generic "Controls the number of columns in the feed (4 columns). Click label to set custom value.":
+              - generic: Column count...
+              - slider: "4"
+        - generic [ref=e20]:
+          - button "清空" [ref=e21] [cursor=pointer]
+          - button "❌" [ref=e22] [cursor=pointer]
+      - generic [ref=e23]:
+        - text: .. .. .. ▼ ▼
+        - generic:
+          - generic [ref=e26]:
+            - group [ref=e30]:
+              - button "Unsaved Workflow • 关闭" [pressed] [ref=e31] [cursor=pointer]:
+                - generic [ref=e33]:
+                  - generic [ref=e34]: Unsaved Workflow
+                  - generic [ref=e35]:
+                    - generic [ref=e36]: •
+                    - button "关闭" [ref=e37]:
+                      - generic [ref=e38]: 
+            - button "创建空白工作流" [ref=e39] [cursor=pointer]:
+              - generic [ref=e40]: 
+          - generic:
+            - navigation [ref=e42]:
+              - generic [ref=e43]:
+                - generic [ref=e44]:
+                  - button "资产（a）" [ref=e50] [cursor=pointer]
+                  - button "节点库（n）" [ref=e54] [cursor=pointer]
+                  - button "模型库（m）" [ref=e58] [cursor=pointer]
+                  - button "工作流（w）" [ref=e62] [cursor=pointer]
+                  - button "应用" [ref=e66] [cursor=pointer]
+                  - button "节点与组" [ref=e70] [cursor=pointer]:
+                    - generic [ref=e71]: 
+                  - 'button "MTB: Browse inputs and outputs directories." [ref=e74] [cursor=pointer]':
+                    - generic [ref=e75]: 
+                  - button "RunningHub 节点面板 (Ctrl+Shift+R)" [ref=e78] [cursor=pointer]:
+                    - generic [ref=e79]: 
+                  - button "模板" [ref=e82] [cursor=pointer]
+                - generic [ref=e86]:
+                  - button "帮助中心" [ref=e87] [cursor=pointer]:
+                    - generic [ref=e88]: 
+                  - button "底部面板" [ref=e91] [cursor=pointer]
+                  - button "键盘快捷键 (Ctrl + Shift + k)" [ref=e95] [cursor=pointer]
+                  - button "设置 (Ctrl + ,)" [ref=e99] [cursor=pointer]
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic [ref=e103]:
+                          - button "进入应用模式" [ref=e104] [cursor=pointer]
+                          - button "工作流操作" [ref=e106] [cursor=pointer]:
+                            - generic [ref=e107]: 图形
+                        - text: 
+                    - generic [ref=e109]:
+                      - generic [ref=e111]:
+                        - button "🤖大炮ComfyUI🤖" [ref=e112] [cursor=pointer]
+                        - button "🧹清理" [ref=e113] [cursor=pointer]
+                        - generic [ref=e114]:
+                          - button "🛩️RG节点" [ref=e115] [cursor=pointer]
+                          - button "󰃀" [ref=e124] [cursor=pointer]
+                        - button "Show Image Feed 🐍" [disabled] [ref=e128]:
+                          - generic [ref=e129]: 󰋹
+                          - text: 显示图像流 🐍
+                      - region [ref=e132]:
+                        - generic [ref=e134]:
+                          - generic [ref=e135]: .. .. ..
+                          - generic [ref=e136]:
+                            - generic "批次数量" [ref=e137]:
+                              - generic [ref=e138]:
+                                - textbox "批次数量" [ref=e139]: "1"
+                                - generic [ref=e140]:
+                                  - button "增加" [ref=e141] [cursor=pointer]
+                                  - button "减小" [disabled]
+                            - button "运行" [ref=e142] [cursor=pointer]
+                            - button "运行" [ref=e144] [cursor=pointer]
+                          - button "取消当前任务" [disabled]
+                          - button "0 个活动任务 展开任务队列" [ref=e145] [cursor=pointer]:
+                            - generic [ref=e146]: 0 个活动任务
+                            - generic [ref=e147]: 展开任务队列
+                      - button "开关属性面板" [ref=e149] [cursor=pointer]
+                - generic:
+                  - toolbar "画布工具栏" [ref=e151]:
+                    - button "画布模式" [ref=e152] [cursor=pointer]
+                    - button "适应视图 (.)" [ref=e158] [cursor=pointer]
+                    - button "缩放控制" [ref=e160] [cursor=pointer]:
+                      - generic [ref=e161]: 100%
+                    - button "显示小地图 (ALT + SHIFT + M)" [ref=e165] [cursor=pointer]
+                    - button "隐藏链接" [ref=e167] [cursor=pointer]
+                  - text: 
+    - text: 
+  - text: ×
+  - button [ref=e171] [cursor=pointer]

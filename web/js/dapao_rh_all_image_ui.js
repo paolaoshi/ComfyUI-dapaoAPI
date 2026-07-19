@@ -15,6 +15,7 @@ const API_CHANNEL_NODE_TYPES = new Set([
     "DapaoRHVideoEnhanceNode",
     "DapaoRHLLMChatNode",
     "DapaoRHBatchLLMPromptNode",
+    "DapaoRHAppNode",
 ]);
 
 const PRICE_MAP = {
