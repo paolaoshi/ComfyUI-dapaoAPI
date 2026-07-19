@@ -46,6 +46,8 @@ _MODEL_CACHE = {}
 FALLBACK_MODELS = [
     "google/gemini-3.1-flash-lite-preview",
     "google/gemini-3.5-flash",
+    "openai/gpt-5.6-sol",
+    "openai/gpt-5.6-terra",
     "openai/gpt-5.5",
     "openai/gpt-5.5-pro",
     "anthropic/claude-fable-5",
@@ -55,28 +57,56 @@ FALLBACK_MODELS = [
     "anthropic/claude-opus-4.6",
     "openai/gpt-5.4",
     "openai/gpt-5.3-codex",
+    "glm-5.2",
     "glm-5.1",
     "glm-5-turbo",
     "anthropic/claude-sonnet-4.6",
     "glm-5",
+    "anthropic/claude-sonnet-5",
     "qwen/qwen3.7-max",
     "glm-5v-turbo",
+    "qwen/qwen3.7-plus",
     "deepseek/deepseek-v4-pro",
+    "xai/grok-4.5",
     "xai/grok-4.3",
     "qwen/qwen3.6-plus",
     "google/gemini-3.1-pro-preview",
+    "bytedance/doubao-seed-evolving",
+    "bytedance/doubao-seed-2.1-pro",
     "anthropic/claude-sonnet-4.5",
+    "bytedance/doubao-seed-2.1-turbo",
     "anthropic/claude-opus-4.5",
     "bytedance/doubao-seed-2.0-pro",
     "bytedance/doubao-seed-2.0-code",
     "deepseek/deepseek-v4-flash",
     "qwen/qwen3.6-flash",
+    "openai/gpt-5.6-luna",
     "openai/gpt-5.4-mini",
     "openai/gpt-5.4-nano",
     "google/gemini-3-flash-preview",
     "google/gemini-2.5-flash",
     "bytedance/doubao-seed-2.0-lite",
     "bytedance/doubao-seed-2.0-mini",
+    "minimax/minimax-m2.7",
+    "anthropic/claude-haiku-4.5",
+    "qwen/qwen3.6-max-preview",
+    "anthropic/claude-haiku-4.5-saver",
+    "anthropic/claude-opus-4.6-saver",
+    "anthropic/claude-opus-4.7-saver",
+    "anthropic/claude-opus-4.8-saver",
+    "anthropic/claude-sonnet-4.6-saver",
+    "google/gemini-2.5-pro",
+    # ComfyUI_RH_OpenAPI 参考节点保留的兼容模型。
+    "qwen/qwen3-vl-235b-a22b-instruct",
+    "qwen/qwen-plus",
+    "qwen/qwen-max",
+    "qwen/qwen3-235b-a22b-2507",
+    "deepseek/deepseek-v3.2",
+    "deepseek/deepseek-chat",
+    "rh-llm-o/rh-t-55",
+    "rh-llm-o/rh-t-54",
+    "rh-llm-g/rh-g-flash-preview-3",
+    "rh-llm-g/rh-g-pro-preview-31",
 ]
 
 
@@ -92,7 +122,19 @@ def _default_model(models):
     return DEFAULT_MODEL if DEFAULT_MODEL in models else models[0]
 
 
-def _fetch_model_list(force=False, api_channel="国内版"):
+def _merge_model_lists(*model_lists):
+    merged = []
+    seen = set()
+    for model_list in model_lists:
+        for model_id in model_list:
+            normalized = str(model_id or "").strip()
+            if normalized and normalized not in seen:
+                seen.add(normalized)
+                merged.append(normalized)
+    return merged
+
+
+def _fetch_channel_models(api_channel, force=False):
     now = time.time()
     channel_cache = _MODEL_CACHE.get(api_channel) or {}
     cached = channel_cache.get("models")
@@ -118,9 +160,19 @@ def _fetch_model_list(force=False, api_channel="国内版"):
             }
             return models
     except Exception as e:
-        _log_info(f"获取模型列表失败，使用内置模型列表：{type(e).__name__}")
+        _log_info(f"获取{api_channel}模型列表失败：{type(e).__name__}")
 
-    return list(FALLBACK_MODELS)
+    return []
+
+
+def _fetch_model_list(force=False, api_channel=None):
+    channels = [api_channel] if api_channel in LLM_API_URLS else API_CHANNEL_CHOICES
+    remote_models = []
+    for channel in channels:
+        remote_models.extend(_fetch_channel_models(channel, force=force))
+
+    # 两个渠道的模型并不完全相同；节点下拉框使用并集，内置列表保证离线时仍完整。
+    return _merge_model_lists(remote_models, FALLBACK_MODELS)
 
 
 def _clean_think_tags(text):
@@ -288,7 +340,7 @@ class DapaoRHLLMChatNode:
                 }),
                 "🤖 模型ID": (models, {
                     "default": _default_model(models),
-                    "tooltip": "启动节点时会从 RH 获取模型列表；如果获取失败，会使用内置备用列表。"
+                    "tooltip": "启动节点时会合并 RH 国内版、国外版模型列表；如果获取失败，会使用完整内置备用列表。模型实际可用性以当前 API渠道为准。"
                 }),
                 "🎯 系统角色": ("STRING", {
                     "multiline": True,
