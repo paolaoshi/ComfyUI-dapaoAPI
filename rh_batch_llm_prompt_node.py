@@ -20,8 +20,8 @@ import torch
 from PIL import Image
 
 from .rh_llm_chat_node import (
+    API_CHANNEL_CHOICES,
     DEFAULT_MODEL,
-    LLM_CHAT_URL,
     REASONING_CHOICES,
     DapaoRHLLMChatNode,
     _clean_think_tags,
@@ -194,10 +194,15 @@ class DapaoRHBatchLLMPromptNode(DapaoRHLLMChatNode):
         models = _fetch_model_list()
         return {
             "required": {
+                "🌐 API渠道": (API_CHANNEL_CHOICES, {
+                    "default": "国内版",
+                    "tooltip": "国内版与国外版使用不同的 API 地址和 API 密钥，请选择与密钥一致的渠道。",
+                }),
                 "🔑 API密钥": ("STRING", {
                     "default": "",
                     "multiline": False,
                     "placeholder": "填入 RunningHub LLM API Key",
+                    "tooltip": "国内版和国外版密钥不通用。",
                 }),
                 "🤖 模型ID": (models, {
                     "default": _default_model(models),
@@ -844,6 +849,8 @@ class DapaoRHBatchLLMPromptNode(DapaoRHLLMChatNode):
         return prompts, json.dumps(full_response, ensure_ascii=False, indent=2), info
 
     def generate_batch_prompts(self, **kwargs):
+        api_channel = self._text_input_value(kwargs, "🌐 API渠道", "国内版")
+        self._activate_api_channel(api_channel)
         api_key = self._text_input_value(kwargs, "🔑 API密钥", "").strip()
         model = self._text_input_value(kwargs, "🤖 模型ID", DEFAULT_MODEL).strip()
         system_role = self._text_input_value(kwargs, "🎯 系统角色", "")
@@ -1017,6 +1024,7 @@ class DapaoRHBatchLLMPromptNode(DapaoRHLLMChatNode):
             "status": "success",
             "node": NODE_NAME,
             "model": model,
+            "api_channel": api_channel,
             "prompt_count": len(prompts),
             "task_count": total_count,
             "success_count": success_count,
@@ -1061,6 +1069,7 @@ class DapaoRHBatchLLMPromptNode(DapaoRHLLMChatNode):
         }
         info_lines = [
             "✅ RH 批量 LLM 提示词完成",
+            f"🌐 API渠道：{api_channel}",
             f"🤖 模型ID：{model}",
             f"📝 提示词数量：{len(prompts)}",
             f"🔢 实际任务数量：{total_count}",

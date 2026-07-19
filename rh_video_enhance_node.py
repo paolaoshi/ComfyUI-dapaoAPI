@@ -6,7 +6,7 @@ import json
 import time
 import traceback
 
-from .rh_all_image_node import BASE_URL
+from .rh_all_image_node import API_CHANNEL_CHOICES
 from .rh_all_video_seedance_node import (
     DapaoRHAllVideoSeedanceNode,
     IO,
@@ -39,10 +39,14 @@ class DapaoRHVideoEnhanceNode(DapaoRHAllVideoSeedanceNode):
     def INPUT_TYPES(cls):
         return {
             "required": {
+                "🌐 API渠道": (API_CHANNEL_CHOICES, {
+                    "default": "国内版",
+                    "tooltip": "国内版与国外版使用不同的 API 地址和 API 密钥，请选择与密钥一致的渠道。",
+                }),
                 "🔑 API密钥": ("STRING", {
                     "default": "",
                     "placeholder": "填入 RunningHub API Key",
-                    "tooltip": "RunningHub API Key，仅用于本次请求，不会写入文件。",
+                    "tooltip": "RunningHub API Key，仅用于本次请求，不会写入文件。国内版和国外版密钥不通用。",
                 }),
                 "🧩 超分目标": (UPSCALE_CHOICES, {
                     "default": "1080p",
@@ -129,7 +133,12 @@ class DapaoRHVideoEnhanceNode(DapaoRHAllVideoSeedanceNode):
         return url
 
     def _run_stage(self, api_key, endpoint, payload, max_seconds, interval, timeout):
-        submit_response = self._post_json(f"{BASE_URL}/{endpoint}", api_key, payload, timeout)
+        submit_response = self._post_json(
+            f"{self._current_api_urls()['base']}/{endpoint}",
+            api_key,
+            payload,
+            timeout,
+        )
         if submit_response.get("errorCode") or submit_response.get("errorMessage"):
             raise RuntimeError(f"RunningHub 提交失败：[{submit_response.get('errorCode') or ''}] {submit_response.get('errorMessage') or submit_response}")
 
@@ -157,6 +166,8 @@ class DapaoRHVideoEnhanceNode(DapaoRHAllVideoSeedanceNode):
         }
 
     def enhance_video(self, **kwargs):
+        api_channel = kwargs.get("🌐 API渠道", "国内版")
+        self._activate_api_channel(api_channel)
         api_key = (kwargs.get("🔑 API密钥", "") or "").strip()
         upscale_target = kwargs.get("🧩 超分目标", "1080p")
         fps_mode = kwargs.get("🎞️ 帧率增强", "不启用")
@@ -207,6 +218,7 @@ class DapaoRHVideoEnhanceNode(DapaoRHAllVideoSeedanceNode):
 
             info_lines = [
                 "✅ RH 视频超清任务完成",
+                f"🌐 API渠道：{api_channel}",
                 f"🧩 超分目标：{upscale_target}",
                 f"🎞️ 帧率增强：{fps_mode}",
                 f"💵 当前标价：{self._price_text(upscale_target, fps_mode)}",

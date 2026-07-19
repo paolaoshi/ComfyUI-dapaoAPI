@@ -2,6 +2,20 @@ import { app } from "../../../scripts/app.js";
 
 const TAG = "[Dapao RH Price UI]";
 const RH_NODE_TYPES = new Set(["DapaoRHAllImageNode", "DapaoRHAllImageConcurrentNode", "DapaoRHAllVideoSeedanceNode", "DapaoRHSeedance20MiniNode", "DapaoRHAllVideoV31Node", "DapaoRHAllVideoXVideo3Node"]);
+const API_CHANNEL_CHOICES = new Set(["国内版", "国外版"]);
+const API_CHANNEL_NODE_TYPES = new Set([
+    "DapaoRHAllImageNode",
+    "DapaoRHAllImageConcurrentNode",
+    "DapaoRHAllVideoSeedanceNode",
+    "DapaoRHSeedance20MiniNode",
+    "DapaoRHAllVideoV31Node",
+    "DapaoRHAllVideoXVideo3Node",
+    "DapaoRHSeedanceAssetCreateNode",
+    "DapaoRHSeedanceAssetQueryNode",
+    "DapaoRHVideoEnhanceNode",
+    "DapaoRHLLMChatNode",
+    "DapaoRHBatchLLMPromptNode",
+]);
 
 const PRICE_MAP = {
     "全能图片G-2|官方稳定版|文生图|1k|low": "¥0.06/次",
@@ -446,6 +460,24 @@ function drawPriceBadge(node, ctx) {
 app.registerExtension({
     name: "Dapao.RHAllImage.PriceBadge",
     async beforeRegisterNodeDef(nodeType, nodeData) {
+        if (API_CHANNEL_NODE_TYPES.has(nodeData.name)) {
+            const configure = nodeType.prototype.configure;
+            nodeType.prototype.configure = function (info) {
+                const apiChannelIsInput = info?.inputs?.some?.((input) => input?.name === "🌐 API渠道");
+                if (
+                    Array.isArray(info?.widgets_values)
+                    && !apiChannelIsInput
+                    && !API_CHANNEL_CHOICES.has(info.widgets_values[0])
+                ) {
+                    info = {
+                        ...info,
+                        widgets_values: ["国内版", ...info.widgets_values],
+                    };
+                }
+                return configure?.call(this, info);
+            };
+        }
+
         if (!RH_NODE_TYPES.has(nodeData.name)) return;
 
         const onNodeCreated = nodeType.prototype.onNodeCreated;

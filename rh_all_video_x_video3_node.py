@@ -6,7 +6,7 @@ import json
 import time
 import traceback
 
-from .rh_all_image_node import BASE_URL
+from .rh_all_image_node import API_CHANNEL_CHOICES
 from .rh_all_video_seedance_node import (
     DapaoRHAllVideoSeedanceNode,
     IO,
@@ -132,7 +132,15 @@ class DapaoRHAllVideoXVideo3Node(DapaoRHAllVideoSeedanceNode):
         })
         return {
             "required": {
-                "🔑 API密钥": ("STRING", {"default": "", "placeholder": "填入 RunningHub API Key"}),
+                "🌐 API渠道": (API_CHANNEL_CHOICES, {
+                    "default": "国内版",
+                    "tooltip": "国内版与国外版使用不同的 API 地址和 API 密钥，请选择与密钥一致的渠道。",
+                }),
+                "🔑 API密钥": ("STRING", {
+                    "default": "",
+                    "placeholder": "填入 RunningHub API Key",
+                    "tooltip": "国内版和国外版密钥不通用。",
+                }),
                 "🤖 模型": (MODEL_CHOICES, {"default": "X-video3"}),
                 "🏷️ 渠道": (CHANNEL_CHOICES, {"default": "官方稳定版"}),
                 "🎛️ 功能": (FUNCTION_CHOICES, {"default": "文生视频"}),
@@ -296,6 +304,8 @@ class DapaoRHAllVideoXVideo3Node(DapaoRHAllVideoSeedanceNode):
         return payload
 
     def generate_video(self, **kwargs):
+        api_channel = kwargs.get("🌐 API渠道", "国内版")
+        api_urls = self._activate_api_channel(api_channel)
         api_key = (kwargs.get("🔑 API密钥", "") or "").strip()
         model = kwargs.get("🤖 模型", "X-video3")
         channel = kwargs.get("🏷️ 渠道", "官方稳定版")
@@ -318,8 +328,8 @@ class DapaoRHAllVideoXVideo3Node(DapaoRHAllVideoSeedanceNode):
         try:
             payload = self._build_payload(kwargs, config, api_key, timeout)
             endpoint = config["endpoint"]
-            _log_info(f"开始请求 RH 全能视频X-video3：{endpoint}")
-            submit_response = self._post_json(f"{BASE_URL}/{endpoint}", api_key, payload, timeout)
+            _log_info(f"开始请求 RH 全能视频X-video3：{api_channel} / {endpoint}")
+            submit_response = self._post_json(f"{api_urls['base']}/{endpoint}", api_key, payload, timeout)
             if submit_response.get("errorCode") or submit_response.get("errorMessage"):
                 raise RuntimeError(f"RunningHub 提交失败：[{submit_response.get('errorCode') or ''}] {submit_response.get('errorMessage') or submit_response}")
 
@@ -342,6 +352,7 @@ class DapaoRHAllVideoXVideo3Node(DapaoRHAllVideoSeedanceNode):
             cost, duration_cost = self._extract_usage(final_response)
             info_lines = [
                 "✅ RH 全能视频 X-video3 任务完成",
+                f"🌐 API渠道：{api_channel}",
                 f"🤖 模型：{model}",
                 f"🏷️ 渠道：{channel}",
                 f"🎛️ 功能：{function}",

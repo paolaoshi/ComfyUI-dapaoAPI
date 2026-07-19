@@ -21,9 +21,11 @@ import torch
 from PIL import Image
 
 
-API_HOST = "https://www.runninghub.cn"
-BASE_URL = f"{API_HOST}/openapi/v2"
-UPLOAD_URL = f"{BASE_URL}/media/upload/binary"
+API_CHANNEL_CHOICES = ["国内版", "国外版"]
+API_BASE_URLS = {
+    "国内版": "https://www.runninghub.cn/openapi/v2",
+    "国外版": "https://www.runninghub.ai/openapi/v2",
+}
 ASSET_GROUP_ID = "group-20260327004931-dvjbj"
 ASSET_NAME = "dapao_seedance_asset"
 CATEGORY = "🤖dapaoAPI/🦄RH功能专区🦄"
@@ -67,7 +69,14 @@ def _api_key_input():
     return ("STRING", {
         "default": "",
         "placeholder": "填入 RunningHub API Key",
-        "tooltip": "RunningHub API Key，仅用于本次请求，不会写入文件。",
+        "tooltip": "RunningHub API Key，仅用于本次请求，不会写入文件。国内版和国外版密钥不通用。",
+    })
+
+
+def _api_channel_input():
+    return (API_CHANNEL_CHOICES, {
+        "default": "国内版",
+        "tooltip": "国内版与国外版使用不同的 API 地址和 API 密钥，请选择与密钥一致的渠道。",
     })
 
 
@@ -90,41 +99,114 @@ def _response_error(response):
     return text
 
 
-def _post_json(endpoint, api_key, payload, timeout=60, max_retries=2):
-    url = f"{BASE_URL}/{endpoint.lstrip('/')}"
+def _is_authentication_error(code, message):
+    if str(code) in {"401", "403"}:
+        return True
+    normalized = str(message or "").lower()
+    return any(keyword in normalized for keyword in (
+        "api key",
+        "apikey",
+        "authorization",
+        "unauthorized",
+        "forbidden",
+        "invalid token",
+        "认证失败",
+        "密钥无效",
+    ))
+
+
+def _authentication_error(api_channel, status, message):
+    return RuntimeError(
+        f"RunningHub 认证失败 {status}：当前选择的是“{api_channel}”。"
+        f"国内版和国外版使用不同的 API 密钥，请确认 API渠道与密钥一致。接口返回：{message}"
+    )
+
+
+def _api_base_url(api_channel):
+    base_url = API_BASE_URLS.get(api_channel)
+    if not base_url:
+        raise ValueError(f"不支持的 API渠道：{api_channel}")
+    return base_url
+
+
+def _post_json(endpoint, api_key, payload, timeout=60, max_retries=2, api_channel="国内版"):
+    url = f"{_api_base_url(api_channel)}/{endpoint.lstrip('/')}"
     last_error = None
     for attempt in range(max_retries + 1):
         try:
             if attempt:
                 time.sleep(min(2 ** attempt, 10))
             response = requests.post(url, headers=_headers(api_key), json=payload, timeout=timeout)
-            if response.status_code >= 400:
-                raise RuntimeError(f"HTTP {response.status_code}: {_response_error(response)}")
-            data = response.json() if response.text else {}
-            if not isinstance(data, dict):
-                raise RuntimeError(f"接口返回内容不是 JSON：{response.text[:300]}")
-            if data.get("code") not in (None, 0, "0"):
-                raise RuntimeError(data.get("msg") or data.get("message") or str(data))
-            return data
-        except Exception as e:
-            last_error = e
+        except (requests.ConnectionError, requests.Timeout) as error:
+            last_error = error
             if attempt >= max_retries:
-                break
+                raise RuntimeError(
+                    f"RunningHub {api_channel}连接失败，已尝试 {attempt + 1} 次：{error}\n"
+                    "如果启用了代理软件，请检查代理是否稳定，或将当前 RunningHub 域名配置为直连。"
+                ) from error
+            continue
+
+        message = _response_error(response)
+        if _is_authentication_error(response.status_code, message):
+            raise _authentication_error(api_channel, response.status_code, message)
+        if response.status_code >= 500 and attempt < max_retries:
+            last_error = RuntimeError(f"HTTP {response.status_code}: {message}")
+            continue
+        if response.status_code >= 400:
+            raise RuntimeError(f"HTTP {response.status_code}: {message}")
+
+        data = response.json() if response.text else {}
+        if not isinstance(data, dict):
+            raise RuntimeError(f"接口返回内容不是 JSON：{response.text[:300]}")
+        code = data.get("code")
+        if code in (None, 0, "0"):
+            error_code = data.get("errorCode")
+            if error_code not in (None, 0, "0", ""):
+                code = error_code
+        message = data.get("msg") or data.get("message") or data.get("errorMessage") or data
+        if code not in (None, 0, "0"):
+            if _is_authentication_error(code, message):
+                raise _authentication_error(api_channel, code, message)
+            raise RuntimeError(message)
+        return data
     raise RuntimeError(f"请求失败：{last_error}")
 
 
-def _upload_file(api_key, content, filename, mime_type, timeout=120):
-    response = requests.post(
-        UPLOAD_URL,
-        headers={"Authorization": f"Bearer {api_key}"},
-        files={"file": (filename, content, mime_type)},
-        timeout=max(timeout, 120),
-    )
+def _upload_file(api_key, content, filename, mime_type, timeout=120, api_channel="国内版"):
+    upload_url = f"{_api_base_url(api_channel)}/media/upload/binary"
+    response = None
+    for attempt in range(3):
+        try:
+            response = requests.post(
+                upload_url,
+                headers={"Authorization": f"Bearer {api_key}"},
+                files={"file": (filename, content, mime_type)},
+                timeout=max(timeout, 120),
+            )
+            break
+        except (requests.ConnectionError, requests.Timeout) as error:
+            if attempt >= 2:
+                raise RuntimeError(
+                    f"RunningHub {api_channel}媒体上传连接失败，已尝试 3 次：{error}\n"
+                    "如果启用了代理软件，请检查代理是否稳定，或将当前 RunningHub 域名配置为直连。"
+                ) from error
+            time.sleep(attempt + 1)
     if response.status_code >= 400:
-        raise RuntimeError(f"媒体上传失败 {response.status_code}：{_response_error(response)}")
+        message = _response_error(response)
+        if _is_authentication_error(response.status_code, message):
+            raise _authentication_error(api_channel, response.status_code, message)
+        raise RuntimeError(f"媒体上传失败 {response.status_code}：{message}")
     data = response.json() if response.text else {}
-    if data.get("code") not in (None, 0, "0"):
-        raise RuntimeError(data.get("msg") or data.get("message") or str(data))
+    code = data.get("code")
+    if code in (None, 0, "0"):
+        error_code = data.get("errorCode")
+        if error_code not in (None, 0, "0", ""):
+            code = error_code
+    message = data.get("msg") or data.get("message") or data.get("errorMessage") or data
+    if code not in (None, 0, "0"):
+        if _is_authentication_error(code, message):
+            raise _authentication_error(api_channel, code, message)
+        raise RuntimeError(message)
     url = (data.get("data") or {}).get("download_url")
     if not url:
         raise RuntimeError(f"媒体上传成功但没有返回 download_url：{_json(data)[:500]}")
@@ -631,21 +713,21 @@ def _prepare_media(media_type, value, keep_video_audio=False):
     raise ValueError(f"不支持的素材类型：{media_type}")
 
 
-def _create_one_asset(api_key, media_type, value, timeout, keep_video_audio=False):
+def _create_one_asset(api_key, media_type, value, timeout, keep_video_audio=False, api_channel="国内版"):
     content, filename, mime_type = _prepare_media(media_type, value, keep_video_audio=keep_video_audio)
-    source_url = _upload_file(api_key, content, filename, mime_type, timeout)
+    source_url = _upload_file(api_key, content, filename, mime_type, timeout, api_channel)
     payload = {
         "groupId": ASSET_GROUP_ID,
         "url": source_url,
         "assetType": _asset_type(media_type),
         "name": ASSET_NAME,
     }
-    response = _post_json("assets/create", api_key, payload, timeout)
+    response = _post_json("assets/create", api_key, payload, timeout, api_channel=api_channel)
     data = response.get("data") or {}
     asset_id = _clean(data.get("assetId"))
     if not asset_id:
         raise RuntimeError(f"创建成功但没有返回 assetId：{_json(response)[:500]}")
-    ready_info = _wait_for_asset(api_key, asset_id, media_type, timeout)
+    ready_info = _wait_for_asset(api_key, asset_id, media_type, timeout, api_channel)
     return {
         "media_type": media_type,
         "asset_id": asset_id,
@@ -654,8 +736,15 @@ def _create_one_asset(api_key, media_type, value, timeout, keep_video_audio=Fals
     }
 
 
-def _query_asset(api_key, asset_id, timeout):
-    response = _post_json("assets/query", api_key, {"assetId": asset_id}, timeout, max_retries=1)
+def _query_asset(api_key, asset_id, timeout, api_channel="国内版"):
+    response = _post_json(
+        "assets/query",
+        api_key,
+        {"assetId": asset_id},
+        timeout,
+        max_retries=1,
+        api_channel=api_channel,
+    )
     data = response.get("data") or {}
     return {
         "asset_id": _clean(data.get("assetId")) or asset_id,
@@ -665,11 +754,11 @@ def _query_asset(api_key, asset_id, timeout):
     }
 
 
-def _wait_for_asset(api_key, asset_id, media_type, timeout):
+def _wait_for_asset(api_key, asset_id, media_type, timeout, api_channel="国内版"):
     deadline = time.time() + {"image": 180, "video": 300, "audio": 180}.get(media_type, 180)
     last_status = ""
     while True:
-        info = _query_asset(api_key, asset_id, timeout)
+        info = _query_asset(api_key, asset_id, timeout, api_channel)
         status = _clean(info.get("status")).upper()
         if status != last_status:
             _log(f"素材 {asset_id} 状态：{status or 'UNKNOWN'}")
@@ -705,6 +794,7 @@ class DapaoRHSeedanceAssetCreateNode:
     def INPUT_TYPES(cls):
         return {
             "required": {
+                "🌐 API渠道": _api_channel_input(),
                 "🔑 API密钥": _api_key_input(),
             },
             "optional": {
@@ -731,6 +821,7 @@ class DapaoRHSeedanceAssetCreateNode:
         return ("", "", _json({"error": message}))
 
     def create(self, **kwargs):
+        api_channel = _clean(kwargs.get("🌐 API渠道")) or "国内版"
         api_key = _clean(kwargs.get("🔑 API密钥"))
         skip_error = bool(kwargs.get("skip_error", False))
         timeout = int(kwargs.get("⌛ 请求超时", 120))
@@ -749,6 +840,7 @@ class DapaoRHSeedanceAssetCreateNode:
                     media[0][1],
                     timeout,
                     keep_video_audio=keep_video_audio,
+                    api_channel=api_channel,
                 )
                 return (item["asset_id"], item["status"], _json(item["response"]))
 
@@ -762,6 +854,7 @@ class DapaoRHSeedanceAssetCreateNode:
                         value,
                         timeout,
                         keep_video_audio,
+                        api_channel,
                     ): index
                     for index, (media_type, value) in enumerate(media)
                 }
@@ -795,6 +888,7 @@ class DapaoRHSeedanceAssetQueryNode:
     def INPUT_TYPES(cls):
         return {
             "required": {
+                "🌐 API渠道": _api_channel_input(),
                 "🔑 API密钥": _api_key_input(),
                 "asset_id": _connectable_string(),
             },
@@ -815,6 +909,7 @@ class DapaoRHSeedanceAssetQueryNode:
         return ("", "", "", _json({"error": message}))
 
     def query(self, **kwargs):
+        api_channel = _clean(kwargs.get("🌐 API渠道")) or "国内版"
         api_key = _clean(kwargs.get("🔑 API密钥"))
         asset_id = _clean(kwargs.get("asset_id"))
         skip_error = bool(kwargs.get("skip_error", False))
@@ -826,7 +921,7 @@ class DapaoRHSeedanceAssetQueryNode:
                 asset_id = asset_id[8:]
             if not asset_id:
                 raise ValueError("asset_id 不能为空。")
-            info = _query_asset(api_key, asset_id, timeout)
+            info = _query_asset(api_key, asset_id, timeout, api_channel)
             return (info["asset_id"], info["status"], info["preview_url"], _json(info["response"]))
         except Exception as e:
             if skip_error:

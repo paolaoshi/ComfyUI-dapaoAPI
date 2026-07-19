@@ -19,13 +19,12 @@ except Exception:
     comfy = None
 
 from .rh_all_image_node import (
+    API_CHANNEL_CHOICES,
     ALL_RATIOS,
-    BASE_URL,
     CHANNEL_CHOICES,
     ENDPOINT_CONFIGS,
     MODE_CHOICES,
     MODEL_CHOICES,
-    POLL_URL,
     DapaoRHAllImageNode,
     create_blank_tensor,
     pil2tensor,
@@ -51,10 +50,14 @@ class DapaoRHAllImageConcurrentNode(DapaoRHAllImageNode):
     def INPUT_TYPES(cls):
         result = {
             "required": {
+                "🌐 API渠道": (API_CHANNEL_CHOICES, {
+                    "default": "国内版",
+                    "tooltip": "国内版与国外版使用不同的 API 地址和 API 密钥，请选择与密钥一致的渠道。",
+                }),
                 "🔑 API密钥": ("STRING", {
                     "default": "",
                     "placeholder": "填入 RunningHub API Key",
-                    "tooltip": "RunningHub API Key，仅用于本次请求，不会写入文件。"
+                    "tooltip": "RunningHub API Key，仅用于本次请求，不会写入文件。国内版和国外版密钥不通用。"
                 }),
                 "🤖 模型": (MODEL_CHOICES, {
                     "default": "全能图片G-2",
@@ -318,7 +321,12 @@ class DapaoRHAllImageConcurrentNode(DapaoRHAllImageNode):
             time.sleep(interval)
             elapsed += interval
             try:
-                result = self._post_json(POLL_URL, api_key, {"taskId": task_id}, timeout)
+                result = self._post_json(
+                    self._current_api_urls()["poll"],
+                    api_key,
+                    {"taskId": task_id},
+                    timeout,
+                )
                 consecutive_failures = 0
             except Exception as e:
                 consecutive_failures += 1
@@ -381,7 +389,12 @@ class DapaoRHAllImageConcurrentNode(DapaoRHAllImageNode):
                     dict(extra_params),
                 )
                 endpoint = config["endpoint"]
-                submit_response = self._post_json(f"{BASE_URL}/{endpoint}", api_key, payload, timeout)
+                submit_response = self._post_json(
+                    f"{self._current_api_urls()['base']}/{endpoint}",
+                    api_key,
+                    payload,
+                    timeout,
+                )
                 if submit_response.get("errorCode") or submit_response.get("errorMessage"):
                     raise RuntimeError(
                         f"RunningHub 提交失败：[{submit_response.get('errorCode') or ''}] "
@@ -459,6 +472,8 @@ class DapaoRHAllImageConcurrentNode(DapaoRHAllImageNode):
         return torch.cat(tensors, dim=0) if tensors else create_blank_tensor()
 
     def generate_concurrent(self, **kwargs):
+        api_channel = self._text_input_value(kwargs, "🌐 API渠道", "国内版")
+        self._activate_api_channel(api_channel)
         api_key = str(self._text_input_value(kwargs, "🔑 API密钥", "")).strip()
         model = self._text_input_value(kwargs, "🤖 模型", "全能图片G-2")
         channel = self._text_input_value(kwargs, "🏷️ 渠道", "官方稳定版")
@@ -533,7 +548,10 @@ class DapaoRHAllImageConcurrentNode(DapaoRHAllImageNode):
 
         start_time = time.time()
         try:
-            _log_info(f"开始多并发请求 RH：任务数量 {task_count}，并发数 {concurrency}，端点 {config['endpoint']}")
+            _log_info(
+                f"开始多并发请求 RH：{api_channel}，任务数量 {task_count}，"
+                f"并发数 {concurrency}，端点 {config['endpoint']}"
+            )
 
             results = [None] * task_count
             pbar = comfy.utils.ProgressBar(task_count) if comfy is not None else None
@@ -613,6 +631,7 @@ class DapaoRHAllImageConcurrentNode(DapaoRHAllImageNode):
 
             info_lines = [
                 "✅ RH 全能图片多并发任务完成",
+                f"🌐 API渠道：{api_channel}",
                 f"🤖 模型：{model}",
                 f"🏷️ 渠道：{channel}",
                 f"🔀 模式：{mode}",

@@ -23,14 +23,25 @@ from PIL import Image
 
 NODE_NAME = "DapaoRHLLMChatNode"
 LLM_CHAT_URL = "https://llm.runninghub.cn/v1/chat/completions"
-LLM_MODELS_URL = "https://llm.runninghub.ai/v1/models"
+LLM_MODELS_URL = "https://llm.runninghub.cn/v1/models"
+API_CHANNEL_CHOICES = ["国内版", "国外版"]
+LLM_API_URLS = {
+    "国内版": {
+        "chat": "https://llm.runninghub.cn/v1/chat/completions",
+        "models": "https://llm.runninghub.cn/v1/models",
+    },
+    "国外版": {
+        "chat": "https://llm.runninghub.ai/v1/chat/completions",
+        "models": "https://llm.runninghub.ai/v1/models",
+    },
+}
 DEFAULT_MODEL = "google/gemini-3.1-flash-lite-preview"
 MODEL_CACHE_TTL_SECONDS = 3600
 REASONING_CHOICES = ["none", "low", "medium", "high"]
 MAX_VIDEO_BYTES = 10 * 1024 * 1024
 MAX_VIDEO_DURATION = 15
 
-_MODEL_CACHE = {"expires_at": 0.0, "models": None}
+_MODEL_CACHE = {}
 
 FALLBACK_MODELS = [
     "google/gemini-3.1-flash-lite-preview",
@@ -81,14 +92,16 @@ def _default_model(models):
     return DEFAULT_MODEL if DEFAULT_MODEL in models else models[0]
 
 
-def _fetch_model_list(force=False):
+def _fetch_model_list(force=False, api_channel="国内版"):
     now = time.time()
-    cached = _MODEL_CACHE.get("models")
-    if not force and cached and now < float(_MODEL_CACHE.get("expires_at", 0)):
+    channel_cache = _MODEL_CACHE.get(api_channel) or {}
+    cached = channel_cache.get("models")
+    if not force and cached and now < float(channel_cache.get("expires_at", 0)):
         return list(cached)
 
     try:
-        response = requests.get(LLM_MODELS_URL, timeout=5)
+        models_url = LLM_API_URLS.get(api_channel, LLM_API_URLS["国内版"])["models"]
+        response = requests.get(models_url, timeout=5)
         response.raise_for_status()
         data = response.json()
         models = []
@@ -99,8 +112,10 @@ def _fetch_model_list(force=False):
             if model_id:
                 models.append(model_id)
         if models:
-            _MODEL_CACHE["models"] = models
-            _MODEL_CACHE["expires_at"] = now + MODEL_CACHE_TTL_SECONDS
+            _MODEL_CACHE[api_channel] = {
+                "models": models,
+                "expires_at": now + MODEL_CACHE_TTL_SECONDS,
+            }
             return models
     except Exception as e:
         _log_info(f"获取模型列表失败，使用内置模型列表：{type(e).__name__}")
@@ -261,11 +276,15 @@ class DapaoRHLLMChatNode:
         models = _fetch_model_list()
         return {
             "required": {
+                "🌐 API渠道": (API_CHANNEL_CHOICES, {
+                    "default": "国内版",
+                    "tooltip": "国内版与国外版使用不同的 API 地址和 API 密钥，请选择与密钥一致的渠道。",
+                }),
                 "🔑 API密钥": ("STRING", {
                     "default": "",
                     "multiline": False,
                     "placeholder": "填入 RunningHub LLM API Key",
-                    "tooltip": "仅用于本次请求，不会写入文件。"
+                    "tooltip": "仅用于本次请求，不会写入文件。国内版和国外版密钥不通用。"
                 }),
                 "🤖 模型ID": (models, {
                     "default": _default_model(models),
@@ -370,19 +389,66 @@ class DapaoRHLLMChatNode:
             pass
         return text
 
-    def _raise_for_response(self, response):
+    def _activate_api_channel(self, api_channel):
+        urls = LLM_API_URLS.get(api_channel)
+        if not urls:
+            raise ValueError(f"不支持的 API渠道：{api_channel}")
+        self._active_api_channel = api_channel
+        self._active_api_urls = urls
+        return urls
+
+    def _current_api_channel(self):
+        return getattr(self, "_active_api_channel", "国内版")
+
+    def _current_api_urls(self):
+        return getattr(self, "_active_api_urls", LLM_API_URLS["国内版"])
+
+    @staticmethod
+    def _authentication_error(api_channel, status, message):
+        return RuntimeError(
+            f"RH LLM 认证失败 {status}：当前选择的是“{api_channel}”。"
+            f"国内版和国外版使用不同的 API 密钥，请确认 API渠道与密钥一致。接口返回：{message}"
+        )
+
+    @staticmethod
+    def _json_authentication_error(data):
+        if not isinstance(data, dict):
+            return None
+        error = data.get("error")
+        if isinstance(error, dict):
+            code = error.get("code") or error.get("type") or "认证错误"
+            message = error.get("message") or error
+        else:
+            code = data.get("errorCode") or data.get("code")
+            message = data.get("errorMessage") or data.get("message") or error
+        normalized = str(message or "").lower()
+        if str(code) in {"401", "403"} or any(keyword in normalized for keyword in (
+            "api key",
+            "apikey",
+            "authorization",
+            "unauthorized",
+            "forbidden",
+            "invalid token",
+            "认证失败",
+            "密钥无效",
+        )):
+            return code or "认证错误", message
+        return None
+
+    def _raise_for_response(self, response, api_channel=None):
         if response.status_code == 200:
             return
+        api_channel = api_channel or self._current_api_channel()
         message = self._response_error_message(response)
         status = response.status_code
         if status == 400:
             raise RuntimeError(f"RH LLM 参数错误 400：请检查模型ID、提示词、图片或输出参数。接口返回：{message}")
         if status == 401:
-            raise RuntimeError(f"RH LLM 认证失败 401：API密钥无效或未填写正确。接口返回：{message}")
+            raise self._authentication_error(api_channel, status, message)
         if status == 402:
             raise RuntimeError(f"RH LLM 余额不足 402：账户余额不足，请充值后再试。接口返回：{message}")
         if status == 403:
-            raise RuntimeError(f"RH LLM 权限不足 403：没有权限访问该模型或资源。接口返回：{message}")
+            raise self._authentication_error(api_channel, status, message)
         if status == 429:
             raise RuntimeError(f"RH LLM 请求过频 429：请降低频率后重试。接口返回：{message}")
         if status >= 500:
@@ -398,21 +464,32 @@ class DapaoRHLLMChatNode:
 
     def _post_json_with_retry(self, payload, api_key, timeout):
         last_error = None
+        api_channel = self._current_api_channel()
+        chat_url = self._current_api_urls()["chat"]
         for attempt in range(3):
             try:
                 response = requests.post(
-                    LLM_CHAT_URL,
+                    chat_url,
                     headers=self._headers(api_key),
                     json=payload,
                     timeout=timeout,
                 )
-                self._raise_for_response(response)
-                return response.json()
+                self._raise_for_response(response, api_channel)
+                data = response.json()
+                auth_error = self._json_authentication_error(data)
+                if auth_error:
+                    raise self._authentication_error(api_channel, auth_error[0], auth_error[1])
+                return data
             except json.JSONDecodeError as e:
                 raise RuntimeError(f"RH LLM 返回内容不是 JSON：{e}")
             except Exception as e:
                 last_error = e
                 if attempt >= 2 or not self._should_retry(e):
+                    if isinstance(e, (requests.exceptions.Timeout, requests.exceptions.ConnectionError)):
+                        raise RuntimeError(
+                            f"RH LLM {api_channel}连接失败，已尝试 {attempt + 1} 次：{e}\n"
+                            "如果启用了代理软件，请检查代理是否稳定，或将当前 RunningHub 域名配置为直连。"
+                        ) from e
                     raise
                 time.sleep(min(2 ** attempt, 5))
         raise last_error
@@ -495,6 +572,8 @@ class DapaoRHLLMChatNode:
         return data
 
     def chat(self, **kwargs):
+        api_channel = kwargs.get("🌐 API渠道", "国内版")
+        self._activate_api_channel(api_channel)
         api_key = (kwargs.get("🔑 API密钥") or "").strip()
         model = (kwargs.get("🤖 模型ID") or DEFAULT_MODEL).strip()
         system_role = kwargs.get("🎯 系统角色", "")
@@ -538,6 +617,7 @@ class DapaoRHLLMChatNode:
             elapsed_time = time.time() - start_time
             info = (
                 "✅ RH LLM 智能对话完成\n"
+                f"🌐 API渠道：{api_channel}\n"
                 f"🤖 模型ID：{model}\n"
                 f"🖼️ 图像数量：{len(image_urls)}\n"
                 f"🎬 视频输入：{'是' if video_url else '否'}\n"

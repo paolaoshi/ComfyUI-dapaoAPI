@@ -10,9 +10,7 @@ import json
 import time
 import traceback
 
-import requests
-
-from .rh_all_image_node import BASE_URL
+from .rh_all_image_node import API_CHANNEL_CHOICES, BASE_URL
 from .rh_all_video_seedance_node import (
     DapaoRHAllVideoSeedanceNode,
     RHSeedanceVideoAdapter,
@@ -126,7 +124,15 @@ class DapaoRHSeedance20MiniNode(DapaoRHAllVideoSeedanceNode):
         })
         return {
             "required": {
-                "🔑 API密钥": ("STRING", {"default": "", "placeholder": "填入 RunningHub API Key"}),
+                "🌐 API渠道": (API_CHANNEL_CHOICES, {
+                    "default": "国内版",
+                    "tooltip": "国内版与国外版使用不同的 API 地址和 API 密钥，请选择与密钥一致的渠道。",
+                }),
+                "🔑 API密钥": ("STRING", {
+                    "default": "",
+                    "placeholder": "填入 RunningHub API Key",
+                    "tooltip": "国内版和国外版密钥不通用。",
+                }),
                 "🎛️ 功能": (FUNCTION_CHOICES, {"default": "文生视频"}),
                 "📝 提示词": ("STRING", {
                     "multiline": True,
@@ -183,18 +189,7 @@ class DapaoRHSeedance20MiniNode(DapaoRHAllVideoSeedanceNode):
         return f"约¥{total:.2f}/{seconds:g}秒"
 
     def _upload_bytes(self, api_key, content, filename, mime_type, timeout):
-        upload_url = f"{getattr(self, '_active_base_url', BASE_URL).rstrip('/')}/media/upload/binary"
-        files = {"file": (filename, content, mime_type)}
-        headers = {"Authorization": f"Bearer {api_key}"}
-        response = requests.post(upload_url, headers=headers, files=files, timeout=max(timeout, 120))
-        if response.status_code >= 400:
-            raise RuntimeError(f"媒体上传失败 {response.status_code}：{self._error_message(response)}")
-        data = response.json()
-        if data.get("code") == 0:
-            url = data.get("data", {}).get("download_url")
-            if url:
-                return url
-        raise RuntimeError(f"媒体上传失败：{data.get('msg') or data.get('message') or data}")
+        return super()._upload_bytes(api_key, content, filename, mime_type, timeout)
 
     def _query_asset_type(self, api_key, asset_id, timeout):
         response = self._post_json(
@@ -249,8 +244,10 @@ class DapaoRHSeedance20MiniNode(DapaoRHAllVideoSeedanceNode):
         raise RuntimeError(f"任务超过 {max_seconds} 秒仍未完成，请稍后查询任务ID：{task_id}")
 
     def generate_video(self, **kwargs):
+        api_channel = kwargs.get("🌐 API渠道", "国内版")
+        api_urls = self._activate_api_channel(api_channel)
         api_key = (kwargs.get("🔑 API密钥", "") or "").strip()
-        self._active_base_url = BASE_URL
+        self._active_base_url = api_urls["base"]
 
         function = kwargs.get("🎛️ 功能", "文生视频")
         timeout = int(kwargs.get("⌛ 请求超时", 120))
@@ -271,8 +268,8 @@ class DapaoRHSeedance20MiniNode(DapaoRHAllVideoSeedanceNode):
         try:
             payload = self._build_payload(kwargs, config, api_key, timeout)
             endpoint = config["endpoint"]
-            _log_info(f"开始请求 RH Seedance2.0 Mini：{endpoint}")
-            submit_response = self._post_json(f"{BASE_URL}/{endpoint}", api_key, payload, timeout)
+            _log_info(f"开始请求 RH Seedance2.0 Mini：{api_channel} / {endpoint}")
+            submit_response = self._post_json(f"{api_urls['base']}/{endpoint}", api_key, payload, timeout)
             if submit_response.get("errorCode") or submit_response.get("errorMessage"):
                 raise RuntimeError(f"RunningHub 提交失败：[{submit_response.get('errorCode') or ''}] {submit_response.get('errorMessage') or submit_response}")
             task_id = self._extract_task_id(submit_response)
@@ -303,6 +300,7 @@ class DapaoRHSeedance20MiniNode(DapaoRHAllVideoSeedanceNode):
             )
             info_lines = [
                 "✅ RH Seedance2.0 Mini 任务完成",
+                f"🌐 API渠道：{api_channel}",
                 f"🎛️ 功能：{function}",
                 f"📡 端点：{endpoint}",
                 f"💵 标价：{price_text}",

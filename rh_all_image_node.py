@@ -29,6 +29,11 @@ UPLOAD_URL = f"{BASE_URL}/media/upload/binary"
 POLL_URL = f"{BASE_URL}/query"
 INLINE_LIMIT_BYTES = 5 * 1024 * 1024
 
+API_CHANNEL_CHOICES = ["国内版", "国外版"]
+API_BASE_URLS = {
+    "国内版": "https://www.runninghub.cn/openapi/v2",
+    "国外版": "https://www.runninghub.ai/openapi/v2",
+}
 MODEL_CHOICES = ["全能图片G-2", "全能图片V2", "全能图片PRO"]
 CHANNEL_CHOICES = ["官方稳定版", "低价渠道版"]
 MODE_CHOICES = ["文生图", "图生图"]
@@ -198,17 +203,21 @@ class DapaoRHAllImageNode:
     def INPUT_TYPES(cls):
         return {
             "required": {
+                "🌐 API渠道": (API_CHANNEL_CHOICES, {
+                    "default": "国内版",
+                    "tooltip": "国内版与国外版使用不同的 API 地址和 API 密钥，请选择与密钥一致的渠道。"
+                }),
                 "🔑 API密钥": ("STRING", {
                     "default": "",
                     "placeholder": "填入 RunningHub API Key",
-                    "tooltip": "RunningHub API Key，仅用于本次请求，不会写入文件。"
+                    "tooltip": "RunningHub API Key，仅用于本次请求，不会写入文件。国内版和国外版密钥不通用。"
                 }),
                 "🤖 模型": (MODEL_CHOICES, {
                     "default": "全能图片G-2",
                     "tooltip": "只保留 G-2、V2、PRO 三个模型，具体端点由渠道和模式共同决定。"
                 }),
                 "🏷️ 渠道": (CHANNEL_CHOICES, {
-                    "default": "官方稳定版",
+                    "default": "低价渠道版",
                     "tooltip": "官方稳定版质量更稳；低价渠道版通常费用更低。"
                 }),
                 "🔀 模式": (MODE_CHOICES, {
@@ -289,17 +298,103 @@ class DapaoRHAllImageNode:
             pass
         return text
 
-    def _post_json(self, url, api_key, payload, timeout):
-        response = requests.post(url, headers=self._headers(api_key), json=payload, timeout=timeout)
+    @staticmethod
+    def _api_urls(api_channel):
+        base_url = API_BASE_URLS.get(api_channel)
+        if not base_url:
+            raise ValueError(f"不支持的 API渠道：{api_channel}")
+        return {
+            "base": base_url,
+            "upload": f"{base_url}/media/upload/binary",
+            "poll": f"{base_url}/query",
+        }
+
+    def _activate_api_channel(self, api_channel):
+        api_urls = self._api_urls(api_channel)
+        self._active_api_channel = api_channel
+        self._active_api_urls = api_urls
+        return api_urls
+
+    def _current_api_channel(self):
+        return getattr(self, "_active_api_channel", "国内版")
+
+    def _current_api_urls(self):
+        return getattr(self, "_active_api_urls", self._api_urls("国内版"))
+
+    @staticmethod
+    def _authentication_error(api_channel, status, message):
+        return RuntimeError(
+            f"RunningHub 认证失败 {status}：当前选择的是“{api_channel}”。"
+            f"国内版和国外版使用不同的 API 密钥，请确认 API渠道与密钥一致。接口返回：{message}"
+        )
+
+    @staticmethod
+    def _is_authentication_error(code, message):
+        if str(code) in {"401", "403"}:
+            return True
+        normalized = str(message or "").lower()
+        return any(keyword in normalized for keyword in (
+            "api key",
+            "apikey",
+            "authorization",
+            "unauthorized",
+            "forbidden",
+            "invalid token",
+            "认证失败",
+            "密钥无效",
+        ))
+
+    def _post_json(
+        self,
+        url,
+        api_key,
+        payload,
+        timeout,
+        api_channel=None,
+        connection_retries=2,
+    ):
+        api_channel = api_channel or self._current_api_channel()
+        response = None
+        for attempt in range(connection_retries + 1):
+            try:
+                response = requests.post(
+                    url,
+                    headers=self._headers(api_key),
+                    json=payload,
+                    timeout=timeout,
+                )
+                break
+            except (requests.ConnectionError, requests.Timeout) as error:
+                if attempt >= connection_retries:
+                    raise RuntimeError(
+                        f"RunningHub {api_channel}连接失败，已尝试 {attempt + 1} 次：{error}\n"
+                        "如果启用了代理软件，请检查代理是否稳定，或将当前 RunningHub 域名配置为直连。"
+                    ) from error
+                wait_seconds = attempt + 1
+                _log_info(
+                    f"{api_channel}连接中断，{wait_seconds} 秒后进行第 {attempt + 2} 次尝试。"
+                )
+                time.sleep(wait_seconds)
+
         if response.status_code >= 400:
-            raise RuntimeError(f"RunningHub 请求失败 {response.status_code}：{self._error_message(response)}")
+            message = self._error_message(response)
+            if self._is_authentication_error(response.status_code, message):
+                raise self._authentication_error(api_channel, response.status_code, message)
+            raise RuntimeError(f"RunningHub 请求失败 {response.status_code}：{message}")
         try:
             data = response.json()
         except Exception as e:
             raise RuntimeError(f"RunningHub 返回内容不是 JSON：{e}，响应：{response.text[:500]}")
         code = data.get("code") if isinstance(data, dict) else None
+        if isinstance(data, dict) and code in (None, 0, "0"):
+            error_code = data.get("errorCode")
+            if error_code not in (None, 0, "0", ""):
+                code = error_code
         if code not in (None, 0, "0"):
-            raise RuntimeError(f"RunningHub API 返回错误：{data.get('msg') or data.get('message') or data}")
+            message = data.get("msg") or data.get("message") or data.get("errorMessage") or data
+            if self._is_authentication_error(code, message):
+                raise self._authentication_error(api_channel, code, message)
+            raise RuntimeError(f"RunningHub API 返回错误：{message}")
         return data
 
     @staticmethod
@@ -341,7 +436,18 @@ class DapaoRHAllImageNode:
                 urls.append(str(item_url))
         return urls
 
-    def _poll_task(self, task_id, api_key, max_seconds, interval, timeout):
+    def _poll_task(
+        self,
+        task_id,
+        api_key,
+        max_seconds,
+        interval,
+        timeout,
+        poll_url=None,
+        api_channel=None,
+    ):
+        api_channel = api_channel or self._current_api_channel()
+        poll_url = poll_url or self._current_api_urls()["poll"]
         elapsed = 0
         consecutive_failures = 0
         pbar = comfy.utils.ProgressBar(100) if comfy is not None else None
@@ -352,7 +458,13 @@ class DapaoRHAllImageNode:
             time.sleep(interval)
             elapsed += interval
             try:
-                result = self._post_json(POLL_URL, api_key, {"taskId": task_id}, timeout)
+                result = self._post_json(
+                    poll_url,
+                    api_key,
+                    {"taskId": task_id},
+                    timeout,
+                    api_channel,
+                )
                 consecutive_failures = 0
             except Exception as e:
                 consecutive_failures += 1
@@ -387,26 +499,86 @@ class DapaoRHAllImageNode:
             image_bytes.append(buffer.getvalue())
         return image_bytes
 
-    def _upload_image_bytes(self, api_key, content, filename, timeout):
+    def _upload_image_bytes(
+        self,
+        api_key,
+        content,
+        filename,
+        timeout,
+        upload_url=None,
+        api_channel=None,
+    ):
+        api_channel = api_channel or self._current_api_channel()
+        upload_url = upload_url or self._current_api_urls()["upload"]
         files = {"file": (filename, content, "image/png")}
         headers = {"Authorization": f"Bearer {api_key}"}
-        response = requests.post(UPLOAD_URL, headers=headers, files=files, timeout=max(timeout, 120))
+        response = None
+        for attempt in range(3):
+            try:
+                response = requests.post(
+                    upload_url,
+                    headers=headers,
+                    files=files,
+                    timeout=max(timeout, 120),
+                )
+                break
+            except (requests.ConnectionError, requests.Timeout) as error:
+                if attempt >= 2:
+                    raise RuntimeError(
+                        f"RunningHub {api_channel}图片上传连接失败，已尝试 3 次：{error}\n"
+                        "如果启用了代理软件，请检查代理是否稳定，或将当前 RunningHub 域名配置为直连。"
+                    ) from error
+                time.sleep(attempt + 1)
         if response.status_code >= 400:
-            raise RuntimeError(f"图片上传失败 {response.status_code}：{self._error_message(response)}")
+            message = self._error_message(response)
+            if self._is_authentication_error(response.status_code, message):
+                raise self._authentication_error(api_channel, response.status_code, message)
+            raise RuntimeError(f"图片上传失败 {response.status_code}：{message}")
         data = response.json()
         if data.get("code") == 0:
             download_url = data.get("data", {}).get("download_url")
             if download_url:
                 return download_url
-        raise RuntimeError(f"图片上传失败：{data.get('msg') or data}")
+        code = data.get("code")
+        message = data.get("msg") or data.get("message") or data
+        if self._is_authentication_error(code, message):
+            raise self._authentication_error(api_channel, code, message)
+        raise RuntimeError(f"图片上传失败：{message}")
 
-    def _image_bytes_to_input_url(self, api_key, content, filename, timeout):
+    def _image_bytes_to_input_url(
+        self,
+        api_key,
+        content,
+        filename,
+        timeout,
+        upload_url=None,
+        api_channel=None,
+    ):
+        api_channel = api_channel or self._current_api_channel()
+        upload_url = upload_url or self._current_api_urls()["upload"]
         if len(content) > INLINE_LIMIT_BYTES:
-            return self._upload_image_bytes(api_key, content, filename, timeout)
+            return self._upload_image_bytes(
+                api_key,
+                content,
+                filename,
+                timeout,
+                upload_url,
+                api_channel,
+            )
         encoded = base64.b64encode(content).decode("ascii")
         return f"data:image/png;base64,{encoded}"
 
-    def _collect_image_urls(self, kwargs, api_key, timeout, max_images):
+    def _collect_image_urls(
+        self,
+        kwargs,
+        api_key,
+        timeout,
+        max_images,
+        upload_url=None,
+        api_channel=None,
+    ):
+        api_channel = api_channel or self._current_api_channel()
+        upload_url = upload_url or self._current_api_urls()["upload"]
         image_urls = []
         for input_index in range(1, 11):
             image_tensor = kwargs.get(f"🖼️ 图像{input_index}")
@@ -416,7 +588,14 @@ class DapaoRHAllImageNode:
                 if len(image_urls) >= max_images:
                     return image_urls
                 filename = f"comfyui_ref_{input_index}_{batch_index}.png"
-                image_urls.append(self._image_bytes_to_input_url(api_key, content, filename, timeout))
+                image_urls.append(self._image_bytes_to_input_url(
+                    api_key,
+                    content,
+                    filename,
+                    timeout,
+                    upload_url,
+                    api_channel,
+                ))
         return image_urls
 
     @staticmethod
@@ -455,9 +634,10 @@ class DapaoRHAllImageNode:
         return payload, final_ratio, final_resolution, final_quality
 
     def generate(self, **kwargs):
+        api_channel = kwargs.get("🌐 API渠道", "国内版")
         api_key = kwargs.get("🔑 API密钥", "").strip()
         model = kwargs.get("🤖 模型", "全能图片G-2")
-        channel = kwargs.get("🏷️ 渠道", "官方稳定版")
+        channel = kwargs.get("🏷️ 渠道", "低价渠道版")
         mode = kwargs.get("🔀 模式", "文生图")
         prompt = kwargs.get("📝 提示词", "").strip()
         ratio = kwargs.get("📐 画面比例", "模型默认")
@@ -490,9 +670,17 @@ class DapaoRHAllImageNode:
         final_response = {}
 
         try:
+            api_urls = self._activate_api_channel(api_channel)
             image_urls = []
             if mode == "图生图":
-                image_urls = self._collect_image_urls(kwargs, api_key, timeout, config["max_images"])
+                image_urls = self._collect_image_urls(
+                    kwargs,
+                    api_key,
+                    timeout,
+                    config["max_images"],
+                    api_urls["upload"],
+                    api_channel,
+                )
                 if not image_urls:
                     raise ValueError("选择图生图时，请至少接入一张参考图。")
 
@@ -507,10 +695,17 @@ class DapaoRHAllImageNode:
             )
 
             endpoint = config["endpoint"]
-            _log_info(f"开始请求 RH：{endpoint}")
+            _log_info(f"开始请求 RH：{api_channel} / {endpoint}")
             _log_info(f"端点：{config['display_name']}，参考图：{len(image_urls)}，比例：{final_ratio}，分辨率：{final_resolution}")
 
-            submit_response = self._post_json(f"{BASE_URL}/{endpoint}", api_key, payload, timeout)
+            submit_response = self._post_json(
+                f"{api_urls['base']}/{endpoint}",
+                api_key,
+                payload,
+                timeout,
+                api_channel,
+                connection_retries=2,
+            )
             task_id = self._extract_task_id(submit_response)
             if not task_id:
                 raise RuntimeError(f"提交成功但响应中没有 taskId：{json.dumps(submit_response, ensure_ascii=False)[:1000]}")
@@ -519,7 +714,15 @@ class DapaoRHAllImageNode:
             if submit_data.get("status") == "SUCCESS" and submit_data.get("results"):
                 final_response = submit_data
             else:
-                final_response = self._poll_task(task_id, api_key, max_seconds, interval, timeout)
+                final_response = self._poll_task(
+                    task_id,
+                    api_key,
+                    max_seconds,
+                    interval,
+                    timeout,
+                    api_urls["poll"],
+                    api_channel,
+                )
 
             urls = self._extract_urls(final_response)
             if not urls:
@@ -534,6 +737,7 @@ class DapaoRHAllImageNode:
 
             info_lines = [
                 "✅ RH 全能图片任务完成",
+                f"🌐 API渠道：{api_channel}",
                 f"🤖 模型：{model}",
                 f"🏷️ 渠道：{channel}",
                 f"🔀 模式：{mode}",

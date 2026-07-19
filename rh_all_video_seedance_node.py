@@ -29,9 +29,7 @@ except Exception:
         VIDEO = "VIDEO"
 
 from .rh_all_image_node import (
-    BASE_URL,
-    POLL_URL,
-    UPLOAD_URL,
+    API_CHANNEL_CHOICES,
     DapaoRHAllImageNode,
     create_blank_tensor,
     pil2tensor,
@@ -172,7 +170,15 @@ class DapaoRHAllVideoSeedanceNode(DapaoRHAllImageNode):
         })
         return {
             "required": {
-                "🔑 API密钥": ("STRING", {"default": "", "placeholder": "填入 RunningHub API Key"}),
+                "🌐 API渠道": (API_CHANNEL_CHOICES, {
+                    "default": "国内版",
+                    "tooltip": "国内版与国外版使用不同的 API 地址和 API 密钥，请选择与密钥一致的渠道。",
+                }),
+                "🔑 API密钥": ("STRING", {
+                    "default": "",
+                    "placeholder": "填入 RunningHub API Key",
+                    "tooltip": "国内版和国外版密钥不通用。",
+                }),
                 "🤖 模型": (MODEL_CHOICES, {"default": "SEEDANCE2.0"}),
                 "🎛️ 功能": (FUNCTION_CHOICES, {"default": "文生视频"}),
                 "📝 提示词": ("STRING", {
@@ -296,15 +302,43 @@ class DapaoRHAllVideoSeedanceNode(DapaoRHAllImageNode):
     def _upload_bytes(self, api_key, content, filename, mime_type, timeout):
         files = {"file": (filename, content, mime_type)}
         headers = {"Authorization": f"Bearer {api_key}"}
-        response = requests.post(UPLOAD_URL, headers=headers, files=files, timeout=max(timeout, 120))
+        upload_url = self._current_api_urls()["upload"]
+        response = None
+        for attempt in range(3):
+            try:
+                response = requests.post(
+                    upload_url,
+                    headers=headers,
+                    files=files,
+                    timeout=max(timeout, 120),
+                )
+                break
+            except (requests.ConnectionError, requests.Timeout) as error:
+                if attempt >= 2:
+                    raise RuntimeError(
+                        f"RunningHub {self._current_api_channel()}媒体上传连接失败，已尝试 3 次：{error}\n"
+                        "如果启用了代理软件，请检查代理是否稳定，或将当前 RunningHub 域名配置为直连。"
+                    ) from error
+                time.sleep(attempt + 1)
         if response.status_code >= 400:
-            raise RuntimeError(f"媒体上传失败 {response.status_code}：{self._error_message(response)}")
+            message = self._error_message(response)
+            if self._is_authentication_error(response.status_code, message):
+                raise self._authentication_error(
+                    self._current_api_channel(),
+                    response.status_code,
+                    message,
+                )
+            raise RuntimeError(f"媒体上传失败 {response.status_code}：{message}")
         data = response.json()
         if data.get("code") == 0:
             url = data.get("data", {}).get("download_url")
             if url:
                 return url
-        raise RuntimeError(f"媒体上传失败：{data.get('msg') or data.get('message') or data}")
+        code = data.get("code")
+        message = data.get("msg") or data.get("message") or data
+        if self._is_authentication_error(code, message):
+            raise self._authentication_error(self._current_api_channel(), code, message)
+        raise RuntimeError(f"媒体上传失败：{message}")
 
     def _image_to_url(self, image_tensor, api_key, name, timeout):
         if image_tensor is None:
@@ -354,7 +388,12 @@ class DapaoRHAllVideoSeedanceNode(DapaoRHAllImageNode):
         return ""
 
     def _query_asset_type(self, api_key, asset_id, timeout):
-        response = self._post_json(f"{BASE_URL}/assets/query", api_key, {"assetId": asset_id}, timeout)
+        response = self._post_json(
+            f"{self._current_api_urls()['base']}/assets/query",
+            api_key,
+            {"assetId": asset_id},
+            timeout,
+        )
         data = response.get("data") or {}
         asset_type = str(data.get("assetType") or "").strip().lower()
         if not asset_type:
@@ -459,7 +498,12 @@ class DapaoRHAllVideoSeedanceNode(DapaoRHAllImageNode):
             time.sleep(interval)
             elapsed += interval
             try:
-                result = self._post_json(POLL_URL, api_key, {"taskId": task_id}, timeout)
+                result = self._post_json(
+                    self._current_api_urls()["poll"],
+                    api_key,
+                    {"taskId": task_id},
+                    timeout,
+                )
                 consecutive_failures = 0
             except Exception as e:
                 consecutive_failures += 1
@@ -603,6 +647,8 @@ class DapaoRHAllVideoSeedanceNode(DapaoRHAllImageNode):
         return payload
 
     def generate_video(self, **kwargs):
+        api_channel = kwargs.get("🌐 API渠道", "国内版")
+        self._activate_api_channel(api_channel)
         api_key = (kwargs.get("🔑 API密钥", "") or "").strip()
         model = kwargs.get("🤖 模型", "SEEDANCE2.0")
         function = kwargs.get("🎛️ 功能", "文生视频")
@@ -623,8 +669,13 @@ class DapaoRHAllVideoSeedanceNode(DapaoRHAllImageNode):
         try:
             payload = self._build_payload(kwargs, config, api_key, timeout)
             endpoint = config["endpoint"]
-            _log_info(f"开始请求 RH Seedance2.0：{endpoint}")
-            submit_response = self._post_json(f"{BASE_URL}/{endpoint}", api_key, payload, timeout)
+            _log_info(f"开始请求 RH Seedance2.0：{api_channel} / {endpoint}")
+            submit_response = self._post_json(
+                f"{self._current_api_urls()['base']}/{endpoint}",
+                api_key,
+                payload,
+                timeout,
+            )
             if submit_response.get("errorCode") or submit_response.get("errorMessage"):
                 raise RuntimeError(f"RunningHub 提交失败：[{submit_response.get('errorCode') or ''}] {submit_response.get('errorMessage') or submit_response}")
             task_id = self._extract_task_id(submit_response)
@@ -648,6 +699,7 @@ class DapaoRHAllVideoSeedanceNode(DapaoRHAllImageNode):
             cost, duration = self._extract_usage(final_response)
             info_lines = [
                 "✅ RH 全能视频 Seedance2.0 任务完成",
+                f"🌐 API渠道：{api_channel}",
                 f"🤖 模型：{model}",
                 f"🎛️ 功能：{function}",
                 f"📡 端点：{endpoint}",
