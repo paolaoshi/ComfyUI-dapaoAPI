@@ -222,6 +222,12 @@ from .rh_app_node import (
     upload_rh_app_file,
 )
 
+# 加载炳火低价全能 API 节点
+from .low_price_universal_api_node import (
+    NODE_CLASS_MAPPINGS as LOW_PRICE_API_MAPPINGS,
+    NODE_DISPLAY_NAME_MAPPINGS as LOW_PRICE_API_DISPLAY_MAPPINGS,
+)
+
 # 加载 GPT 智能对话节点
 from .gpt_smart_chat_node import (
     NODE_CLASS_MAPPINGS as GPT_SMART_CHAT_MAPPINGS,
@@ -375,6 +381,7 @@ NODE_CLASS_MAPPINGS = {
     **RH_LLM_CHAT_MAPPINGS,
     **RH_BATCH_LLM_PROMPT_MAPPINGS,
     **RH_APP_MAPPINGS,
+    **LOW_PRICE_API_MAPPINGS,
     **GPT_SMART_CHAT_MAPPINGS,
     **APIMART_MULTIMODAL_CHAT_MAPPINGS,
     **APIMART_SEEDANCE2_MAPPINGS,
@@ -390,6 +397,21 @@ NODE_CLASS_MAPPINGS = {
     **GEMINI_OFFICIAL_MAPPINGS,
     **GEMINI_REVERSE_MAPPINGS,
 }
+
+# 整理节点菜单：保留根目录节点、RH 功能专区和魔塔 API，
+# 其余已有分组中的节点全部直接收纳到“旧版节点(弃用)”下。
+_DAPAO_CATEGORY_ROOT = "🤖dapaoAPI"
+_DAPAO_CATEGORY_PREFIX = f"{_DAPAO_CATEGORY_ROOT}/"
+_DAPAO_DEPRECATED_CATEGORY = f"{_DAPAO_CATEGORY_ROOT}/旧版节点(弃用)"
+_DAPAO_PRESERVED_GROUPS = {"🦄RH功能专区🦄", "魔塔API", "低价全能API推荐"}
+
+for _node_class in NODE_CLASS_MAPPINGS.values():
+    _category = _node_class.CATEGORY
+    if _category.startswith(_DAPAO_CATEGORY_PREFIX):
+        _relative_category = _category[len(_DAPAO_CATEGORY_PREFIX):]
+        _top_level_group = _relative_category.split("/", 1)[0]
+        if _top_level_group not in _DAPAO_PRESERVED_GROUPS:
+            _node_class.CATEGORY = _DAPAO_DEPRECATED_CATEGORY
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     **SEEDREAM_DISPLAY_MAPPINGS,
@@ -424,6 +446,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     **RH_LLM_CHAT_DISPLAY_MAPPINGS,
     **RH_BATCH_LLM_PROMPT_DISPLAY_MAPPINGS,
     **RH_APP_DISPLAY_MAPPINGS,
+    **LOW_PRICE_API_DISPLAY_MAPPINGS,
     **GPT_SMART_CHAT_DISPLAY_MAPPINGS,
     **APIMART_MULTIMODAL_CHAT_DISPLAY_MAPPINGS,
     **APIMART_SEEDANCE2_DISPLAY_MAPPINGS,
