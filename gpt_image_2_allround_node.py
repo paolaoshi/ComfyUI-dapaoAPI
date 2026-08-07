@@ -1,0 +1,540 @@
+"""GPT Image 2 all-round image node for the dapaoAI relay.
+
+This module is intentionally self-contained.  It does not import or inherit the
+legacy low-price image node, so that node can be removed independently.
+"""
+
+import base64
+import io
+import json
+import sys
+import time
+import traceback
+
+import numpy as np
+import requests
+import torch
+from PIL import Image
+
+try:
+    import comfy.model_management
+    import comfy.utils
+except Exception:
+    comfy = None
+
+
+API_BASE_URL = "https://api.dapaoai.com"
+NODE_NAME = "DapaoGPTImage2AllroundNode"
+NODE_CATEGORY = "🤖dapaoAPI/🍬大炮AI主力维护🍬"
+DISPLAY_NAME = "🐠GPT-image-2全能图像@炮老师的小课堂"
+
+MODEL_LABEL = "image-2"
+MODEL_BY_RESOLUTION = {
+    "1K": "image-2-1k",
+    "2K": "image-2-2k",
+    "4K": "image-2-4k",
+}
+RESOLUTION_API_VALUES = {"1K": "1k", "2K": "2k", "4K": "4k"}
+PRICE_BY_RESOLUTION = {"1K": 0.06, "2K": 0.12, "4K": 0.18}
+
+SIZE_OPTIONS = [
+    "模型默认",
+    "1:1",
+    "3:2",
+    "2:3",
+    "4:3",
+    "3:4",
+    "5:4",
+    "4:5",
+    "16:9",
+    "9:16",
+    "2:1",
+    "1:2",
+    "3:1",
+    "1:3",
+    "21:9",
+    "9:21",
+]
+QUALITY_API_VALUES = {
+    "低画质": "low",
+    "标准画质": "medium",
+    "高画质": "high",
+}
+
+
+def _safe_print(message):
+    """Keep logging from masking the actual API error on GBK consoles."""
+    try:
+        print(message)
+    except UnicodeEncodeError:
+        encoding = getattr(sys.stdout, "encoding", None) or "utf-8"
+        printable = str(message).encode(encoding, errors="replace").decode(encoding, errors="replace")
+        print(printable)
+
+
+def _log_info(message):
+    _safe_print(f"[dapaoAPI-GPT-image-2全能图像] 信息：{message}")
+
+
+def _log_error(message):
+    _safe_print(f"[dapaoAPI-GPT-image-2全能图像] 错误：{message}")
+
+
+def _pil_to_tensor(image):
+    image = image.convert("RGB")
+    array = np.asarray(image).astype(np.float32) / 255.0
+    return torch.from_numpy(array).unsqueeze(0)
+
+
+def _tensor_to_png_bytes(image_tensor):
+    items = []
+    for index in range(image_tensor.shape[0]):
+        array = np.clip(image_tensor[index].detach().cpu().numpy() * 255.0, 0, 255).astype(np.uint8)
+        image = Image.fromarray(array).convert("RGB")
+        buffer = io.BytesIO()
+        image.save(buffer, format="PNG")
+        items.append(buffer.getvalue())
+    return items
+
+
+def _png_data_uri(content):
+    return "data:image/png;base64," + base64.b64encode(content).decode("ascii")
+
+
+def _parse_extra_json(value):
+    try:
+        data = json.loads((value or "{}").strip() or "{}")
+    except json.JSONDecodeError as error:
+        raise ValueError(f"额外参数JSON格式错误：{error}") from error
+    if not isinstance(data, dict):
+        raise ValueError("额外参数JSON必须是 JSON 对象。")
+    return data
+
+
+def _merge_extra_parameters(payload, extra, protected_fields):
+    conflicts = sorted(set(extra).intersection(protected_fields))
+    if conflicts:
+        raise ValueError(f"额外参数JSON不能覆盖节点核心参数：{', '.join(conflicts)}")
+    payload.update(extra)
+
+
+def _response_error(response):
+    text = response.text[:1000]
+    try:
+        data = response.json()
+    except Exception:
+        return text
+    if not isinstance(data, dict):
+        return text
+    error = data.get("error")
+    if isinstance(error, dict):
+        return str(error.get("message") or error.get("code") or text)
+    return str(data.get("message") or data.get("msg") or error or text)
+
+
+class DapaoImage2APIError(RuntimeError):
+    def __init__(self, status_code, message):
+        self.status_code = int(status_code)
+        self.api_message = str(message)
+        super().__init__(self._format_message())
+
+    def _format_message(self):
+        labels = {
+            400: "请求参数错误",
+            401: "认证失败，请检查 API 密钥",
+            402: "余额不足，请充值后重试",
+            403: "没有模型或接口权限",
+            404: "接口不存在",
+            429: "请求过频，请稍后重试",
+        }
+        label = labels.get(self.status_code, "中转站请求失败")
+        return f"{label} {self.status_code}：{self.api_message}"
+
+
+def _response_layers(result):
+    if not isinstance(result, dict):
+        return []
+    layers = []
+    pending = [result]
+    seen = set()
+    while pending:
+        layer = pending.pop(0)
+        layer_id = id(layer)
+        if layer_id in seen:
+            continue
+        seen.add(layer_id)
+        layers.append(layer)
+        for key in ("data", "result", "output", "task"):
+            value = layer.get(key)
+            if isinstance(value, dict):
+                pending.append(value)
+            elif isinstance(value, list):
+                pending.extend(item for item in value if isinstance(item, dict))
+    return layers
+
+
+def _task_id(result):
+    for layer in _response_layers(result):
+        value = layer.get("task_id") or layer.get("id")
+        if isinstance(value, str) and value:
+            return value
+    return ""
+
+
+def _task_state(result):
+    statuses = []
+    message = ""
+    progress = None
+    for layer in _response_layers(result):
+        if layer.get("status") is not None:
+            statuses.append(str(layer.get("status")).strip().lower())
+        if progress is None and layer.get("progress") is not None:
+            try:
+                progress = float(str(layer.get("progress")).strip().rstrip("%"))
+            except (TypeError, ValueError):
+                pass
+        if not message:
+            for key in ("fail_reason", "error_message", "error", "message", "msg", "detail"):
+                value = layer.get(key)
+                if isinstance(value, str) and value.strip():
+                    message = value.strip()
+                    break
+                if isinstance(value, dict):
+                    nested = value.get("message") or value.get("error") or value.get("detail")
+                    if nested:
+                        message = str(nested)
+                        break
+
+    if any(status in {"failed", "failure", "error", "cancelled", "canceled", "rejected"} for status in statuses):
+        return "failed", progress, message
+    if any(status in {"succeeded", "success", "completed", "complete"} for status in statuses):
+        return "succeeded", progress, message
+    if any(status in {"submitted", "processing", "pending", "queued", "running", "in_progress"} for status in statuses):
+        return "processing", progress, message
+    return (statuses[0] if statuses else ""), progress, message
+
+
+def _extract_image_items(result):
+    items = []
+    seen = set()
+
+    def add(kind, value):
+        if not isinstance(value, str) or not value or value in seen:
+            return
+        seen.add(value)
+        items.append((kind, value))
+
+    def walk(value, parent_key=""):
+        if isinstance(value, dict):
+            for key, item in value.items():
+                normalized_key = str(key).lower()
+                if normalized_key in {"b64_json", "base64", "image_base64"}:
+                    if isinstance(item, str):
+                        add("base64", item)
+                    else:
+                        walk(item, normalized_key)
+                elif normalized_key in {"url", "image_url", "result_url"}:
+                    if isinstance(item, str) and item.startswith(("http://", "https://", "data:image/")):
+                        add("url", item)
+                    else:
+                        walk(item, normalized_key)
+                else:
+                    walk(item, normalized_key)
+        elif isinstance(value, list):
+            for item in value:
+                walk(item, parent_key)
+        elif isinstance(value, str):
+            if parent_key in {"url", "image_url", "result_url"} and value.startswith(("http://", "https://", "data:image/")):
+                add("url", value)
+
+    walk(result)
+    return items
+
+
+class DapaoImage2RelayClient:
+    def __init__(self, api_key, timeout):
+        self.api_key = api_key
+        self.timeout = timeout
+        self.base_url = API_BASE_URL.rstrip("/")
+
+    def _headers(self, json_body=False):
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "User-Agent": "ComfyUI-dapaoAPI/GPTImage2Allround",
+        }
+        if json_body:
+            headers["Content-Type"] = "application/json"
+        return headers
+
+    def _request_json(self, method, path, **kwargs):
+        url = f"{self.base_url}/{path.lstrip('/')}"
+        headers = kwargs.pop("headers", self._headers(json_body="json" in kwargs))
+        attempts = 3 if method.upper() == "GET" else 1
+        for attempt in range(attempts):
+            try:
+                response = requests.request(method, url, headers=headers, timeout=self.timeout, **kwargs)
+            except (requests.ConnectionError, requests.Timeout) as error:
+                if attempt < attempts - 1:
+                    time.sleep(attempt + 1)
+                    continue
+                if method.upper() == "GET":
+                    raise RuntimeError(f"中转站连接失败，已尝试 {attempts} 次：{error}") from error
+                raise RuntimeError(f"中转站连接失败：{error}。提交请求不会自动重试，以免重复扣费。") from error
+            if response.status_code >= 400:
+                raise DapaoImage2APIError(response.status_code, _response_error(response))
+            try:
+                return response.json()
+            except json.JSONDecodeError as error:
+                raise RuntimeError(f"中转站返回内容不是 JSON：{response.text[:500]}") from error
+        raise RuntimeError("中转站请求失败。")
+
+    def generate(self, payload):
+        return self._request_json("POST", "/v1/images/generations", json=payload)
+
+    def poll(self, task_id, max_seconds, interval):
+        started = time.monotonic()
+        progress_bar = comfy.utils.ProgressBar(100) if comfy is not None else None
+        while time.monotonic() - started < max_seconds:
+            if comfy is not None:
+                comfy.model_management.throw_exception_if_processing_interrupted()
+            result = self._request_json("GET", f"/v1/tasks/{task_id}")
+            status, progress, message = _task_state(result)
+            if status == "succeeded":
+                if progress_bar:
+                    progress_bar.update_absolute(100)
+                return result
+            if status == "failed":
+                raise RuntimeError(f"任务失败：{message or json.dumps(result, ensure_ascii=False)[:1000]}")
+            if progress_bar:
+                elapsed = time.monotonic() - started
+                current = min(95, int(progress)) if progress is not None else min(95, int(elapsed / max_seconds * 95))
+                progress_bar.update_absolute(current)
+            time.sleep(interval)
+        raise RuntimeError(f"任务超过 {max_seconds} 秒仍未完成。")
+
+    def download(self, url):
+        try:
+            response = requests.get(
+                url,
+                headers={"User-Agent": "Mozilla/5.0", "Accept": "image/*,*/*;q=0.8"},
+                timeout=max(self.timeout, 300),
+                allow_redirects=True,
+            )
+            response.raise_for_status()
+            return response.content
+        except requests.RequestException as error:
+            raise RuntimeError(f"结果图片下载失败：{error}") from error
+
+
+def _image_item_to_pil(client, kind, value):
+    if kind == "base64":
+        encoded = value.split(",", 1)[1] if value.startswith("data:") and "," in value else value
+        content = base64.b64decode(encoded)
+    elif value.startswith("data:image/"):
+        content = base64.b64decode(value.split(",", 1)[1])
+    else:
+        content = client.download(value)
+    return Image.open(io.BytesIO(content)).convert("RGB")
+
+
+class DapaoGPTImage2AllroundNode:
+    @classmethod
+    def INPUT_TYPES(cls):
+        optional = {
+            "📋 额外参数JSON": (
+                "STRING",
+                {
+                    "multiline": True,
+                    "default": "{}",
+                    "tooltip": "补充中转站支持的高级参数；不能覆盖模型、尺寸、清晰度等核心参数。",
+                },
+            ),
+            "🔁 最大轮询秒数": ("INT", {"default": 1200, "min": 60, "max": 3600, "step": 10}),
+            "⏱️ 轮询间隔": ("INT", {"default": 5, "min": 3, "max": 30, "step": 1}),
+            "⌛ 请求超时": ("INT", {"default": 900, "min": 30, "max": 1800, "step": 10}),
+        }
+        for index in range(1, 5):
+            optional[f"🖼️ 图像{index}"] = ("IMAGE", {"tooltip": f"接入任意参考图后自动切换为图生图，最多4张。"})
+        return {
+            "required": {
+                "🔑 API密钥": (
+                    "STRING",
+                    {
+                        "default": "",
+                        "placeholder": "填入 dapaoAI API 密钥",
+                        "tooltip": "密钥只用于请求 https://api.dapaoai.com，不会写入配置文件。",
+                    },
+                ),
+                "🤖 模型": ([MODEL_LABEL], {"default": MODEL_LABEL}),
+                "📝 提示词": (
+                    "STRING",
+                    {
+                        "multiline": True,
+                        "default": "一张高端商业摄影海报，干净的自然光，细节清晰，质感高级",
+                    },
+                ),
+                "📐 图片尺寸/比例": (SIZE_OPTIONS, {"default": "模型默认"}),
+                "🧩 清晰度": (list(MODEL_BY_RESOLUTION), {"default": "1K"}),
+                "🎨 画质": (list(QUALITY_API_VALUES), {"default": "标准画质"}),
+                "🖼️ 出图数量": ("INT", {"default": 1, "min": 1, "max": 10, "step": 1}),
+                "⚡ 异步模式": (
+                    "BOOLEAN",
+                    {"default": False, "tooltip": "仅当中转站返回任务ID时自动轮询；同步返回时无需开启。"},
+                ),
+                "🎲 随机种": (
+                    "INT",
+                    {
+                        "default": 0,
+                        "min": 0,
+                        "max": 0xFFFFFFFFFFFFFFFF,
+                        "control_after_generate": "randomize",
+                        "tooltip": "仅控制 ComfyUI 缓存，不发送给接口。",
+                    },
+                ),
+            },
+            "optional": optional,
+        }
+
+    RETURN_TYPES = ("IMAGE", "STRING", "STRING")
+    RETURN_NAMES = ("🖼️ 图像", "🔗 图片链接", "📋 响应信息")
+    FUNCTION = "generate"
+    CATEGORY = NODE_CATEGORY
+    DESCRIPTION = "GPT-image-2 文生图/多图编辑，1K/2K/4K 自动映射 dapaoAI 模型 @炮老师的小课堂"
+
+    @staticmethod
+    def _collect_reference_images(kwargs):
+        contents = []
+        for input_index in range(1, 5):
+            image_tensor = kwargs.get(f"🖼️ 图像{input_index}")
+            if image_tensor is None:
+                continue
+            for content in _tensor_to_png_bytes(image_tensor):
+                if len(contents) >= 4:
+                    return contents
+                contents.append(content)
+        return contents
+
+    def generate(self, **kwargs):
+        api_key = (kwargs.get("🔑 API密钥") or "").strip()
+        model_label = kwargs.get("🤖 模型", MODEL_LABEL)
+        prompt = (kwargs.get("📝 提示词") or "").strip()
+        size = kwargs.get("📐 图片尺寸/比例", "模型默认")
+        resolution_label = kwargs.get("🧩 清晰度", "1K")
+        quality_label = kwargs.get("🎨 画质", "标准画质")
+        count = min(max(int(kwargs.get("🖼️ 出图数量", 1)), 1), 10)
+        async_mode = bool(kwargs.get("⚡ 异步模式", False))
+        timeout = int(kwargs.get("⌛ 请求超时", 900))
+        max_poll_seconds = int(kwargs.get("🔁 最大轮询秒数", 1200))
+        poll_interval = int(kwargs.get("⏱️ 轮询间隔", 5))
+
+        submitted = {}
+        final = {}
+        started = time.time()
+        try:
+            if not api_key:
+                raise ValueError("请填写 dapaoAI API 密钥。")
+            if model_label != MODEL_LABEL:
+                raise ValueError(f"未知界面模型：{model_label}")
+            if not prompt:
+                raise ValueError("提示词不能为空。")
+            if resolution_label not in MODEL_BY_RESOLUTION:
+                raise ValueError(f"不支持的清晰度：{resolution_label}")
+            if quality_label not in QUALITY_API_VALUES:
+                raise ValueError(f"不支持的画质：{quality_label}")
+
+            model_id = MODEL_BY_RESOLUTION[resolution_label]
+            resolution = RESOLUTION_API_VALUES[resolution_label]
+            quality = QUALITY_API_VALUES[quality_label]
+            # 后端以实际收到的 IMAGE 输入为准，避免前端连线状态与工作流参数不同步。
+            reference_images = self._collect_reference_images(kwargs)
+            mode = "图生图" if reference_images else "文生图"
+
+            extra = _parse_extra_json(kwargs.get("📋 额外参数JSON", "{}"))
+            core_payload = {
+                "model": model_id,
+                "prompt": prompt,
+                "resolution": resolution,
+                "quality": quality,
+                "n": count,
+                "response_format": "url",
+            }
+            if size != "模型默认":
+                core_payload["size"] = size
+            if async_mode:
+                core_payload["async"] = True
+
+            protected_fields = {
+                "model", "prompt", "resolution", "quality", "n", "size", "images", "image",
+                "response_format", "async",
+            }
+            _merge_extra_parameters(core_payload, extra, protected_fields)
+            client = DapaoImage2RelayClient(api_key, timeout)
+
+            _log_info(
+                f"提交任务：relay={API_BASE_URL}，model={model_id}，mode={mode}，"
+                f"size={size}，quality={quality}，n={count}，参考图={len(reference_images)}张"
+            )
+            if mode == "文生图":
+                submitted = client.generate(core_payload)
+            else:
+                # 映射通道的图生图仍使用 generations JSON；上游要求 images 为带 MIME 前缀的 Base64 数组。
+                edit_payload = dict(core_payload)
+                edit_payload["images"] = [_png_data_uri(content) for content in reference_images]
+                submitted = client.generate(edit_payload)
+
+            final = submitted
+            image_items = _extract_image_items(final)
+            task_identifier = _task_id(submitted)
+            state, _, _ = _task_state(submitted)
+            if not image_items and task_identifier and (async_mode or state == "processing"):
+                final = client.poll(task_identifier, max_poll_seconds, poll_interval)
+                image_items = _extract_image_items(final)
+
+            if not image_items:
+                raise RuntimeError(f"任务完成但没有找到图片：{json.dumps(final, ensure_ascii=False)[:1200]}")
+
+            tensors = [_pil_to_tensor(_image_item_to_pil(client, kind, value)) for kind, value in image_items]
+            first_shape = tensors[0].shape
+            if any(tensor.shape[1:] != first_shape[1:] for tensor in tensors[1:]):
+                raise RuntimeError("中转站返回的多张图片尺寸不一致，无法组成 ComfyUI IMAGE 批次。")
+            images = tensors[0] if len(tensors) == 1 else torch.cat(tensors, dim=0)
+            urls = [value for kind, value in image_items if kind == "url" and value.startswith(("http://", "https://"))]
+            elapsed = time.time() - started
+            estimated_price = PRICE_BY_RESOLUTION[resolution_label] * count
+            info = (
+                "✅ GPT-image-2 全能图像任务完成\n"
+                f"🌐 中转站：{API_BASE_URL}\n"
+                f"🤖 界面模型：{MODEL_LABEL}\n"
+                f"📤 实际模型ID：{model_id}\n"
+                f"🔀 模式：{mode}\n"
+                f"📐 图片比例：{size}\n"
+                f"🧩 清晰度：{resolution_label}\n"
+                f"🎨 画质：{quality_label} ({quality})\n"
+                f"🖼️ 参考图：{len(reference_images)} 张\n"
+                f"🖼️ 请求数量：{count} 张，实际返回：{len(tensors)} 张\n"
+                f"💰 预计价格：¥{estimated_price:.2f}\n"
+                f"🆔 任务ID：{task_identifier or '同步返回'}\n"
+                f"⏱️ 耗时：{elapsed:.2f} 秒\n\n"
+                + json.dumps({"submit": submitted, "final": final}, ensure_ascii=False, indent=2)
+            )
+            return images, "\n".join(urls), info
+        except Exception as error:
+            message = f"❌ GPT-image-2 全能图像生成失败：{error}"
+            _log_error(message)
+            _log_error(traceback.format_exc())
+            details = json.dumps({"submit": submitted, "final": final}, ensure_ascii=False, indent=2)
+            # 不再返回黑色占位图，避免下游保存节点把请求失败误当成有效结果。
+            raise RuntimeError(f"{message}\n\n{details}") from error
+
+
+NODE_CLASS_MAPPINGS = {NODE_NAME: DapaoGPTImage2AllroundNode}
+NODE_DISPLAY_NAME_MAPPINGS = {NODE_NAME: DISPLAY_NAME}
+
+
+__all__ = [
+    "DapaoGPTImage2AllroundNode",
+    "MODEL_BY_RESOLUTION",
+    "PRICE_BY_RESOLUTION",
+    "NODE_CLASS_MAPPINGS",
+    "NODE_DISPLAY_NAME_MAPPINGS",
+]
