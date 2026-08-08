@@ -3,6 +3,7 @@ import { api } from "../../../scripts/api.js";
 
 const NODE_TYPE = "DapaoGPTImage2AllroundNode";
 const PRICES = { "1K": 0.06, "2K": 0.12, "4K": 0.18 };
+const MODEL_PRICES = { "image-2官方稳定全分辨率": 0.60 };
 const REGISTER_URL = "https://api.dapaoai.com/sign-up?aff=vcOZ";
 const REGISTER_WIDGET_NAME = "👉点此注册API密钥👈";
 
@@ -133,9 +134,10 @@ function setup(node) {
 }
 
 function priceText(node) {
+    const model = String(value(node, "🤖 模型", "image-2"));
     const resolution = String(value(node, "🧩 清晰度", "1K"));
     const count = Math.max(1, Number(value(node, "🖼️ 出图数量", 1)) || 1);
-    const unitPrice = PRICES[resolution];
+    const unitPrice = MODEL_PRICES[model] ?? PRICES[resolution];
     if (!unitPrice) return "价格待补";
     const total = (unitPrice * count).toFixed(2);
     return count === 1 ? `¥${total}/张` : `¥${total}/${count}张`;

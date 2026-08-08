@@ -29,6 +29,11 @@ NODE_CATEGORY = "🤖dapaoAPI/🍬大炮AI主力维护🍬"
 DISPLAY_NAME = "🐠GPT-image-2全能图像@炮老师的小课堂"
 
 MODEL_LABEL = "image-2"
+OFFICIAL_STABLE_MODEL_LABEL = "image-2官方稳定全分辨率"
+MODEL_OPTIONS = [MODEL_LABEL, OFFICIAL_STABLE_MODEL_LABEL]
+MODEL_ID_BY_LABEL = {
+    OFFICIAL_STABLE_MODEL_LABEL: "image-2-office",
+}
 MODEL_BY_RESOLUTION = {
     "1K": "image-2-1k",
     "2K": "image-2-2k",
@@ -36,6 +41,7 @@ MODEL_BY_RESOLUTION = {
 }
 RESOLUTION_API_VALUES = {"1K": "1k", "2K": "2k", "4K": "4k"}
 PRICE_BY_RESOLUTION = {"1K": 0.06, "2K": 0.12, "4K": 0.18}
+PRICE_BY_MODEL = {OFFICIAL_STABLE_MODEL_LABEL: 0.60}
 
 SIZE_OPTIONS = [
     "模型默认",
@@ -365,7 +371,7 @@ class DapaoGPTImage2AllroundNode:
                         "tooltip": "密钥只用于请求 https://api.dapaoai.com，不会写入配置文件。",
                     },
                 ),
-                "🤖 模型": ([MODEL_LABEL], {"default": MODEL_LABEL}),
+                "🤖 模型": (MODEL_OPTIONS, {"default": MODEL_LABEL}),
                 "📝 提示词": (
                     "STRING",
                     {
@@ -433,7 +439,7 @@ class DapaoGPTImage2AllroundNode:
         try:
             if not api_key:
                 raise ValueError("请填写 dapaoAI API 密钥。")
-            if model_label != MODEL_LABEL:
+            if model_label not in MODEL_OPTIONS:
                 raise ValueError(f"未知界面模型：{model_label}")
             if not prompt:
                 raise ValueError("提示词不能为空。")
@@ -442,7 +448,7 @@ class DapaoGPTImage2AllroundNode:
             if quality_label not in QUALITY_API_VALUES:
                 raise ValueError(f"不支持的画质：{quality_label}")
 
-            model_id = MODEL_BY_RESOLUTION[resolution_label]
+            model_id = MODEL_ID_BY_LABEL.get(model_label, MODEL_BY_RESOLUTION[resolution_label])
             resolution = RESOLUTION_API_VALUES[resolution_label]
             quality = QUALITY_API_VALUES[quality_label]
             # 后端以实际收到的 IMAGE 输入为准，避免前端连线状态与工作流参数不同步。
@@ -500,11 +506,12 @@ class DapaoGPTImage2AllroundNode:
             images = tensors[0] if len(tensors) == 1 else torch.cat(tensors, dim=0)
             urls = [value for kind, value in image_items if kind == "url" and value.startswith(("http://", "https://"))]
             elapsed = time.time() - started
-            estimated_price = PRICE_BY_RESOLUTION[resolution_label] * count
+            unit_price = PRICE_BY_MODEL.get(model_label, PRICE_BY_RESOLUTION[resolution_label])
+            estimated_price = unit_price * count
             info = (
                 "✅ GPT-image-2 全能图像任务完成\n"
                 f"🌐 中转站：{API_BASE_URL}\n"
-                f"🤖 界面模型：{MODEL_LABEL}\n"
+                f"🤖 界面模型：{model_label}\n"
                 f"📤 实际模型ID：{model_id}\n"
                 f"🔀 模式：{mode}\n"
                 f"📐 图片比例：{size}\n"
@@ -512,7 +519,7 @@ class DapaoGPTImage2AllroundNode:
                 f"🎨 画质：{quality_label} ({quality})\n"
                 f"🖼️ 参考图：{len(reference_images)} 张\n"
                 f"🖼️ 请求数量：{count} 张，实际返回：{len(tensors)} 张\n"
-                f"💰 预计价格：¥{estimated_price:.2f}\n"
+                f"💰 单价：¥{unit_price:.2f}/张，预计价格：¥{estimated_price:.2f}\n"
                 f"🆔 任务ID：{task_identifier or '同步返回'}\n"
                 f"⏱️ 耗时：{elapsed:.2f} 秒\n\n"
                 + json.dumps({"submit": submitted, "final": final}, ensure_ascii=False, indent=2)
@@ -533,8 +540,11 @@ NODE_DISPLAY_NAME_MAPPINGS = {NODE_NAME: DISPLAY_NAME}
 
 __all__ = [
     "DapaoGPTImage2AllroundNode",
+    "MODEL_OPTIONS",
+    "MODEL_ID_BY_LABEL",
     "MODEL_BY_RESOLUTION",
     "PRICE_BY_RESOLUTION",
+    "PRICE_BY_MODEL",
     "NODE_CLASS_MAPPINGS",
     "NODE_DISPLAY_NAME_MAPPINGS",
 ]
