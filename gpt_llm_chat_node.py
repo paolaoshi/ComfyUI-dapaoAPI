@@ -17,7 +17,18 @@ CHAT_ENDPOINT = f"{API_BASE_URL}/v1/chat/completions"
 NODE_NAME = "DapaoGPTLLMChatNode"
 NODE_CATEGORY = "🤖dapaoAPI/🍬大炮AI主力维护🍬"
 DISPLAY_NAME = "🐠GPT-LLM智能对话@炮老师的小课堂"
-MODEL_OPTIONS = ["gpt-5.5", "gpt-5.6-luna", "gpt-5.6-terra", "gpt-5.6-sol"]
+MODEL_OPTIONS = [
+    "gpt-5.5",
+    "gpt-5.6-luna",
+    "gpt-5.6-terra",
+    "gpt-5.6-sol",
+    "claude-fable-5",
+    "claude-opus-4-8",
+    "claude-opus-5",
+    "claude-sonnet-5",
+    "gemini-3.5-flash",
+    "gemini-3.5-flash-lite",
+]
 
 
 def _safe_print(message):

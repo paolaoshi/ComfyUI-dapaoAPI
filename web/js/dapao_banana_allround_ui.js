@@ -3,13 +3,21 @@ import { api } from "../../../scripts/api.js";
 
 const NODE_TYPE = "DapaoBananaAllroundNode";
 const PRICES = { "bananaPRO": 0.20, "bannana-2": 0.15 };
+const RESOLUTION_PRICES = {
+    "香蕉pro官方稳定版": { "1K": 0.60, "2K": 0.60, "4K": 1.00 },
+    "香蕉2官方稳定版": { "1K": 0.30, "2K": 0.30, "4K": 0.60 },
+};
 const ASPECT_RATIOS = {
     "bananaPRO": ["模型默认", "1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"],
     "bannana-2": ["模型默认", "16:9", "4:3", "4:5", "3:2", "1:1", "2:3", "3:4", "5:4", "9:16", "21:9", "1:4", "4:1", "1:8", "8:1"],
+    "香蕉pro官方稳定版": ["模型默认", "1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"],
+    "香蕉2官方稳定版": ["模型默认", "16:9", "4:3", "4:5", "3:2", "1:1", "2:3", "3:4", "5:4", "9:16", "21:9", "1:4", "4:1", "1:8", "8:1"],
 };
 const RESOLUTIONS = {
     "bananaPRO": ["1K", "2K", "4K"],
     "bannana-2": ["1K", "2K", "4K"],
+    "香蕉pro官方稳定版": ["1K", "2K", "4K"],
+    "香蕉2官方稳定版": ["1K", "2K", "4K"],
 };
 const REGISTER_URL = "https://api.dapaoai.com/sign-up?aff=vcOZ";
 const REGISTER_WIDGET_NAME = "👉点此注册API密钥👈";
@@ -135,8 +143,9 @@ function setup(node) {
 
 function priceText(node) {
     const model = String(value(node, "🤖 模型", "bananaPRO"));
+    const resolution = String(value(node, "🧩 清晰度", "1K"));
     const count = Math.max(1, Number(value(node, "🖼️ 出图数量", 1)) || 1);
-    const unitPrice = PRICES[model];
+    const unitPrice = RESOLUTION_PRICES[model]?.[resolution] ?? PRICES[model];
     if (!unitPrice) return "价格待补";
     const total = (unitPrice * count).toFixed(2);
     return count === 1 ? `¥${total}/张` : `¥${total}/${count}张`;

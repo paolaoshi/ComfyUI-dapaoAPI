@@ -31,8 +31,26 @@ NODE_NAME = "DapaoBananaAllroundNode"
 NODE_CATEGORY = "🤖dapaoAPI/🍬大炮AI主力维护🍬"
 DISPLAY_NAME = "🐠香蕉-banana全能图像@炮老师的小课堂"
 
-MODEL_OPTIONS = ["bananaPRO", "bannana-2"]
+BANANA_PRO_OFFICIAL_LABEL = "香蕉pro官方稳定版"
+BANANA_2_OFFICIAL_LABEL = "香蕉2官方稳定版"
+MODEL_OPTIONS = ["bananaPRO", "bannana-2", BANANA_PRO_OFFICIAL_LABEL, BANANA_2_OFFICIAL_LABEL]
 PRICE_BY_MODEL = {"bananaPRO": 0.20, "bannana-2": 0.15}
+MODEL_ID_BY_RESOLUTION = {
+    BANANA_PRO_OFFICIAL_LABEL: {
+        "1K": "bananaPRO-official-1k",
+        "2K": "bananaPRO-official-2k",
+        "4K": "bananaPRO-official-4k",
+    },
+    BANANA_2_OFFICIAL_LABEL: {
+        "1K": "banana2-official-1k",
+        "2K": "banana2-official-2k",
+        "4K": "banana2-official-4k",
+    },
+}
+PRICE_BY_MODEL_RESOLUTION = {
+    BANANA_PRO_OFFICIAL_LABEL: {"1K": 0.60, "2K": 0.60, "4K": 1.00},
+    BANANA_2_OFFICIAL_LABEL: {"1K": 0.30, "2K": 0.30, "4K": 0.60},
+}
 BANANA_PRO_ASPECT_RATIOS = [
     "模型默认",
     "1:1",
@@ -66,10 +84,14 @@ BANANA_2_ASPECT_RATIOS = [
 ASPECT_RATIOS_BY_MODEL = {
     "bananaPRO": BANANA_PRO_ASPECT_RATIOS,
     "bannana-2": BANANA_2_ASPECT_RATIOS,
+    BANANA_PRO_OFFICIAL_LABEL: BANANA_PRO_ASPECT_RATIOS,
+    BANANA_2_OFFICIAL_LABEL: BANANA_2_ASPECT_RATIOS,
 }
 RESOLUTIONS_BY_MODEL = {
     "bananaPRO": ["1K", "2K", "4K"],
     "bannana-2": ["1K", "2K", "4K"],
+    BANANA_PRO_OFFICIAL_LABEL: ["1K", "2K", "4K"],
+    BANANA_2_OFFICIAL_LABEL: ["1K", "2K", "4K"],
 }
 # ComfyUI's server schema is static, so expose the union and let the frontend
 # narrow each combo immediately after the model is selected.
@@ -392,7 +414,7 @@ class DapaoBananaAllroundNode:
 
     def generate(self, **kwargs):
         api_key = (kwargs.get("🔑 API密钥") or "").strip()
-        model_id = kwargs.get("🤖 模型", "bananaPRO")
+        model_label = kwargs.get("🤖 模型", "bananaPRO")
         prompt = (kwargs.get("📝 提示词") or "").strip()
         aspect_ratio = kwargs.get("📐 图片尺寸/比例", "1:1")
         resolution = kwargs.get("🧩 清晰度", "1K")
@@ -405,16 +427,17 @@ class DapaoBananaAllroundNode:
         try:
             if not api_key:
                 raise ValueError("请填写 dapaoAI API 密钥。")
-            if model_id not in MODEL_OPTIONS:
-                raise ValueError(f"不支持的映射模型：{model_id}")
+            if model_label not in MODEL_OPTIONS:
+                raise ValueError(f"不支持的映射模型：{model_label}")
             if not prompt:
                 raise ValueError("提示词不能为空。")
-            supported_aspect_ratios = ASPECT_RATIOS_BY_MODEL[model_id]
-            supported_resolutions = RESOLUTIONS_BY_MODEL[model_id]
+            supported_aspect_ratios = ASPECT_RATIOS_BY_MODEL[model_label]
+            supported_resolutions = RESOLUTIONS_BY_MODEL[model_label]
             if aspect_ratio not in supported_aspect_ratios:
-                raise ValueError(f"模型 {model_id} 不支持图片比例：{aspect_ratio}")
+                raise ValueError(f"模型 {model_label} 不支持图片比例：{aspect_ratio}")
             if resolution not in supported_resolutions:
-                raise ValueError(f"模型 {model_id} 不支持清晰度：{resolution}")
+                raise ValueError(f"模型 {model_label} 不支持清晰度：{resolution}")
+            model_id = MODEL_ID_BY_RESOLUTION.get(model_label, {}).get(resolution, model_label)
             reference_parts = self._collect_reference_parts(kwargs)
             mode = "图生图" if reference_parts else "文生图"
             extra = _parse_extra_json(kwargs.get("📋 额外参数JSON", "{}"))
@@ -453,11 +476,18 @@ class DapaoBananaAllroundNode:
             images = tensors[0] if len(tensors) == 1 else torch.cat(tensors, dim=0)
             urls = [value for kind, value, _ in image_items if kind == "url"]
             elapsed = time.time() - started
-            estimated_price = PRICE_BY_MODEL[model_id] * count
+            unit_price = PRICE_BY_MODEL_RESOLUTION.get(model_label, {}).get(
+                resolution,
+                PRICE_BY_MODEL.get(model_label),
+            )
+            if unit_price is None:
+                raise RuntimeError(f"模型 {model_label} 的价格尚未配置。")
+            estimated_price = unit_price * count
             info = (
                 "✅ 香蕉-banana 全能图像任务完成\n"
                 f"🌐 中转站：{API_BASE_URL}\n"
-                f"🤖 映射模型ID：{model_id}\n"
+                f"🤖 界面模型：{model_label}\n"
+                f"📤 实际模型ID：{model_id}\n"
                 f"🔀 模式：{mode}\n"
                 f"📐 图片比例：{aspect_ratio}\n"
                 f"🧩 清晰度：{resolution}\n"
@@ -465,7 +495,7 @@ class DapaoBananaAllroundNode:
                 f"🖼️ 请求数量：{count} 次，实际返回：{len(tensors)} 张\n"
                 f"📏 尺寸统一：{'已统一到首张图片' if resized_count else '无需处理'}\n"
                 f"⚡ 提交方式：{'并发' if concurrent and count > 1 else '顺序'}\n"
-                f"💰 预计价格：¥{estimated_price:.2f}\n"
+                f"💰 单价：¥{unit_price:.2f}/张，预计价格：¥{estimated_price:.2f}\n"
                 f"⏱️ 耗时：{elapsed:.2f} 秒\n\n"
                 + json.dumps({"responses": _sanitized_result(responses)}, ensure_ascii=False, indent=2)
             )
@@ -486,7 +516,9 @@ NODE_DISPLAY_NAME_MAPPINGS = {NODE_NAME: DISPLAY_NAME}
 __all__ = [
     "DapaoBananaAllroundNode",
     "MODEL_OPTIONS",
+    "MODEL_ID_BY_RESOLUTION",
     "PRICE_BY_MODEL",
+    "PRICE_BY_MODEL_RESOLUTION",
     "ASPECT_RATIOS_BY_MODEL",
     "RESOLUTIONS_BY_MODEL",
     "NODE_CLASS_MAPPINGS",
