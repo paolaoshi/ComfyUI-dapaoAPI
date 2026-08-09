@@ -1065,6 +1065,71 @@ def _audit_h3_prompt(prompt, mode, duration, image_count, video_count, audio_cou
     return issues
 
 
+def _parse_reference_manifest(value):
+    if not value:
+        return None
+    if isinstance(value, str):
+        try:
+            value = json.loads(value)
+        except json.JSONDecodeError as error:
+            raise ValueError("H3素材标记格式无效，请重新连接H3专用提示词框。") from error
+    if not isinstance(value, dict) or not isinstance(value.get("items"), list):
+        raise ValueError("H3素材标记缺少有效items字段。")
+
+    limits = {"Picture": 9, "Video": 3, "Audio": 6}
+    next_index = {kind: 1 for kind in limits}
+    items = []
+    for raw in value["items"]:
+        if not isinstance(raw, dict):
+            raise ValueError("H3素材标记包含无效项目。")
+        kind = str(raw.get("kind") or "")
+        index = raw.get("index")
+        if kind not in limits or not isinstance(index, int):
+            raise ValueError("H3素材标记包含未知素材类型或编号。")
+        if index != next_index[kind] or index > limits[kind]:
+            raise ValueError(f"H3素材标记中的{kind}编号不连续或超出官方上限。")
+        next_index[kind] += 1
+        token = f"<{kind} {index}>"
+        if raw.get("token") not in (None, token):
+            raise ValueError(f"H3素材标记必须使用官方格式：{token}")
+        items.append({
+            "kind": kind,
+            "index": index,
+            "token": token,
+            "label": str(raw.get("label") or token),
+            "source_input": str(raw.get("source_input") or ""),
+        })
+
+    mode = str(value.get("mode") or "T2VA")
+    if mode not in {"T2VA", "I2VA", "FL2VA", "L2VA", "Ref2VA"}:
+        raise ValueError(f"H3素材标记包含未知模式：{mode}")
+    counts = {kind: sum(item["kind"] == kind for item in items) for kind in limits}
+    if mode == "T2VA" and items:
+        raise ValueError("T2VA素材标记不应包含参考素材。")
+    if mode in {"I2VA", "L2VA"} and counts != {"Picture": 1, "Video": 0, "Audio": 0}:
+        raise ValueError(f"{mode}素材标记必须只包含<Picture 1>。")
+    if mode == "FL2VA" and counts != {"Picture": 2, "Video": 0, "Audio": 0}:
+        raise ValueError("FL2VA素材标记必须包含<Picture 1>和<Picture 2>。")
+    if mode == "Ref2VA" and counts["Audio"] and not (counts["Picture"] or counts["Video"]):
+        raise ValueError("Ref2VA音频不能作为唯一参考素材。")
+    return {"version": 1, "mode": mode, "target": str(value.get("target") or ""), "items": items, "counts": counts}
+
+
+def _audit_reference_manifest(prompt, manifest):
+    if not manifest:
+        return []
+    expected = {item["token"] for item in manifest["items"]}
+    used = {f"<{kind} {number}>" for kind, number in re.findall(r"<(Picture|Video|Audio)\s+(\d+)>", str(prompt or ""))}
+    issues = []
+    missing = sorted(expected - used)
+    unexpected = sorted(used - expected)
+    if missing:
+        issues.append("缺少官方素材标记：" + "、".join(missing))
+    if unexpected:
+        issues.append("出现未连接的官方素材标记：" + "、".join(unexpected))
+    return issues
+
+
 class H3PromptLLMClient:
     def __init__(self, api_key, timeout):
         self.api_key = api_key
@@ -1093,6 +1158,10 @@ class DapaoH3VideoPromptNode:
     @classmethod
     def INPUT_TYPES(cls):
         optional = {
+            "🧩 H3素材标记": (
+                "DAPAO_H3_REFERENCES",
+                {"tooltip": "连接🧙‍♂️H3专用提示词框的素材标记输出，用官方H3节点的实际素材顺序锁定编号。"},
+            ),
             "🎬 首帧图": ("IMAGE", {"tooltip": "I2VA/FL2VA 使用；在H3提示词中作为精确首帧锚点。"}),
             "🏁 尾帧图": ("IMAGE", {"tooltip": "L2VA/FL2VA 使用；在H3提示词中作为精确尾帧锚点。"}),
             "🎞️ 每个视频采样帧数": ("INT", {"default": 5, "min": 2, "max": 8, "step": 1, "tooltip": "从每个参考视频均匀提取代表帧给LLM分析；不计入H3的9张源图片上限。"}),
@@ -1265,24 +1334,65 @@ class DapaoH3VideoPromptNode:
             raise ValueError("Ref2VA至少需要图片或参考视频素材；参考音频不能作为唯一素材。")
 
     @staticmethod
-    def _build_user_content(kwargs, mode, style, ordered_images, videos, audios):
+    def _build_user_content(kwargs, mode, style, ordered_images, videos, audios, reference_manifest=None):
         duration = int(kwargs.get("⏱️ 目标时长(秒)", 5))
         ratio = kwargs.get("📐 视频比例", "16:9")
         native_audio = bool(kwargs.get("🔊 原生音频", True))
         output_chinese = bool(kwargs.get("🌐 输出中文提示词", False))
         output_language = "Simplified Chinese" if output_chinese else "English"
-        image_labels = [f"<Picture {index}>={name}" for index, (name, _) in enumerate(ordered_images, start=1)]
-        video_labels = [
-            f"<Video {item['index']}>=参考视频{item['slot']}接口，{item['duration']:.2f}秒，"
-            f"{item['width']}x{item['height']}，{item['fps']:.2f}fps"
-            for item in videos
-        ]
-        audio_labels = [
-            f"<Audio {item['index']}>=参考音频{item['slot']}接口，{item['duration']:.2f}秒，"
-            f"{item['sample_rate']}Hz/{item['channels']}声道，估算BPM={item['bpm']:.1f}，"
-            f"RMS={item['rms']:.4f}，静音比例={item['silence_ratio']:.1%}"
-            for item in audios
-        ]
+        if reference_manifest:
+            pictures = [item for item in reference_manifest["items"] if item["kind"] == "Picture"]
+            manifest_videos = [item for item in reference_manifest["items"] if item["kind"] == "Video"]
+            manifest_audios = [item for item in reference_manifest["items"] if item["kind"] == "Audio"]
+            image_labels = [
+                f"{item['token']}={ordered_images[item['index'] - 1][0] if item['index'] <= len(ordered_images) else item['label']}"
+                for item in pictures
+            ]
+            video_labels = []
+            for item in manifest_videos:
+                detail = next((video for video in videos if video["index"] == item["index"]), None)
+                if detail:
+                    video_labels.append(
+                        f"{item['token']}={item['label']}，已接入LLM分析素材，{detail['duration']:.2f}秒，"
+                        f"{detail['width']}x{detail['height']}，{detail['fps']:.2f}fps"
+                    )
+                else:
+                    video_labels.append(f"{item['token']}={item['label']}，仅按用户文字说明使用")
+            audio_labels = []
+            for item in manifest_audios:
+                detail = next((audio for audio in audios if audio["index"] == item["index"]), None)
+                if detail:
+                    audio_labels.append(
+                        f"{item['token']}={item['label']}，已接入LLM分析素材，{detail['duration']:.2f}秒，"
+                        f"{detail['sample_rate']}Hz/{detail['channels']}声道，估算BPM={detail['bpm']:.1f}，"
+                        f"RMS={detail['rms']:.4f}，静音比例={detail['silence_ratio']:.1%}"
+                    )
+                else:
+                    audio_labels.append(f"{item['token']}={item['label']}，仅按用户文字说明使用")
+            label_lock = (
+                "AUTHORITATIVE OFFICIAL H3 LABEL LOCK:\n"
+                f"Allowed labels in fixed identity order: {', '.join(item['token'] for item in reference_manifest['items']) or 'none'}\n"
+                "Preserve every label character-for-character. Never rename, renumber, swap roles, omit a listed label, "
+                "or invent another Picture/Video/Audio label. The user's text assigns each label's semantic role.\n"
+            )
+            mixed_count = len(reference_manifest["items"])
+            audio_limit = 6
+        else:
+            image_labels = [f"<Picture {index}>={name}" for index, (name, _) in enumerate(ordered_images, start=1)]
+            video_labels = [
+                f"<Video {item['index']}>=参考视频{item['slot']}接口，{item['duration']:.2f}秒，"
+                f"{item['width']}x{item['height']}，{item['fps']:.2f}fps"
+                for item in videos
+            ]
+            audio_labels = [
+                f"<Audio {item['index']}>=参考音频{item['slot']}接口，{item['duration']:.2f}秒，"
+                f"{item['sample_rate']}Hz/{item['channels']}声道，估算BPM={item['bpm']:.1f}，"
+                f"RMS={item['rms']:.4f}，静音比例={item['silence_ratio']:.1%}"
+                for item in audios
+            ]
+            label_lock = ""
+            mixed_count = len(image_labels) + len(video_labels) + len(audio_labels)
+            audio_limit = MAX_H3_AUDIOS
         text = (
             f"Requested H3 mode: {mode}\n"
             f"Creative preset: {style}\n"
@@ -1292,11 +1402,12 @@ class DapaoH3VideoPromptNode:
             f"Exact duration: {duration}.00 seconds\n"
             f"Aspect ratio: {ratio}\n"
             f"Native audio enabled: {str(native_audio).lower()}\n"
+            f"{label_lock}"
             "SOURCE MEDIA MANIFEST (source files only; analysis frames/spectrograms do not add files):\n"
             f"Images ({len(image_labels)}/{MAX_H3_IMAGES}): {', '.join(image_labels) if image_labels else 'none'}\n"
             f"Videos ({len(video_labels)}/{MAX_H3_VIDEOS}): {'; '.join(video_labels) if video_labels else 'none'}\n"
-            f"Audio ({len(audio_labels)}/{MAX_H3_AUDIOS}): {'; '.join(audio_labels) if audio_labels else 'none'}\n"
-            f"Mixed source-file count: {len(image_labels) + len(video_labels) + len(audio_labels)}/{MAX_H3_MIXED_FILES}\n\n"
+            f"Audio ({len(audio_labels)}/{audio_limit}): {'; '.join(audio_labels) if audio_labels else 'none'}\n"
+            f"Reference label count: {mixed_count}\n\n"
             f"原始视频需求（素材角色、对白、歌词、画面文字和声音要求均以此处为准）：\n"
             f"{(kwargs.get('📝 原始视频需求') or '').strip()}"
         )
@@ -1357,12 +1468,40 @@ class DapaoH3VideoPromptNode:
             ordered_images = self._collect_images(kwargs)
             videos, audios = self._collect_video_audio(kwargs)
             self._validate_source_limits(ordered_images, videos, audios)
+            reference_manifest = _parse_reference_manifest(kwargs.get("🧩 H3素材标记"))
             has_first = kwargs.get("🎬 首帧图") is not None
             has_last = kwargs.get("🏁 尾帧图") is not None
             has_references = any(kwargs.get(f"🖼️ 参考图{index}") is not None for index in range(1, 10))
             has_video_or_audio = bool(videos or audios)
-            resolved_mode = self._resolve_mode(selected_mode, has_first, has_last, has_references, has_video_or_audio)
-            self._validate_mode(resolved_mode, has_first, has_last, has_references, has_video_or_audio)
+            if reference_manifest:
+                resolved_mode = reference_manifest["mode"]
+                if selected_mode != "自动识别":
+                    selected_resolved_mode = self._resolve_mode(selected_mode, False, False, False, False)
+                    if selected_resolved_mode != resolved_mode:
+                        raise ValueError(
+                            f"H3生成模式选择了{selected_resolved_mode}，但下游官方H3节点实际是{resolved_mode}。"
+                        )
+                counts = reference_manifest["counts"]
+                if resolved_mode == "Ref2VA" and not (counts["Picture"] or counts["Video"]):
+                    raise ValueError("下游MiniMax H3 Reference to Video尚未连接图片或视频参考素材。")
+                actual_counts = {"Picture": len(ordered_images), "Video": len(videos), "Audio": len(audios)}
+                for kind, actual_count in actual_counts.items():
+                    if actual_count > counts[kind]:
+                        raise ValueError(
+                            f"H3提示词节点接入了{actual_count}个{kind}分析素材，"
+                            f"但下游官方节点只有{counts[kind]}个对应素材，编号会错位。"
+                        )
+                if resolved_mode != "Ref2VA" and any(actual_counts.values()):
+                    self._validate_mode(resolved_mode, has_first, has_last, has_references, has_video_or_audio)
+                image_count = counts["Picture"]
+                video_count = counts["Video"]
+                audio_count = counts["Audio"]
+            else:
+                resolved_mode = self._resolve_mode(selected_mode, has_first, has_last, has_references, has_video_or_audio)
+                self._validate_mode(resolved_mode, has_first, has_last, has_references, has_video_or_audio)
+                image_count = len(ordered_images)
+                video_count = len(videos)
+                audio_count = len(audios)
 
             messages = [
                 {
@@ -1371,7 +1510,12 @@ class DapaoH3VideoPromptNode:
                         LANGUAGE_POLICY_CHINESE if output_chinese else LANGUAGE_POLICY_ENGLISH
                     ),
                 },
-                {"role": "user", "content": self._build_user_content(kwargs, resolved_mode, style, ordered_images, videos, audios)},
+                {
+                    "role": "user",
+                    "content": self._build_user_content(
+                        kwargs, resolved_mode, style, ordered_images, videos, audios, reference_manifest
+                    ),
+                },
             ]
             payload = {
                 "model": model_id,
@@ -1405,13 +1549,19 @@ class DapaoH3VideoPromptNode:
             if compiled["production_notes"]:
                 analysis = (analysis + "\n\n制作说明：\n" + compiled["production_notes"]).strip()
 
+            reference_issues = _audit_reference_manifest(h3_prompt, reference_manifest)
+            if reference_issues:
+                raise RuntimeError(
+                    "LLM改动了官方H3素材编号，为避免素材错位已停止输出：" + "；".join(reference_issues)
+                )
+
             audit_issues = _audit_h3_prompt(
                 h3_prompt,
                 resolved_mode,
                 int(kwargs.get("⏱️ 目标时长(秒)", 5)),
-                len(ordered_images),
-                len(videos),
-                len(audios),
+                image_count,
+                video_count,
+                audio_count,
             )
             if audit_issues:
                 analysis = (analysis + "\n\n结构校验提醒：\n- " + "\n- ".join(audit_issues)).strip()
@@ -1426,10 +1576,10 @@ class DapaoH3VideoPromptNode:
                 f"🌐 提示词语言：{'简体中文' if output_chinese else '英文'}\n"
                 f"⏱️ 时长：{int(kwargs.get('⏱️ 目标时长(秒)', 5))}秒\n"
                 f"📐 比例：{kwargs.get('📐 视频比例', '16:9')}\n"
-                f"🖼️ 参考图：{len(ordered_images)}张\n"
-                f"🎞️ 参考视频：{len(videos)}个 / 总计{sum(item['duration'] for item in videos):.2f}秒\n"
-                f"🎵 参考音频：{len(audios)}个 / 总计{sum(item['duration'] for item in audios):.2f}秒\n"
-                f"📦 混合素材：{len(ordered_images) + len(videos) + len(audios)}/{MAX_H3_MIXED_FILES}个\n"
+                f"🔗 官方素材编号：{'已锁定' if reference_manifest else '按本节点输入生成'}\n"
+                f"🖼️ 参考图：{image_count}张（LLM实际分析{len(ordered_images)}张）\n"
+                f"🎞️ 参考视频：{video_count}个（LLM实际分析{len(videos)}个 / {sum(item['duration'] for item in videos):.2f}秒）\n"
+                f"🎵 参考音频：{audio_count}个（LLM实际分析{len(audios)}个 / {sum(item['duration'] for item in audios):.2f}秒）\n"
                 f"🔎 结构校验：{'通过' if not audit_issues else f'发现{len(audit_issues)}项提醒'}\n"
                 f"📥 输入令牌：{usage.get('prompt_tokens', usage.get('input_tokens', '未知'))}\n"
                 f"📤 输出令牌：{usage.get('completion_tokens', usage.get('output_tokens', '未知'))}\n"
