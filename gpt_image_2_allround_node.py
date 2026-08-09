@@ -5,6 +5,7 @@ legacy low-price image node, so that node can be removed independently.
 """
 
 import base64
+import asyncio
 import io
 import json
 import sys
@@ -385,7 +386,7 @@ class DapaoGPTImage2AllroundNode:
                 "🖼️ 出图数量": ("INT", {"default": 1, "min": 1, "max": 10, "step": 1}),
                 "⚡ 异步模式": (
                     "BOOLEAN",
-                    {"default": False, "tooltip": "仅当中转站返回任务ID时自动轮询；同步返回时无需开启。"},
+                    {"default": False, "tooltip": "仅控制中转站任务ID轮询；上游提示词列表会由ComfyUI自动并发，与此开关无关。"},
                 ),
                 "🎲 随机种": (
                     "INT",
@@ -405,7 +406,7 @@ class DapaoGPTImage2AllroundNode:
     RETURN_NAMES = ("🖼️ 图像", "🔗 图片链接", "📋 响应信息")
     FUNCTION = "generate"
     CATEGORY = NODE_CATEGORY
-    DESCRIPTION = "GPT-image-2 文生图/多图编辑，1K/2K/4K 自动映射 dapaoAI 模型 @炮老师的小课堂"
+    DESCRIPTION = "GPT-image-2 文生图/多图编辑；接收提示词列表时由ComfyUI并发执行各条任务 @炮老师的小课堂"
 
     @staticmethod
     def _collect_reference_images(kwargs):
@@ -420,7 +421,13 @@ class DapaoGPTImage2AllroundNode:
                 contents.append(content)
         return contents
 
-    def generate(self, **kwargs):
+    async def generate(self, **kwargs):
+        # ComfyUI maps list outputs into one coroutine per prompt.  Running the
+        # blocking requests work in worker threads lets those mapped prompts
+        # progress concurrently while preserving the single-prompt code path.
+        return await asyncio.to_thread(self._generate_sync, **kwargs)
+
+    def _generate_sync(self, **kwargs):
         api_key = (kwargs.get("🔑 API密钥") or "").strip()
         model_label = kwargs.get("🤖 模型", MODEL_LABEL)
         prompt = (kwargs.get("📝 提示词") or "").strip()

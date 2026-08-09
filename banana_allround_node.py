@@ -6,6 +6,7 @@ Gemini-native URL; upstream provider names are documentation references only.
 """
 
 import base64
+import asyncio
 import io
 import json
 import re
@@ -345,7 +346,7 @@ class DapaoBananaAllroundNode:
                     "BOOLEAN",
                     {
                         "default": False,
-                        "tooltip": "数量大于1时：开启为并发调用，关闭为顺序调用。每张均按一次接口调用计价。",
+                        "tooltip": "只控制同一条提示词的出图数量大于1时是否并发；上游提示词列表会由ComfyUI自动并发。每张均按一次接口调用计价。",
                     },
                 ),
                 "🎲 随机种": (
@@ -366,7 +367,7 @@ class DapaoBananaAllroundNode:
     RETURN_NAMES = ("🖼️ 图像", "🔗 图片链接", "📋 响应信息")
     FUNCTION = "generate"
     CATEGORY = NODE_CATEGORY
-    DESCRIPTION = "Banana 文生图/多图编辑，自动切换模式并使用 Gemini 原生协议调用 dapaoAI 映射模型"
+    DESCRIPTION = "Banana 文生图/多图编辑；接收提示词列表时由ComfyUI并发执行各条任务"
 
     @staticmethod
     def _collect_reference_parts(kwargs):
@@ -412,7 +413,13 @@ class DapaoBananaAllroundNode:
                 results[futures[future]] = future.result()
         return results
 
-    def generate(self, **kwargs):
+    async def generate(self, **kwargs):
+        # Each mapped prompt becomes an independent coroutine in ComfyUI.
+        # Move requests/PIL work to worker threads so list tasks run in
+        # parallel without changing the proven single-prompt implementation.
+        return await asyncio.to_thread(self._generate_sync, **kwargs)
+
+    def _generate_sync(self, **kwargs):
         api_key = (kwargs.get("🔑 API密钥") or "").strip()
         model_label = kwargs.get("🤖 模型", "bananaPRO")
         prompt = (kwargs.get("📝 提示词") or "").strip()
