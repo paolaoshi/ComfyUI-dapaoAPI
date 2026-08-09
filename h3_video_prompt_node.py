@@ -1162,6 +1162,14 @@ class DapaoH3VideoPromptNode:
                 "DAPAO_H3_REFERENCES",
                 {"tooltip": "连接🧙‍♂️H3专用提示词框的素材标记输出，用官方H3节点的实际素材顺序锁定编号。"},
             ),
+            "🔗 外部文本输入": (
+                "STRING",
+                {
+                    "forceInput": True,
+                    "default": "",
+                    "tooltip": "可连接任意STRING文本节点；连接后执行时优先使用外部文本，未连接时使用本节点的大文本框。",
+                },
+            ),
             "🎬 首帧图": ("IMAGE", {"tooltip": "I2VA/FL2VA 使用；在H3提示词中作为精确首帧锚点。"}),
             "🏁 尾帧图": ("IMAGE", {"tooltip": "L2VA/FL2VA 使用；在H3提示词中作为精确尾帧锚点。"}),
             "🎞️ 每个视频采样帧数": ("INT", {"default": 5, "min": 2, "max": 8, "step": 1, "tooltip": "从每个参考视频均匀提取代表帧给LLM分析；不计入H3的9张源图片上限。"}),
@@ -1199,6 +1207,14 @@ class DapaoH3VideoPromptNode:
                         "multiline": True,
                         "default": "电影感镜头，主体动作自然，音画同步，画面稳定且细节丰富。",
                         "placeholder": "用自然语言描述你想生成的视频……",
+                    },
+                ),
+                "🧩 H3自动素材清单": (
+                    "STRING",
+                    {
+                        "multiline": True,
+                        "default": "",
+                        "tooltip": "由节点界面在H3最终提示词直连官方MiniMax H3节点时自动维护。",
                     },
                 ),
                 "⏱️ 目标时长(秒)": ("INT", {"default": 5, "min": 4, "max": 15, "step": 1}),
@@ -1409,7 +1425,7 @@ class DapaoH3VideoPromptNode:
             f"Audio ({len(audio_labels)}/{audio_limit}): {'; '.join(audio_labels) if audio_labels else 'none'}\n"
             f"Reference label count: {mixed_count}\n\n"
             f"原始视频需求（素材角色、对白、歌词、画面文字和声音要求均以此处为准）：\n"
-            f"{(kwargs.get('📝 原始视频需求') or '').strip()}"
+            f"{(kwargs.get('🔗 外部文本输入') or kwargs.get('📝 原始视频需求') or '').strip()}"
         )
         if not (ordered_images or videos or audios):
             return text
@@ -1462,13 +1478,17 @@ class DapaoH3VideoPromptNode:
                 raise ValueError(f"不支持的H3生成模式：{selected_mode}")
             if style not in STYLE_OPTIONS:
                 raise ValueError(f"不支持的创作类型：{style}")
-            if not (kwargs.get("📝 原始视频需求") or "").strip():
+            if not (kwargs.get("🔗 外部文本输入") or kwargs.get("📝 原始视频需求") or "").strip():
                 raise ValueError("原始视频需求不能为空。")
 
             ordered_images = self._collect_images(kwargs)
             videos, audios = self._collect_video_audio(kwargs)
             self._validate_source_limits(ordered_images, videos, audios)
-            reference_manifest = _parse_reference_manifest(kwargs.get("🧩 H3素材标记"))
+            # 外部专用提示词框的素材标记始终优先；只有未连接外部标记时，
+            # 才使用本节点根据下游官方H3节点自动维护的清单。
+            reference_manifest = _parse_reference_manifest(
+                kwargs.get("🧩 H3素材标记") or kwargs.get("🧩 H3自动素材清单")
+            )
             has_first = kwargs.get("🎬 首帧图") is not None
             has_last = kwargs.get("🏁 尾帧图") is not None
             has_references = any(kwargs.get(f"🖼️ 参考图{index}") is not None for index in range(1, 10))
