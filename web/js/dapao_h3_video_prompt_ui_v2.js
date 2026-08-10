@@ -9,6 +9,10 @@ const REGISTER_WIDGET_NAME = "👉点此注册API密钥👈";
 const PROMPT_WIDGET_NAME = "📝 原始视频需求";
 const AUTO_MANIFEST_WIDGET_NAME = "🧩 H3自动素材清单";
 const EXTERNAL_TEXT_INPUT_NAME = "🔗 外部文本输入";
+const VIDEO_SAMPLE_COUNT_WIDGET_NAME = "🎞️ 每个视频采样帧数";
+const DEFAULT_VIDEO_SAMPLE_COUNT = 5;
+const MIN_VIDEO_SAMPLE_COUNT = 2;
+const MAX_VIDEO_SAMPLE_COUNT = 8;
 const TOKEN_PATTERN = /<(?:Picture|Video|Audio)\s+\d+>/g;
 
 let activeReferenceMenu = null;
@@ -221,14 +225,36 @@ function setInputHidden(node, name, hidden) {
 }
 
 function setWidgetValue(node, target, nextValue) {
-    if (!target || String(target.value ?? "") === String(nextValue)) return;
-    target.value = nextValue;
-    target.callback?.(nextValue);
+    if (!target) return;
+    const changed = String(target.value ?? "") !== String(nextValue);
+    if (changed) {
+        target.value = nextValue;
+        target.callback?.(nextValue);
+    }
     const index = node.widgets?.indexOf(target) ?? -1;
     if (index >= 0) {
         node.widgets_values ??= [];
         node.widgets_values[index] = nextValue;
     }
+}
+
+/**
+ * 兼容旧工作流的 widgets_values 顺序。
+ *
+ * H3 节点曾新增过隐藏控件，旧工作流恢复时，后续的数字可能发生位置错配，
+ * 导致视频采样帧数被恢复为随机种的 0。ComfyUI 会在调用 Python 前先校验
+ * INT 范围，所以必须在节点恢复和序列化阶段把非法值修正，并同步持久化数组。
+ */
+function normalizeVideoSampleCount(node) {
+    const target = widget(node, VIDEO_SAMPLE_COUNT_WIDGET_NAME);
+    if (!target) return DEFAULT_VIDEO_SAMPLE_COUNT;
+    const numeric = Number(target.value);
+    const valid = Number.isInteger(numeric)
+        && numeric >= MIN_VIDEO_SAMPLE_COUNT
+        && numeric <= MAX_VIDEO_SAMPLE_COUNT;
+    const normalized = valid ? numeric : DEFAULT_VIDEO_SAMPLE_COUNT;
+    setWidgetValue(node, target, normalized);
+    return normalized;
 }
 
 function hideWidget(target) {
@@ -762,6 +788,7 @@ function refreshImageInputs(node) {
 
 function refreshNode(node) {
     if (nodeType(node) !== NODE_TYPE) return;
+    normalizeVideoSampleCount(node);
     refreshImageInputs(node);
     setupPromptEditor(node);
     refreshPromptEditor(node, findOfficialTarget(node));
@@ -787,6 +814,7 @@ function wrapCallback(node, target) {
 
 function setup(node) {
     if (!node?.widgets || nodeType(node) !== NODE_TYPE) return;
+    normalizeVideoSampleCount(node);
     setupPromptEditor(node);
     ensureRegisterButton(node);
     node.widgets.forEach((target) => wrapCallback(node, target));
@@ -808,6 +836,7 @@ app.registerExtension({
         api.addEventListener("hot_reload_update", () => {
             [50, 250, 1000].forEach((delay) => setTimeout(refreshAllNodes, delay));
         });
+        api.addEventListener("executed", () => setTimeout(refreshAllNodes, 50));
     },
     nodeCreated(node) {
         if (nodeType(node) === NODE_TYPE) setTimeout(() => setup(node), 20);
@@ -858,13 +887,24 @@ app.registerExtension({
 
         const onConfigure = nodeTypeClass.prototype.onConfigure;
         nodeTypeClass.prototype.onConfigure = function () {
-            onConfigure?.apply(this, arguments);
+            const result = onConfigure?.apply(this, arguments);
+            normalizeVideoSampleCount(this);
             setTimeout(() => setup(this), 50);
+            return result;
+        };
+
+        const onSerialize = nodeTypeClass.prototype.onSerialize;
+        nodeTypeClass.prototype.onSerialize = function () {
+            normalizeVideoSampleCount(this);
+            const state = this.__dapaoH3PromptEditor;
+            if (state) syncPromptEditor(this);
+            return onSerialize?.apply(this, arguments);
         };
 
         const onWidgetChanged = nodeTypeClass.prototype.onWidgetChanged;
         nodeTypeClass.prototype.onWidgetChanged = function () {
             const result = onWidgetChanged?.apply(this, arguments);
+            normalizeVideoSampleCount(this);
             refreshNode(this);
             return result;
         };

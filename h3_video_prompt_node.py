@@ -1173,7 +1173,18 @@ class DapaoH3VideoPromptNode:
             ),
             "🎬 首帧图": ("IMAGE", {"tooltip": "I2VA/FL2VA 使用；在H3提示词中作为精确首帧锚点。"}),
             "🏁 尾帧图": ("IMAGE", {"tooltip": "L2VA/FL2VA 使用；在H3提示词中作为精确尾帧锚点。"}),
-            "🎞️ 每个视频采样帧数": ("INT", {"default": 5, "min": 2, "max": 8, "step": 1, "tooltip": "从每个参考视频均匀提取代表帧给LLM分析；不计入H3的9张源图片上限。"}),
+            "🎞️ 每个视频采样帧数": (
+                "INT",
+                {
+                    "default": 5,
+                    # 0 仅作为旧工作流控件错位的兼容哨兵；执行时自动恢复为 5。
+                    # 这样即使浏览器仍缓存旧版 JS，ComfyUI 的执行前校验也不会拦截。
+                    "min": 0,
+                    "max": 8,
+                    "step": 1,
+                    "tooltip": "正常范围2–8，默认5；旧工作流异常恢复为0时会自动按5处理。",
+                },
+            ),
             "🎧 参考音频原声直传LLM": ("BOOLEAN", {"default": False, "tooltip": "只发送参考音频1/2/3接口接入的原始音频，不会自动提取参考视频音轨；要求所选LLM支持input_audio。"}),
             "🚫 出错时跳过": ("BOOLEAN", {"default": False}),
         }
@@ -1267,7 +1278,12 @@ class DapaoH3VideoPromptNode:
 
     @staticmethod
     def _collect_video_audio(kwargs):
-        sample_count = int(kwargs.get("🎞️ 每个视频采样帧数", 5))
+        try:
+            sample_count = int(kwargs.get("🎞️ 每个视频采样帧数", 5) or 5)
+        except (TypeError, ValueError):
+            sample_count = 5
+        if not 2 <= sample_count <= 8:
+            sample_count = 5
         include_raw_audio = bool(kwargs.get("🎧 参考音频原声直传LLM", False))
         videos = []
         audios = []
