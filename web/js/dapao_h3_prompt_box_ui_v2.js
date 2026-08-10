@@ -400,6 +400,14 @@ function renderEditor(node, value) {
     if (!editor.childNodes.length) editor.appendChild(document.createElement("br"));
 }
 
+function editorNeedsChipHydration(state, text) {
+    const validTokens = new Set(state.manifest.items.map((item) => item.token));
+    const expected = (String(text || "").match(TOKEN_PATTERN) || []).filter((token) => validTokens.has(token));
+    const actual = [...state.editor.querySelectorAll(".dapao-h3-reference-chip")]
+        .map((chip) => chip.dataset.token || chip.textContent || "");
+    return expected.length !== actual.length || expected.some((token, index) => token !== actual[index]);
+}
+
 function syncPrompt(node) {
     const state = node.__dapaoH3PromptState;
     if (!state) return;
@@ -522,11 +530,17 @@ function refreshNode(node) {
     const target = findOfficialTarget(node);
     const manifest = referenceManifest(target);
     const serialized = JSON.stringify(serializableManifest(manifest));
-    const currentText = textFromEditor(state.editor);
-    const changed = serialized !== String(state.manifestWidget.value || "");
+    let currentText = textFromEditor(state.editor);
+    const storedText = String(state.promptWidget.value || "");
+    const sourceText = storedText !== currentText ? storedText : currentText;
     state.manifest = manifest;
     setWidgetValue(node, state.manifestWidget, serialized);
-    if (changed) renderEditor(node, currentText);
+    const manifestChanged = serialized !== String(state.renderedManifestKey || "");
+    if (manifestChanged || sourceText !== currentText || editorNeedsChipHydration(state, sourceText)) {
+        renderEditor(node, sourceText);
+        currentText = textFromEditor(state.editor);
+    }
+    state.renderedManifestKey = serialized;
 
     const counts = { Picture: 0, Video: 0, Audio: 0 };
     manifest.items.forEach((item) => { counts[item.kind] += 1; });
@@ -582,6 +596,7 @@ function setupPromptNode(node) {
     node.__dapaoH3PromptState = {
         promptWidget, manifestWidget, container, editor, status, warning, domWidget,
         manifest: { version: 1, target: "", mode: "T2VA", items: [] },
+        renderedManifestKey: "",
     };
     renderEditor(node, promptWidget.value || "");
     editor.addEventListener("input", () => { syncPrompt(node); showMenu(node); });
@@ -665,4 +680,4 @@ app.registerExtension({
     },
 });
 
-console.log("[Dapao H3 Prompt Box UI] loaded");
+console.log("[Dapao H3 Prompt Box UI v2] loaded");

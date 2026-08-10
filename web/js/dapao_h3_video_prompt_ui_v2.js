@@ -464,6 +464,14 @@ function renderPromptEditor(state, valueText) {
     if (!state.editor.childNodes.length) state.editor.appendChild(document.createElement("br"));
 }
 
+function promptEditorNeedsChipHydration(state, text) {
+    const validTokens = new Set(state.manifest.items.map((item) => item.token));
+    const expected = (String(text || "").match(TOKEN_PATTERN) || []).filter((token) => validTokens.has(token));
+    const actual = [...state.editor.querySelectorAll(".dapao-h3-generator-chip")]
+        .map((chip) => chip.dataset.token || chip.textContent || "");
+    return expected.length !== actual.length || expected.some((token, index) => token !== actual[index]);
+}
+
 function syncPromptEditor(node) {
     const state = node.__dapaoH3PromptEditor;
     if (!state) return;
@@ -606,6 +614,7 @@ function setupPromptEditor(node) {
     node.__dapaoH3PromptEditor = {
         promptWidget, autoManifestWidget, container, editor, status, warning, domWidget,
         manifest: { version: 1, target: "", mode: "T2VA", items: [] },
+        renderedManifestKey: "",
     };
     renderPromptEditor(node.__dapaoH3PromptEditor, promptWidget.value || "");
     editor.addEventListener("input", () => { syncPromptEditor(node); showReferenceMenu(node); });
@@ -633,8 +642,9 @@ function refreshPromptEditor(node, target) {
     const manifest = referenceManifest(target);
     // 未连接官方节点时必须保持为空，避免后端把普通文本误判为T2VA素材清单模式。
     const nextSerialized = target ? serializedManifest(manifest) : "";
-    const oldSerialized = String(state.autoManifestWidget.value || "");
-    const currentText = textFromEditor(state.editor);
+    let currentText = textFromEditor(state.editor);
+    const storedText = String(state.promptWidget.value || "");
+    const sourceText = storedText !== currentText ? storedText : currentText;
     const externalTextConnected = Boolean(originNode(node, EXTERNAL_TEXT_INPUT_NAME));
     state.manifest = manifest;
     state.externalTextConnected = externalTextConnected;
@@ -642,7 +652,12 @@ function refreshPromptEditor(node, target) {
     state.editor.style.opacity = externalTextConnected ? "0.62" : "1";
     setWidgetValue(node, state.autoManifestWidget, nextSerialized);
     refreshInputLocks(node, target);
-    if (nextSerialized !== oldSerialized) renderPromptEditor(state, currentText);
+    const manifestChanged = nextSerialized !== String(state.renderedManifestKey || "");
+    if (manifestChanged || sourceText !== currentText || promptEditorNeedsChipHydration(state, sourceText)) {
+        renderPromptEditor(state, sourceText);
+        currentText = textFromEditor(state.editor);
+    }
+    state.renderedManifestKey = nextSerialized;
     const counts = { Picture: 0, Video: 0, Audio: 0 };
     manifest.items.forEach((item) => { counts[item.kind] += 1; });
     if (externalTextConnected) state.status.textContent = target
@@ -863,4 +878,4 @@ app.registerExtension({
     },
 });
 
-console.log("[Dapao H3 Video Prompt UI] loaded");
+console.log("[Dapao H3 Video Prompt UI v2] loaded");
