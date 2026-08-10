@@ -7,6 +7,7 @@ implementation is self-contained so the source project is not required at
 runtime.
 """
 
+import asyncio
 import base64
 import io
 import json
@@ -560,7 +561,10 @@ REFERENCE COUNTS: product={len(product_images)}, style={len(style_images)}
                     issues.append(f"第{index - 1:02d}屏与第{index:02d}屏构图变化策略重复。")
         return issues
 
-    def generate_prompt(self, **kwargs):
+    async def generate_prompt(self, **kwargs):
+        return await asyncio.to_thread(self._generate_prompt_sync, **kwargs)
+
+    def _generate_prompt_sync(self, **kwargs):
         result = {}
         started = time.time()
         try:

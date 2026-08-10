@@ -298,13 +298,42 @@ class DapaoImage2RelayClient:
     def generate(self, payload):
         return self._request_json("POST", "/v1/images/generations", json=payload)
 
-    def poll(self, task_id, max_seconds, interval):
+    def edit(self, payload, reference_images):
+        """Submit image editing through the OpenAI-compatible multipart API.
+
+        The relay's image editing route does not consume Base64 references from
+        the generations JSON body.  Each source image must be a repeated
+        ``image`` multipart field on ``/v1/images/edits``.
+        """
+        data = {}
+        for key, value in payload.items():
+            if key == "async":
+                continue
+            if isinstance(value, bool):
+                data[key] = "true" if value else "false"
+            else:
+                data[key] = str(value)
+        files = [
+            ("image", (f"image_{index}.png", content, "image/png"))
+            for index, content in enumerate(reference_images, start=1)
+        ]
+        params = {"async": "true"} if payload.get("async") else None
+        return self._request_json(
+            "POST",
+            "/v1/images/edits",
+            data=data,
+            files=files,
+            params=params,
+        )
+
+    def poll(self, task_id, max_seconds, interval, image_task=False):
         started = time.monotonic()
         progress_bar = comfy.utils.ProgressBar(100) if comfy is not None else None
+        task_path = f"/v1/images/tasks/{task_id}" if image_task else f"/v1/tasks/{task_id}"
         while time.monotonic() - started < max_seconds:
             if comfy is not None:
                 comfy.model_management.throw_exception_if_processing_interrupted()
-            result = self._request_json("GET", f"/v1/tasks/{task_id}")
+            result = self._request_json("GET", task_path)
             status, progress, message = _task_state(result)
             if status == "succeeded":
                 if progress_bar:
@@ -490,17 +519,20 @@ class DapaoGPTImage2AllroundNode:
             if mode == "文生图":
                 submitted = client.generate(core_payload)
             else:
-                # 映射通道的图生图仍使用 generations JSON；上游要求 images 为带 MIME 前缀的 Base64 数组。
-                edit_payload = dict(core_payload)
-                edit_payload["images"] = [_png_data_uri(content) for content in reference_images]
-                submitted = client.generate(edit_payload)
+                # 图生图必须走 edits multipart；重复的 image 文件字段对应多张参考图。
+                submitted = client.edit(core_payload, reference_images)
 
             final = submitted
             image_items = _extract_image_items(final)
             task_identifier = _task_id(submitted)
             state, _, _ = _task_state(submitted)
             if not image_items and task_identifier and (async_mode or state == "processing"):
-                final = client.poll(task_identifier, max_poll_seconds, poll_interval)
+                final = client.poll(
+                    task_identifier,
+                    max_poll_seconds,
+                    poll_interval,
+                    image_task=(mode == "图生图"),
+                )
                 image_items = _extract_image_items(final)
 
             if not image_items:

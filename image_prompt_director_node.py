@@ -6,6 +6,7 @@ independent dapaoAI LLM node suitable for GPT Image 2 and other image models.
 Template taxonomy adapted from ConardLi/garden-skills (MIT License, 2026).
 """
 
+import asyncio
 import base64
 import io
 import json
@@ -595,7 +596,10 @@ class DapaoAllroundImagePromptNode:
             ])
         return content
 
-    def generate_prompt(self, **kwargs):
+    async def generate_prompt(self, **kwargs):
+        return await asyncio.to_thread(self._generate_prompt_sync, **kwargs)
+
+    def _generate_prompt_sync(self, **kwargs):
         result = {}
         try:
             api_key = (kwargs.get("🔑 API密钥") or "").strip()

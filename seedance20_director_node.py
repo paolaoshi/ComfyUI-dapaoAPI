@@ -5,6 +5,7 @@ same dapaoAI LLM surface and media widgets, but compiles Seedance prompts,
 reference roles, clip contracts and explicit project state for one clip.
 """
 
+import asyncio
 import base64
 import io
 import json
@@ -494,7 +495,10 @@ class DapaoSeedance20DirectorNode:
                 content.append({"type": "input_audio", "input_audio": {"data": item["raw_wav_base64"], "format": "wav"}})
         return content
 
-    def generate_prompt(self, **kwargs):
+    async def generate_prompt(self, **kwargs):
+        return await asyncio.to_thread(self._generate_prompt_sync, **kwargs)
+
+    def _generate_prompt_sync(self, **kwargs):
         result = {}
         resolved_mode = ""
         try:

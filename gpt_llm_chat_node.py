@@ -1,5 +1,6 @@
 """Independent GPT LLM chat node for the dapaoAI relay."""
 
+import asyncio
 import base64
 import io
 import json
@@ -293,7 +294,10 @@ class DapaoGPTLLMChatNode:
             messages.append({"role": "user", "content": user_input})
         return messages
 
-    def chat(self, **kwargs):
+    async def chat(self, **kwargs):
+        return await asyncio.to_thread(self._chat_sync, **kwargs)
+
+    def _chat_sync(self, **kwargs):
         api_key = (kwargs.get("🔑 API密钥") or "").strip()
         model_id = kwargs.get("🤖 模型", "gpt-5.5")
         system_role = (kwargs.get("🎯 系统角色") or "").strip()

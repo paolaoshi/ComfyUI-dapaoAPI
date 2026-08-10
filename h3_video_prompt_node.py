@@ -5,6 +5,7 @@ official MiniMax-H3 h3-prompt-writing skill into a deterministic ComfyUI
 prompt-compilation surface; it does not submit video-generation jobs.
 """
 
+import asyncio
 import base64
 import io
 import json
@@ -1459,7 +1460,10 @@ class DapaoH3VideoPromptNode:
                 })
         return content
 
-    def generate_prompt(self, **kwargs):
+    async def generate_prompt(self, **kwargs):
+        return await asyncio.to_thread(self._generate_prompt_sync, **kwargs)
+
+    def _generate_prompt_sync(self, **kwargs):
         api_key = (kwargs.get("🔑 API密钥") or "").strip()
         model_id = kwargs.get("🤖 LLM模型", "gpt-5.5")
         selected_mode = kwargs.get("🎛️ H3生成模式", "自动识别")

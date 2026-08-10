@@ -59,6 +59,12 @@ gpt_config.json
 .cache/
 dapao_user_templates.json
 
+# Open Image Prompts 数据库由节点按官方清单自动下载并校验，避免提交大体积第三方数据
+data/open_image_prompts/prompts.db.gz
+data/open_image_prompts/prompts.db.gz.part
+data/open_image_prompts/*.verified
+data/open_image_prompts/runtime/
+
 # ComfyUI 相关
 comfy_extras/
 custom_nodes_backup/

@@ -4,6 +4,7 @@ The node submits stable dapaoAI mapping IDs. Resolution remains a separate
 request parameter and is not encoded into the model name.
 """
 
+import asyncio
 import io
 import json
 import os
@@ -648,7 +649,10 @@ class DapaoSeedance20AllroundVideoNode:
             return round(long_side * 9 / 16), long_side
         return long_side, round(long_side * 9 / 16)
 
-    def generate(self, **kwargs):
+    async def generate(self, **kwargs):
+        return await asyncio.to_thread(self._generate_sync, **kwargs)
+
+    def _generate_sync(self, **kwargs):
         api_key = (kwargs.get("🔑 API密钥") or "").strip()
         model_id = str(kwargs.get("🤖 模型") or "").strip()
         mode = kwargs.get("🎛️ 生成模式", "文生视频")
