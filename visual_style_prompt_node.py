@@ -229,7 +229,7 @@ ASPECT_RATIO_OPTIONS = ["自动", "1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "2
 TARGET_MODEL_OPTIONS = ["通用图像模型", "GPT Image 2", "Banana / Gemini Image", "Midjourney", "FLUX", "Stable Diffusion"]
 OUTPUT_LANGUAGE_OPTIONS = ["英文（推荐）", "简体中文", "中英双份"]
 DETAIL_OPTIONS = ["简洁", "标准", "专业高密度"]
-MAX_USER_IMAGES = 4
+MAX_USER_IMAGES = 9
 
 
 def _safe_print(message):
@@ -753,10 +753,13 @@ class DapaoVisualStylePromptNode:
             if tensor is None:
                 continue
             for batch_index, data_uri in enumerate(_tensor_data_uris(tensor), 1):
-                if len(collected) >= MAX_USER_IMAGES:
-                    return collected
                 label = f"用户参考图{slot}" + (f"-{batch_index}" if tensor.shape[0] > 1 else "")
                 collected.append((label, data_uri))
+        if len(collected) > MAX_USER_IMAGES:
+            raise ValueError(
+                f"用户参考图最多接收{MAX_USER_IMAGES}张，"
+                f"当前输入接口及图像批次合计{len(collected)}张。"
+            )
         return collected
 
     @staticmethod

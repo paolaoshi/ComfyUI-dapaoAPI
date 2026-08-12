@@ -145,16 +145,6 @@ def _tensor_to_inline_parts(image_tensor):
     return parts
 
 
-def _parse_extra_json(value):
-    try:
-        data = json.loads((value or "{}").strip() or "{}")
-    except json.JSONDecodeError as error:
-        raise ValueError(f"额外参数JSON格式错误：{error}") from error
-    if not isinstance(data, dict):
-        raise ValueError("额外参数JSON必须是 JSON 对象。")
-    return data
-
-
 def _response_error(response):
     text = response.text[:1200]
     try:
@@ -309,14 +299,6 @@ class DapaoBananaAllroundNode:
     @classmethod
     def INPUT_TYPES(cls):
         optional = {
-            "📋 额外参数JSON": (
-                "STRING",
-                {
-                    "multiline": True,
-                    "default": "{}",
-                    "tooltip": "补充 Gemini 原生请求的顶层参数；不能覆盖 contents 或 generationConfig。",
-                },
-            ),
             "⌛ 请求超时": ("INT", {"default": 900, "min": 30, "max": 1800, "step": 10}),
         }
         for index in range(1, 13):
@@ -383,7 +365,7 @@ class DapaoBananaAllroundNode:
         return parts
 
     @staticmethod
-    def _make_payload(prompt, reference_parts, aspect_ratio, resolution, extra):
+    def _make_payload(prompt, reference_parts, aspect_ratio, resolution):
         parts = list(reference_parts)
         parts.append({"text": prompt})
         image_config = {"imageSize": resolution}
@@ -396,10 +378,6 @@ class DapaoBananaAllroundNode:
                 "imageConfig": image_config,
             },
         }
-        conflicts = sorted(set(extra).intersection({"contents", "generationConfig"}))
-        if conflicts:
-            raise ValueError(f"额外参数JSON不能覆盖节点核心参数：{', '.join(conflicts)}")
-        payload.update(extra)
         return payload
 
     @staticmethod
@@ -447,8 +425,7 @@ class DapaoBananaAllroundNode:
             model_id = MODEL_ID_BY_RESOLUTION.get(model_label, {}).get(resolution, model_label)
             reference_parts = self._collect_reference_parts(kwargs)
             mode = "图生图" if reference_parts else "文生图"
-            extra = _parse_extra_json(kwargs.get("📋 额外参数JSON", "{}"))
-            payload = self._make_payload(prompt, reference_parts, aspect_ratio, resolution, extra)
+            payload = self._make_payload(prompt, reference_parts, aspect_ratio, resolution)
             client = DapaoBananaRelayClient(api_key, timeout)
 
             _log_info(

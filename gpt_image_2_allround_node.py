@@ -28,6 +28,7 @@ API_BASE_URL = "https://api.dapaoai.com"
 NODE_NAME = "DapaoGPTImage2AllroundNode"
 NODE_CATEGORY = "🤖dapaoAPI/🍬大炮AI主力维护🍬"
 DISPLAY_NAME = "🐠GPT-image-2全能图像@炮老师的小课堂"
+MAX_REFERENCE_IMAGES = 9
 
 MODEL_LABEL = "image-2"
 OFFICIAL_STABLE_MODEL_LABEL = "image-2官方稳定全分辨率"
@@ -106,23 +107,6 @@ def _tensor_to_png_bytes(image_tensor):
 
 def _png_data_uri(content):
     return "data:image/png;base64," + base64.b64encode(content).decode("ascii")
-
-
-def _parse_extra_json(value):
-    try:
-        data = json.loads((value or "{}").strip() or "{}")
-    except json.JSONDecodeError as error:
-        raise ValueError(f"额外参数JSON格式错误：{error}") from error
-    if not isinstance(data, dict):
-        raise ValueError("额外参数JSON必须是 JSON 对象。")
-    return data
-
-
-def _merge_extra_parameters(payload, extra, protected_fields):
-    conflicts = sorted(set(extra).intersection(protected_fields))
-    if conflicts:
-        raise ValueError(f"额外参数JSON不能覆盖节点核心参数：{', '.join(conflicts)}")
-    payload.update(extra)
 
 
 def _response_error(response):
@@ -377,20 +361,15 @@ class DapaoGPTImage2AllroundNode:
     @classmethod
     def INPUT_TYPES(cls):
         optional = {
-            "📋 额外参数JSON": (
-                "STRING",
-                {
-                    "multiline": True,
-                    "default": "{}",
-                    "tooltip": "补充中转站支持的高级参数；不能覆盖模型、尺寸、清晰度等核心参数。",
-                },
-            ),
             "🔁 最大轮询秒数": ("INT", {"default": 1200, "min": 60, "max": 3600, "step": 10}),
             "⏱️ 轮询间隔": ("INT", {"default": 5, "min": 3, "max": 30, "step": 1}),
             "⌛ 请求超时": ("INT", {"default": 900, "min": 30, "max": 1800, "step": 10}),
         }
-        for index in range(1, 5):
-            optional[f"🖼️ 图像{index}"] = ("IMAGE", {"tooltip": f"接入任意参考图后自动切换为图生图，最多4张。"})
+        for index in range(1, MAX_REFERENCE_IMAGES + 1):
+            optional[f"🖼️ 图像{index}"] = (
+                "IMAGE",
+                {"tooltip": f"接入任意参考图后自动切换为图生图，最多{MAX_REFERENCE_IMAGES}张。"},
+            )
         return {
             "required": {
                 "🔑 API密钥": (
@@ -440,14 +419,17 @@ class DapaoGPTImage2AllroundNode:
     @staticmethod
     def _collect_reference_images(kwargs):
         contents = []
-        for input_index in range(1, 5):
+        for input_index in range(1, MAX_REFERENCE_IMAGES + 1):
             image_tensor = kwargs.get(f"🖼️ 图像{input_index}")
             if image_tensor is None:
                 continue
             for content in _tensor_to_png_bytes(image_tensor):
-                if len(contents) >= 4:
-                    return contents
                 contents.append(content)
+        if len(contents) > MAX_REFERENCE_IMAGES:
+            raise ValueError(
+                f"image-2图生图最多接收{MAX_REFERENCE_IMAGES}张参考图，"
+                f"当前输入接口及图像批次合计{len(contents)}张。"
+            )
         return contents
 
     async def generate(self, **kwargs):
@@ -491,7 +473,6 @@ class DapaoGPTImage2AllroundNode:
             reference_images = self._collect_reference_images(kwargs)
             mode = "图生图" if reference_images else "文生图"
 
-            extra = _parse_extra_json(kwargs.get("📋 额外参数JSON", "{}"))
             core_payload = {
                 "model": model_id,
                 "prompt": prompt,
@@ -505,11 +486,6 @@ class DapaoGPTImage2AllroundNode:
             if async_mode:
                 core_payload["async"] = True
 
-            protected_fields = {
-                "model", "prompt", "resolution", "quality", "n", "size", "images", "image",
-                "response_format", "async",
-            }
-            _merge_extra_parameters(core_payload, extra, protected_fields)
             client = DapaoImage2RelayClient(api_key, timeout)
 
             _log_info(

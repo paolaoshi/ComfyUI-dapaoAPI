@@ -228,13 +228,19 @@ app.registerExtension({
 
         const onConfigure = nodeTypeClass.prototype.onConfigure;
         nodeTypeClass.prototype.onConfigure = function () {
-            // 迁移旧版 widgets_values：第6项曾是“画质”，新版已按官方参数删除。
             const config = arguments[0];
-            const oldValues = config?.widgets_values;
+            let values = Array.isArray(config?.widgets_values) ? [...config.widgets_values] : null;
             const qualityValues = ["低画质", "标准画质", "高画质"];
-            if (Array.isArray(oldValues) && qualityValues.includes(String(oldValues[5]))) {
+            if (values && qualityValues.includes(String(values[5]))) {
+                values.splice(5, 1);
+            }
+            // 旧版在随机种后保存“额外参数JSON”；删除它，避免请求超时控件错位。
+            if (values && typeof values[8] === "string" && String(values[8]).trim().startsWith("{")) {
+                values.splice(8, 1);
+            }
+            if (values) {
                 const args = Array.from(arguments);
-                args[0] = { ...config, widgets_values: [...oldValues.slice(0, 5), ...oldValues.slice(6)] };
+                args[0] = { ...config, widgets_values: values };
                 onConfigure?.apply(this, args);
             } else {
                 onConfigure?.apply(this, arguments);

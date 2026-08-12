@@ -24,11 +24,6 @@ function setWidgetHidden(node, name, hidden) {
     if (target) target.hidden = Boolean(hidden);
 }
 
-function setInputHidden(node, name, hidden) {
-    const target = node?.inputs?.find((item) => item.name === name);
-    if (target) target.hidden = Boolean(hidden);
-}
-
 function ensureRegisterButton(node) {
     if (!node?.addCustomWidget || node.__dapaoRegisterWidget) return;
     for (const legacyName of ["点击此处注册API密钥", "👉点此注册API密钥👈"]) {
@@ -99,10 +94,6 @@ function refreshNode(node) {
     if (legacyModeWidget) {
         const legacyIndex = node.widgets.indexOf(legacyModeWidget);
         if (legacyIndex >= 0) node.widgets.splice(legacyIndex, 1);
-    }
-    // 兼容热更新前已经创建的旧节点：旧版本有图像5-9，隐藏它们而不破坏已有连线。
-    for (let index = 5; index <= 9; index++) {
-        setInputHidden(node, `🖼️ 图像${index}`, true);
     }
     setWidgetHidden(node, "🔁 最大轮询秒数", !asyncMode);
     setWidgetHidden(node, "⏱️ 轮询间隔", !asyncMode);
@@ -221,12 +212,18 @@ app.registerExtension({
 
         const onConfigure = nodeTypeClass.prototype.onConfigure;
         nodeTypeClass.prototype.onConfigure = function () {
-            // 迁移旧版本保存的 widgets_values：旧版第3项是“模式”，新版已删除。
             const config = arguments[0];
-            const oldValues = config?.widgets_values;
-            if (Array.isArray(oldValues) && ["文生图", "图生图"].includes(String(oldValues[2]))) {
+            let values = Array.isArray(config?.widgets_values) ? [...config.widgets_values] : null;
+            if (values && ["文生图", "图生图"].includes(String(values[2]))) {
+                values.splice(2, 1);
+            }
+            // 旧版在随机种后保存“额外参数JSON”；删除它，避免轮询参数整体错位。
+            if (values && typeof values[9] === "string" && String(values[9]).trim().startsWith("{")) {
+                values.splice(9, 1);
+            }
+            if (values) {
                 const args = Array.from(arguments);
-                args[0] = { ...config, widgets_values: [...oldValues.slice(0, 2), ...oldValues.slice(3)] };
+                args[0] = { ...config, widgets_values: values };
                 onConfigure?.apply(this, args);
             } else {
                 onConfigure?.apply(this, arguments);
