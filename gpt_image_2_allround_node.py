@@ -63,6 +63,33 @@ SIZE_OPTIONS = [
     "21:9",
     "9:21",
 ]
+# `image-2-office` is currently backed by a stricter adapter than the public
+# image-2 routes: it accepts `auto` or an explicit WIDTHxHEIGHT value.  Keep
+# the UI in aspect-ratio terms, and translate only for that route.  Dimensions
+# follow the relay's documented Image-2 reference sizes.
+OFFICE_SIZE_BY_RESOLUTION = {
+    "1K": {
+        "1:1": "1024x1024", "3:2": "1536x1024", "2:3": "1024x1536",
+        "4:3": "1024x768", "3:4": "768x1024", "5:4": "1280x1024",
+        "4:5": "1024x1280", "16:9": "1536x864", "9:16": "864x1536",
+        "2:1": "2048x1024", "1:2": "1024x2048", "3:1": "1881x836",
+        "1:3": "887x1774", "21:9": "2016x864", "9:21": "864x2016",
+    },
+    "2K": {
+        "1:1": "2048x2048", "3:2": "2048x1360", "2:3": "1360x2048",
+        "4:3": "2048x1536", "3:4": "1536x2048", "5:4": "2560x2048",
+        "4:5": "2048x2560", "16:9": "2048x1152", "9:16": "1152x2048",
+        "2:1": "2688x1344", "1:2": "1344x2688", "3:1": "3072x1024",
+        "1:3": "1024x3072", "21:9": "2688x1152", "9:21": "1152x2688",
+    },
+    "4K": {
+        "1:1": "2880x2880", "3:2": "3520x2336", "2:3": "2336x3520",
+        "4:3": "3312x2480", "3:4": "2480x3312", "5:4": "3216x2576",
+        "4:5": "2576x3216", "16:9": "3840x2160", "9:16": "2160x3840",
+        "2:1": "3840x1920", "1:2": "1920x3840", "3:1": "3840x1280",
+        "1:3": "1280x3840", "21:9": "3840x1648", "9:21": "1648x3840",
+    },
+}
 QUALITY_API_VALUES = {
     "低画质": "low",
     "标准画质": "medium",
@@ -481,7 +508,22 @@ class DapaoGPTImage2AllroundNode:
                 "n": count,
                 "response_format": "url",
             }
-            if size != "模型默认":
+            # The public image-2 routes accept aspect-ratio strings.  The
+            # official stable route currently validates `size` as `auto` or
+            # explicit pixels, so translate the same UI choice for that route.
+            submitted_size = size
+            if model_label == OFFICIAL_STABLE_MODEL_LABEL:
+                if size == "模型默认":
+                    submitted_size = "auto"
+                else:
+                    submitted_size = OFFICE_SIZE_BY_RESOLUTION.get(resolution_label, {}).get(size)
+                    if not submitted_size:
+                        # Defensive fallback: an unknown/legacy ratio should
+                        # still produce an image instead of sending an invalid
+                        # ratio string to the strict adapter.
+                        submitted_size = "auto"
+                core_payload["size"] = submitted_size
+            elif size != "模型默认":
                 core_payload["size"] = size
             if async_mode:
                 core_payload["async"] = True
@@ -490,7 +532,8 @@ class DapaoGPTImage2AllroundNode:
 
             _log_info(
                 f"提交任务：relay={API_BASE_URL}，model={model_id}，mode={mode}，"
-                f"size={size}，quality={quality}，n={count}，参考图={len(reference_images)}张"
+                f"size={core_payload.get('size', '模型默认')}，quality={quality}，"
+                f"n={count}，参考图={len(reference_images)}张"
             )
             if mode == "文生图":
                 submitted = client.generate(core_payload)
@@ -530,6 +573,7 @@ class DapaoGPTImage2AllroundNode:
                 f"📤 实际模型ID：{model_id}\n"
                 f"🔀 模式：{mode}\n"
                 f"📐 图片比例：{size}\n"
+                f"📏 实际尺寸参数：{submitted_size if model_label == OFFICIAL_STABLE_MODEL_LABEL else size}\n"
                 f"🧩 清晰度：{resolution_label}\n"
                 f"🎨 画质：{quality_label} ({quality})\n"
                 f"🖼️ 参考图：{len(reference_images)} 张\n"
