@@ -34,15 +34,16 @@ function ensureRegisterButton(node) {
         serialize: false,
         _hovered: false,
         _area: null,
-        computeSize(width) { return [Math.max(180, width), 38]; },
+        computeSize() { return [180, 38]; },
         draw(ctx, nodeRef, width, y, height) {
+            const widgetWidth = Math.max(180, Number(nodeRef?.size?.[0]) || Number(width) || 180);
             const margin = 8;
             const buttonY = y + 3;
             const buttonHeight = Math.max(30, height - 6);
             ctx.save();
             ctx.fillStyle = this._hovered ? "#d99524" : "#a96b1b";
             ctx.beginPath();
-            ctx.roundRect(margin, buttonY, width - margin * 2, buttonHeight, 8);
+            ctx.roundRect(margin, buttonY, widgetWidth - margin * 2, buttonHeight, 8);
             ctx.fill();
             ctx.strokeStyle = this._hovered ? "#ffd36a" : "#d49a42";
             ctx.lineWidth = 1.5;
@@ -51,9 +52,9 @@ function ensureRegisterButton(node) {
             ctx.font = "bold 13px sans-serif";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            ctx.fillText(REGISTER_WIDGET_NAME, width / 2, buttonY + buttonHeight / 2);
+            ctx.fillText(REGISTER_WIDGET_NAME, widgetWidth / 2, buttonY + buttonHeight / 2);
             ctx.restore();
-            this._area = { x: margin, y: buttonY, width: width - margin * 2, height: buttonHeight };
+            this._area = { x: margin, y: buttonY, width: widgetWidth - margin * 2, height: buttonHeight };
         },
         mouse(event, pos, nodeRef) {
             const area = this._area;

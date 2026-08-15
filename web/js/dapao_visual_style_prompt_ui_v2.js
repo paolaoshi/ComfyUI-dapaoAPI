@@ -95,18 +95,19 @@ function ensureRegisterButton(node) {
         serialize: false,
         _hovered: false,
         _area: null,
-        computeSize(width) { return [Math.max(220, width), 40]; },
+        computeSize() { return [220, 40]; },
         draw(ctx, nodeRef, width, y, height) {
+            const widgetWidth = Math.max(220, Number(nodeRef?.size?.[0]) || Number(width) || 220);
             const margin = 8;
             const buttonY = y + 3;
             const buttonHeight = Math.max(31, height - 6);
             ctx.save();
-            const gradient = ctx.createLinearGradient(margin, buttonY, width - margin, buttonY + buttonHeight);
+            const gradient = ctx.createLinearGradient(margin, buttonY, widgetWidth - margin, buttonY + buttonHeight);
             gradient.addColorStop(0, this._hovered ? "#dd8b21" : "#a96519");
             gradient.addColorStop(1, this._hovered ? "#b464db" : "#7d3ca3");
             ctx.fillStyle = gradient;
             ctx.beginPath();
-            ctx.roundRect(margin, buttonY, width - margin * 2, buttonHeight, 9);
+            ctx.roundRect(margin, buttonY, widgetWidth - margin * 2, buttonHeight, 9);
             ctx.fill();
             ctx.strokeStyle = this._hovered ? "#ffe48c" : "#d8a55f";
             ctx.lineWidth = 1.5;
@@ -115,9 +116,9 @@ function ensureRegisterButton(node) {
             ctx.font = "bold 13px sans-serif";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            ctx.fillText(REGISTER_WIDGET_NAME, width / 2, buttonY + buttonHeight / 2);
+            ctx.fillText(REGISTER_WIDGET_NAME, widgetWidth / 2, buttonY + buttonHeight / 2);
             ctx.restore();
-            this._area = { x: margin, y: buttonY, width: width - margin * 2, height: buttonHeight };
+            this._area = { x: margin, y: buttonY, width: widgetWidth - margin * 2, height: buttonHeight };
         },
         mouse(event, pos, nodeRef) {
             const area = this._area;
