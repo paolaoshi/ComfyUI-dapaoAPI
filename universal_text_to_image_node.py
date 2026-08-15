@@ -114,7 +114,7 @@ class DapaoUniversalTextToImageNode:
     RETURN_TYPES = ("IMAGE", "STRING", "STRING")
     RETURN_NAMES = ("🖼️ 图像", "ℹ️ 信息", "📄 原始JSON")
     FUNCTION = "generate_image"
-    CATEGORY = "🤖dapaoAPI"
+    CATEGORY = "🤖dapaoAPI/🔮API通用工具🔮"
     DESCRIPTION = "通用图像生成（文生图），兼容 OpenAI 风格 /images/generations 接口 | 作者: @炮老师的小课堂"
     OUTPUT_NODE = False
 

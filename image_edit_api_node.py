@@ -169,7 +169,7 @@ class ImageEditAPINode:
     RETURN_TYPES = ("IMAGE", "STRING", "STRING", "STRING")
     RETURN_NAMES = ("image", "response", "image_url", "raw_json")
     FUNCTION = "call_api"
-    CATEGORY = "🤖dapaoAPI"
+    CATEGORY = "🤖dapaoAPI/🔮API通用工具🔮"
     DESCRIPTION = "🎨通用图像编辑API (测试版) @炮老师的小课堂 | 支持多模态图像编辑、智能提示词处理、AI放大"
     OUTPUT_NODE = False
     

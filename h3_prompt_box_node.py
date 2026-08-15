@@ -5,7 +5,7 @@ import re
 
 
 NODE_NAME = "DapaoH3PromptBoxNode"
-NODE_CATEGORY = "🤖dapaoAPI/🍬大炮AI主力维护🍬"
+NODE_CATEGORY = "🤖dapaoAPI/🍬大炮API常用工具🍬"
 DISPLAY_NAME = "🧙‍♂️H3专用提示词框@炮老师的小课堂"
 REFERENCE_TYPE = "DAPAO_H3_REFERENCES"
 

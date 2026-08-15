@@ -157,7 +157,7 @@ class Gemini3_Multimodal:
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("response",)
     FUNCTION = "process"
-    CATEGORY = "🤖dapaoAPI"
+    CATEGORY = "🤖dapaoAPI/🔮API通用工具🔮"
     DESCRIPTION = "Google Gemini 多功能 | 作者: @炮老师的小课堂"
     OUTPUT_NODE = False
     

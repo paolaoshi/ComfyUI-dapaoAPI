@@ -25,7 +25,7 @@ from PIL import Image
 API_BASE_URL = "https://api.dapaoai.com"
 CHAT_ENDPOINT = f"{API_BASE_URL}/v1/chat/completions"
 NODE_NAME = "DapaoH3VideoPromptNode"
-NODE_CATEGORY = "🤖dapaoAPI/🍬大炮AI主力维护🍬"
+NODE_CATEGORY = "🤖dapaoAPI/🍬大炮API常用工具🍬"
 DISPLAY_NAME = "🦊H3视频提示词生成@炮老师的小课堂"
 
 MODEL_OPTIONS = [

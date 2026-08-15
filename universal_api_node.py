@@ -155,7 +155,7 @@ class UniversalAPINode:
     RETURN_TYPES = ("STRING", "STRING", "STRING", "IMAGE")
     RETURN_NAMES = ("AI回复", "response", "raw_json", "image")
     FUNCTION = "call_api"
-    CATEGORY = "🤖dapaoAPI"
+    CATEGORY = "🤖dapaoAPI/🔮API通用工具🔮"
     DESCRIPTION = "通用API调用节点 | 作者: @炮老师的小课堂"
     OUTPUT_NODE = False
     
