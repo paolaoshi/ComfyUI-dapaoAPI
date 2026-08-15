@@ -29,6 +29,7 @@ MODEL_OPTIONS = [
     "claude-sonnet-5",
     "gemini-3.5-flash",
     "gemini-3.5-flash-lite",
+    "gemini-3.7-flash",
 ]
 
 

@@ -31,6 +31,7 @@ MODEL_OPTIONS = [
     "gpt-5.5", "gpt-5.6-luna", "gpt-5.6-terra", "gpt-5.6-sol",
     "claude-fable-5", "claude-opus-4-8", "claude-opus-5", "claude-sonnet-5",
     "gemini-3.5-flash", "gemini-3.5-flash-lite",
+    "gemini-3.7-flash",
 ]
 MODE_OPTIONS = [
     "自动识别", "独立提示词", "T2V-文生视频", "I2V-图生视频", "V2V-视频参考",

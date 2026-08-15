@@ -31,6 +31,7 @@ MODEL_OPTIONS = [
     "gpt-5.5", "gpt-5.6-luna", "gpt-5.6-terra", "gpt-5.6-sol",
     "claude-fable-5", "claude-opus-4-8", "claude-opus-5", "claude-sonnet-5",
     "gemini-3.5-flash", "gemini-3.5-flash-lite",
+    "gemini-3.7-flash",
 ]
 PAGE_TYPE_OPTIONS = ["实体商品详情页", "AI工具/模型产品页", "SaaS功能页", "开发者产品页", "自定义长页"]
 PRODUCT_CATEGORY_OPTIONS = [

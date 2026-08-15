@@ -39,6 +39,7 @@ MODEL_OPTIONS = [
     "claude-sonnet-5",
     "gemini-3.5-flash",
     "gemini-3.5-flash-lite",
+    "gemini-3.7-flash",
 ]
 MODE_OPTIONS = ["自动识别", "T2VA-文生视频", "I2VA-首帧生视频", "FL2VA-首尾帧生视频", "L2VA-尾帧生视频", "Ref2VA-全能参考"]
 STYLE_OPTIONS = [
