@@ -26,6 +26,8 @@ import numpy as np
 import requests
 from PIL import Image, UnidentifiedImageError
 
+from .network_error_utils import friendly_443_status, friendly_network_error
+
 
 API_BASE_URL = "https://api.dapaoai.com"
 CHAT_ENDPOINT = f"{API_BASE_URL}/v1/chat/completions"
@@ -618,8 +620,10 @@ class VisualStyleLLMClient:
         try:
             response = requests.post(CHAT_ENDPOINT, headers=headers, json=payload, timeout=self.timeout)
         except (requests.ConnectionError, requests.Timeout) as error:
-            raise RuntimeError(f"中转站连接失败：{error}。为避免重复扣费，LLM请求不会自动重试") from error
+            raise RuntimeError(f"{friendly_network_error(error, '提交LLM请求')} 为避免重复扣费，LLM请求不会自动重试。") from error
         if response.status_code >= 400:
+            if response.status_code == 443:
+                raise RuntimeError(friendly_443_status())
             labels = {400: "请求参数错误", 401: "认证失败", 402: "余额不足", 403: "没有模型权限", 404: "映射模型不存在", 429: "请求过频"}
             try:
                 detail = response.json()
@@ -682,7 +686,7 @@ class DapaoVisualStylePromptNode:
         return {
             "required": {
                 "🔑 API密钥": ("STRING", {"default": "", "placeholder": "填入 dapaoAI API 密钥"}),
-                "🤖 LLM模型": (MODEL_OPTIONS, {"default": "gpt-5.5"}),
+                "🤖 LLM模型": (MODEL_OPTIONS, {"default": "gemini-3.7-flash"}),
                 "📝 原始视觉需求": (
                     "STRING",
                     {
@@ -848,7 +852,7 @@ class DapaoVisualStylePromptNode:
         }
         try:
             api_key = (kwargs.get("🔑 API密钥") or "").strip()
-            model = kwargs.get("🤖 LLM模型", "gpt-5.5")
+            model = kwargs.get("🤖 LLM模型", "gemini-3.7-flash")
             request = (kwargs.get("📝 原始视觉需求") or "").strip()
             # Workflows saved before the compact UI may still provide this
             # legacy field; treat it as the primary request when needed.

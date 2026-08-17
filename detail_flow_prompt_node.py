@@ -20,6 +20,8 @@ import numpy as np
 import requests
 from PIL import Image
 
+from .network_error_utils import friendly_443_status, friendly_network_error
+
 
 API_BASE_URL = "https://api.dapaoai.com"
 CHAT_ENDPOINT = f"{API_BASE_URL}/v1/chat/completions"
@@ -273,8 +275,10 @@ class DetailFlowLLMClient:
         try:
             response = requests.post(CHAT_ENDPOINT, headers=headers, json=payload, timeout=self.timeout)
         except (requests.ConnectionError, requests.Timeout) as error:
-            raise RuntimeError(f"中转站连接失败：{error}。LLM请求不会自动重试，以免重复扣费。") from error
+            raise RuntimeError(f"{friendly_network_error(error, '提交LLM请求')} LLM请求不会自动重试，以免重复扣费。") from error
         if response.status_code >= 400:
+            if response.status_code == 443:
+                raise RuntimeError(friendly_443_status())
             labels = {400: "请求参数错误", 401: "认证失败", 402: "余额不足", 403: "没有模型权限", 404: "映射模型不存在", 429: "请求过频"}
             try:
                 detail = response.json()
@@ -371,7 +375,7 @@ class DapaoDetailFlowPromptNode:
         return {
             "required": {
                 "🔑 API密钥": ("STRING", {"default": "", "placeholder": "填入 dapaoAI API 密钥", "tooltip": "密钥只用于请求 https://api.dapaoai.com。"}),
-                "🤖 LLM模型": (MODEL_OPTIONS, {"default": "gpt-5.5"}),
+                "🤖 LLM模型": (MODEL_OPTIONS, {"default": "gemini-3.7-flash"}),
                 "🧭 页面类型": (PAGE_TYPE_OPTIONS, {"default": "实体商品详情页"}),
                 "🗂️ 产品品类": (PRODUCT_CATEGORY_OPTIONS, {"default": "自动识别"}),
                 "🛒 适配平台": (PLATFORM_OPTIONS, {"default": "自动适配"}),
@@ -570,7 +574,7 @@ REFERENCE COUNTS: product={len(product_images)}, style={len(style_images)}
         started = time.time()
         try:
             api_key = (kwargs.get("🔑 API密钥") or "").strip()
-            model = kwargs.get("🤖 LLM模型", "gpt-5.5")
+            model = kwargs.get("🤖 LLM模型", "gemini-3.7-flash")
             screen_count = int(kwargs.get("🔢 分屏数量", "8"))
             brief = _merged_brief(kwargs)
             if not api_key:

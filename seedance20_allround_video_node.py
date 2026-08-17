@@ -18,6 +18,8 @@ import numpy as np
 import requests
 from PIL import Image
 
+from .network_error_utils import friendly_443_status, friendly_network_error
+
 try:
     import comfy.model_management
     import comfy.utils
@@ -395,9 +397,11 @@ class DapaoSeedanceRelayClient:
             response = requests.request(method, url, headers=self._headers(), timeout=self.timeout, **kwargs)
         except (requests.ConnectionError, requests.Timeout) as error:
             if method.upper() == "POST":
-                raise RuntimeError(f"中转站连接失败：{error}。视频提交不会自动重试，以免重复扣费。") from error
-            raise RuntimeError(f"中转站连接失败：{error}") from error
+                raise RuntimeError(f"{friendly_network_error(error, '提交视频任务')} 视频提交不会自动重试，以免重复扣费。") from error
+            raise RuntimeError(friendly_network_error(error, '查询视频任务')) from error
         if response.status_code >= 400:
+            if response.status_code == 443:
+                raise RuntimeError(friendly_443_status())
             raise DapaoSeedanceAPIError(response.status_code, _response_error(response))
         try:
             return response.json()
@@ -443,8 +447,10 @@ class DapaoSeedanceRelayClient:
                 timeout=max(self.timeout, 120),
             )
         except (requests.ConnectionError, requests.Timeout) as error:
-            raise RuntimeError(f"中转站素材上传连接失败：{error}") from error
+            raise RuntimeError(friendly_network_error(error, "上传视频参考素材")) from error
         if response.status_code >= 400:
+            if response.status_code == 443:
+                raise RuntimeError(friendly_443_status())
             raise RuntimeError(
                 f"中转站素材上传接口 /v1/files（model={model_name}）失败 {response.status_code}：{_response_error(response)}。"
                 "此错误发生在视频提交前，不代表 SD2/SD2-face 模型映射失败。"

@@ -3,7 +3,7 @@
 
 当前维护分组：
 - 大炮 AI 主力维护：GPT-image-2、Banana、Seedream 5.0 Pro、Seedream 图层拆分、GPT-LLM、Seedance2
-- 大炮 API 常用工具：H3、Seedance 导演、视觉风格和详情页提示词
+- 大炮 API 常用工具：H3、Seedance 导演、Music3、视觉风格和详情页提示词
 - API 通用工具：Gemini 多功能、通用 HTTP、通用图像生成与编辑
 - RH 功能专区：RunningHub 图像、视频、LLM 与应用节点
 
@@ -70,6 +70,11 @@ from .visual_style_prompt_node import (
 from .detail_flow_prompt_node import (
     NODE_CLASS_MAPPINGS as DETAIL_FLOW_PROMPT_MAPPINGS,
     NODE_DISPLAY_NAME_MAPPINGS as DETAIL_FLOW_PROMPT_DISPLAY_MAPPINGS,
+)
+
+from .music3_caption_prompt_node import (
+    NODE_CLASS_MAPPINGS as MUSIC3_CAPTION_PROMPT_MAPPINGS,
+    NODE_DISPLAY_NAME_MAPPINGS as MUSIC3_CAPTION_PROMPT_DISPLAY_MAPPINGS,
 )
 
 from .seedance20_allround_video_node import (
@@ -188,6 +193,7 @@ NODE_CLASS_MAPPINGS = {
     **SEEDANCE20_DIRECTOR_MAPPINGS,
     **VISUAL_STYLE_PROMPT_MAPPINGS,
     **DETAIL_FLOW_PROMPT_MAPPINGS,
+    **MUSIC3_CAPTION_PROMPT_MAPPINGS,
     **IMAGE_PROMPT_DIRECTOR_MAPPINGS,
     **GEMINI3_MAPPINGS,
     **UNIVERSAL_MAPPINGS,
@@ -219,6 +225,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     **SEEDANCE20_DIRECTOR_DISPLAY_MAPPINGS,
     **VISUAL_STYLE_PROMPT_DISPLAY_MAPPINGS,
     **DETAIL_FLOW_PROMPT_DISPLAY_MAPPINGS,
+    **MUSIC3_CAPTION_PROMPT_DISPLAY_MAPPINGS,
     **IMAGE_PROMPT_DIRECTOR_DISPLAY_MAPPINGS,
     **GEMINI3_DISPLAY_MAPPINGS,
     **UNIVERSAL_DISPLAY_MAPPINGS,

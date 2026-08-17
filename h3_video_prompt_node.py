@@ -21,6 +21,8 @@ import numpy as np
 import requests
 from PIL import Image
 
+from .network_error_utils import friendly_443_status, friendly_network_error
+
 
 API_BASE_URL = "https://api.dapaoai.com"
 CHAT_ENDPOINT = f"{API_BASE_URL}/v1/chat/completions"
@@ -1146,8 +1148,10 @@ class H3PromptLLMClient:
         try:
             response = requests.post(CHAT_ENDPOINT, headers=headers, json=payload, timeout=self.timeout)
         except (requests.ConnectionError, requests.Timeout) as error:
-            raise RuntimeError(f"中转站连接失败：{error}。LLM请求不会自动重试，以免重复扣费。") from error
+            raise RuntimeError(f"{friendly_network_error(error, '提交LLM请求')} LLM请求不会自动重试，以免重复扣费。") from error
         if response.status_code >= 400:
+            if response.status_code == 443:
+                raise RuntimeError(friendly_443_status())
             labels = {400: "请求参数错误", 401: "认证失败", 402: "余额不足", 403: "没有模型权限", 404: "映射模型不存在", 429: "请求过频"}
             raise RuntimeError(f"{labels.get(response.status_code, '中转站请求失败')} {response.status_code}：{_response_error(response)}")
         try:
@@ -1204,7 +1208,7 @@ class DapaoH3VideoPromptNode:
                         "tooltip": "密钥只用于请求 https://api.dapaoai.com，不会写入配置文件。",
                     },
                 ),
-                "🤖 LLM模型": (MODEL_OPTIONS, {"default": "gpt-5.5"}),
+                "🤖 LLM模型": (MODEL_OPTIONS, {"default": "gemini-3.7-flash"}),
                 "🎛️ H3生成模式": (MODE_OPTIONS, {"default": "自动识别"}),
                 "🎨 创作类型": (STYLE_OPTIONS, {"default": "通用H3"}),
                 "🌐 输出中文提示词": (
@@ -1482,7 +1486,7 @@ class DapaoH3VideoPromptNode:
 
     def _generate_prompt_sync(self, **kwargs):
         api_key = (kwargs.get("🔑 API密钥") or "").strip()
-        model_id = kwargs.get("🤖 LLM模型", "gpt-5.5")
+        model_id = kwargs.get("🤖 LLM模型", "gemini-3.7-flash")
         selected_mode = kwargs.get("🎛️ H3生成模式", "自动识别")
         style = kwargs.get("🎨 创作类型", "通用H3")
         output_chinese = bool(kwargs.get("🌐 输出中文提示词", False))

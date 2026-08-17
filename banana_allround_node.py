@@ -20,6 +20,8 @@ import requests
 import torch
 from PIL import Image
 
+from .network_error_utils import friendly_443_status, friendly_network_error
+
 try:
     import comfy.model_management
     import comfy.utils
@@ -203,8 +205,10 @@ class DapaoBananaRelayClient:
         try:
             response = requests.post(url, headers=headers, json=payload, timeout=self.timeout)
         except (requests.ConnectionError, requests.Timeout) as error:
-            raise RuntimeError(f"中转站连接失败：{error}。生成请求不会自动重试，以免重复扣费。") from error
+            raise RuntimeError(f"{friendly_network_error(error, '提交图像任务')} 生成请求不会自动重试，以免重复扣费。") from error
         if response.status_code >= 400:
+            if response.status_code == 443:
+                raise RuntimeError(friendly_443_status())
             raise DapaoBananaAPIError(response.status_code, _response_error(response))
         try:
             return response.json()
@@ -222,7 +226,7 @@ class DapaoBananaRelayClient:
             response.raise_for_status()
             return response.content
         except requests.RequestException as error:
-            raise RuntimeError(f"结果图片下载失败：{error}") from error
+            raise RuntimeError(friendly_network_error(error, "下载生成结果")) from error
 
 
 def _extract_image_items(result):

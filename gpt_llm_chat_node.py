@@ -12,6 +12,8 @@ import numpy as np
 import requests
 from PIL import Image
 
+from .network_error_utils import friendly_443_status, friendly_network_error
+
 
 API_BASE_URL = "https://api.dapaoai.com"
 CHAT_ENDPOINT = f"{API_BASE_URL}/v1/chat/completions"
@@ -133,8 +135,10 @@ class DapaoGPTLLMClient:
         try:
             response = requests.post(CHAT_ENDPOINT, headers=headers, json=payload, timeout=self.timeout)
         except (requests.ConnectionError, requests.Timeout) as error:
-            raise RuntimeError(f"中转站连接失败：{error}。对话请求不会自动重试，以免重复扣费。") from error
+            raise RuntimeError(f"{friendly_network_error(error, '提交对话请求')} 对话请求不会自动重试，以免重复扣费。") from error
         if response.status_code >= 400:
+            if response.status_code == 443:
+                raise RuntimeError(friendly_443_status())
             raise DapaoGPTLLMAPIError(response.status_code, _response_error(response))
         try:
             return response.json()
@@ -232,7 +236,7 @@ class DapaoGPTLLMChatNode:
                         "tooltip": "密钥只用于请求 https://api.dapaoai.com，不会写入配置文件。",
                     },
                 ),
-                "🤖 模型": (MODEL_OPTIONS, {"default": "gpt-5.5"}),
+                "🤖 模型": (MODEL_OPTIONS, {"default": "gemini-3.7-flash"}),
                 "🎯 系统角色": (
                     "STRING",
                     {
@@ -300,7 +304,7 @@ class DapaoGPTLLMChatNode:
 
     def _chat_sync(self, **kwargs):
         api_key = (kwargs.get("🔑 API密钥") or "").strip()
-        model_id = kwargs.get("🤖 模型", "gpt-5.5")
+        model_id = kwargs.get("🤖 模型", "gemini-3.7-flash")
         system_role = (kwargs.get("🎯 系统角色") or "").strip()
         user_input = (kwargs.get("💬 用户输入") or "").strip()
         skip_error = bool(kwargs.get("🚫 出错时跳过", False))

@@ -14,6 +14,8 @@ import torch
 import torch.nn.functional as torch_functional
 from PIL import Image
 
+from .network_error_utils import friendly_443_status, friendly_network_error
+
 try:
     import comfy.model_management
     import comfy.utils
@@ -265,9 +267,11 @@ class DapaoSeedreamLayerClient:
                     time.sleep(attempt + 1)
                     continue
                 if method.upper() == "GET":
-                    raise RuntimeError(f"中转站查询失败，已尝试{attempts}次：{error}") from error
-                raise RuntimeError(f"中转站连接失败：{error}。付费提交不会自动重试，以免重复扣费。") from error
+                    raise RuntimeError(f"{friendly_network_error(error, '查询任务')} 已尝试{attempts}次。") from error
+                raise RuntimeError(f"{friendly_network_error(error, '提交图层拆分任务')} 付费提交不会自动重试，以免重复扣费。") from error
             if response.status_code >= 400:
+                if response.status_code == 443:
+                    raise RuntimeError(friendly_443_status())
                 raise DapaoSeedreamLayerAPIError(response.status_code, _response_error(response))
             try:
                 return response.json()
@@ -311,7 +315,7 @@ class DapaoSeedreamLayerClient:
             response.raise_for_status()
             return response.content
         except requests.RequestException as error:
-            raise RuntimeError(f"拆分结果图片下载失败：{error}") from error
+            raise RuntimeError(friendly_network_error(error, "下载图层拆分结果")) from error
 
 
 def _tensor_to_png_data_uri(image_tensor):
