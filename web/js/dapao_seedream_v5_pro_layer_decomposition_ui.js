@@ -1,0 +1,175 @@
+import { app } from "../../../scripts/app.js";
+import { api } from "../../../scripts/api.js";
+
+const NODE_TYPE = "DapaoSeedreamV5ProLayerDecompositionNode";
+const REGISTER_URL = "https://api.dapaoai.com/sign-up?aff=vcOZ";
+const REGISTER_WIDGET_NAME = "👉点此注册API密钥👈";
+
+function nodeType(node) {
+    return node?.comfyClass || node?.type || "";
+}
+
+function widget(node, name) {
+    return node?.widgets?.find((item) => item.name === name) || null;
+}
+
+function ensureRegisterButton(node) {
+    if (!node?.addCustomWidget || node.__dapaoSeedreamLayerRegisterWidget) return;
+    for (const oldName of ["点击此处注册API密钥", REGISTER_WIDGET_NAME]) {
+        const oldWidget = widget(node, oldName);
+        if (!oldWidget) continue;
+        const index = node.widgets.indexOf(oldWidget);
+        if (index >= 0) node.widgets.splice(index, 1);
+    }
+    const registerWidget = {
+        name: REGISTER_WIDGET_NAME,
+        type: "DAPAO_SEEDREAM_LAYER_REGISTER_BUTTON",
+        serialize: false,
+        _hovered: false,
+        _area: null,
+        computeSize() {
+            return [160, 38];
+        },
+        draw(ctx, nodeRef, width, y, height) {
+            const widgetWidth = Math.max(160, Number(nodeRef?.size?.[0]) || Number(width) || 160);
+            const margin = 8;
+            const buttonY = y + 3;
+            const buttonHeight = Math.max(30, height - 6);
+            ctx.save();
+            ctx.fillStyle = this._hovered ? "#d99524" : "#a96b1b";
+            ctx.beginPath();
+            ctx.roundRect(margin, buttonY, widgetWidth - margin * 2, buttonHeight, 8);
+            ctx.fill();
+            ctx.strokeStyle = this._hovered ? "#ffd36a" : "#d49a42";
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            ctx.fillStyle = "#fff7df";
+            ctx.font = "bold 13px sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(REGISTER_WIDGET_NAME, widgetWidth / 2, buttonY + buttonHeight / 2);
+            ctx.restore();
+            this._area = { x: margin, y: buttonY, width: widgetWidth - margin * 2, height: buttonHeight };
+        },
+        mouse(event, pos, nodeRef) {
+            const area = this._area;
+            if (!area) return false;
+            const inside = pos[0] >= area.x && pos[0] <= area.x + area.width &&
+                pos[1] >= area.y && pos[1] <= area.y + area.height;
+            if (event.type === "pointermove") {
+                this._hovered = inside;
+                nodeRef.setDirtyCanvas?.(true, true);
+                return inside;
+            }
+            if (event.type === "pointerdown" && inside) {
+                const opened = window.open(REGISTER_URL, "_blank");
+                if (opened) opened.opener = null;
+                return true;
+            }
+            return false;
+        },
+    };
+    node.addCustomWidget(registerWidget);
+    node.__dapaoSeedreamLayerRegisterWidget = registerWidget;
+}
+
+function setup(node) {
+    if (!node?.widgets || nodeType(node) !== NODE_TYPE) return;
+    ensureRegisterButton(node);
+    if (node.computeSize) {
+        const computed = node.computeSize();
+        const currentWidth = Number(node.size?.[0]) || computed[0];
+        node.setSize([Math.max(380, currentWidth, computed[0]), computed[1]]);
+    }
+    node.setDirtyCanvas?.(true, true);
+}
+
+function roundRect(ctx, x, y, width, height, radius) {
+    const r = Math.min(radius, width / 2, height / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + width - r, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+    ctx.lineTo(x + width, y + height - r);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+    ctx.lineTo(x + r, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+}
+
+function drawBadge(node, ctx) {
+    const text = "价格待补";
+    ctx.save();
+    ctx.font = "bold 14px Arial, sans-serif";
+    const width = Math.max(92, ctx.measureText(text).width + 36);
+    const height = 24;
+    const x = Math.max(12, node.size[0] - width - 10);
+    const y = -height + 4;
+    ctx.fillStyle = "#5f5f66";
+    roundRect(ctx, x, y, width, height, 8);
+    ctx.fill();
+    ctx.fillStyle = "#d8d8dc";
+    ctx.beginPath();
+    ctx.arc(x + 13, y + height / 2, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#5f5f66";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("?", x + 13, y + height / 2 + 0.5);
+    ctx.fillStyle = "#fff";
+    ctx.textAlign = "left";
+    ctx.fillText(text, x + 26, y + height / 2 + 0.5);
+    ctx.restore();
+}
+
+function refreshAllNodes() {
+    app.graph?.findNodesByType(NODE_TYPE)?.forEach((node) => setup(node));
+}
+
+app.registerExtension({
+    name: "Dapao.SeedreamV5ProLayerDecomposition.UI",
+    async setup() {
+        api.addEventListener("hot_reload_update", () => {
+            [50, 250, 1000].forEach((delay) => setTimeout(refreshAllNodes, delay));
+        });
+    },
+    nodeCreated(node) {
+        if (nodeType(node) === NODE_TYPE) setTimeout(() => setup(node), 20);
+    },
+    loadedGraphNode(node) {
+        if (nodeType(node) === NODE_TYPE) setTimeout(() => setup(node), 50);
+    },
+    async beforeRegisterNodeDef(nodeTypeClass, nodeData) {
+        if (nodeData.name !== NODE_TYPE) return;
+
+        const onNodeCreated = nodeTypeClass.prototype.onNodeCreated;
+        nodeTypeClass.prototype.onNodeCreated = function () {
+            onNodeCreated?.apply(this, arguments);
+            this.color = "#141416";
+            this.bgcolor = "#19191c";
+            setTimeout(() => setup(this), 20);
+        };
+
+        const onAdded = nodeTypeClass.prototype.onAdded;
+        nodeTypeClass.prototype.onAdded = function () {
+            onAdded?.apply(this, arguments);
+            setTimeout(() => setup(this), 20);
+        };
+
+        const onConfigure = nodeTypeClass.prototype.onConfigure;
+        nodeTypeClass.prototype.onConfigure = function () {
+            onConfigure?.apply(this, arguments);
+            setTimeout(() => setup(this), 50);
+        };
+
+        const onDrawForeground = nodeTypeClass.prototype.onDrawForeground;
+        nodeTypeClass.prototype.onDrawForeground = function (ctx) {
+            onDrawForeground?.apply(this, arguments);
+            drawBadge(this, ctx);
+        };
+    },
+});
+
+console.log("[Dapao Seedream V5 Pro Layer Decomposition UI] loaded");
