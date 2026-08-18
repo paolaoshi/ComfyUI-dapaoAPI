@@ -13,6 +13,7 @@ import requests
 from PIL import Image
 
 from .network_error_utils import friendly_443_status, friendly_network_error
+from .image_input_utils import IMAGE_429_HINT, tensor_to_png_data_uris
 
 
 API_BASE_URL = "https://api.dapaoai.com"
@@ -86,22 +87,14 @@ class DapaoGPTLLMAPIError(RuntimeError):
             402: "余额不足，请充值后重试",
             403: "没有模型或接口权限",
             404: "接口或映射模型不存在",
-            429: "请求过频，请稍后重试",
+            429: IMAGE_429_HINT,
         }
         label = labels.get(self.status_code, "中转站请求失败")
         super().__init__(f"{label} {self.status_code}：{self.api_message}")
 
 
 def _tensor_to_data_uris(image_tensor):
-    data_uris = []
-    for index in range(image_tensor.shape[0]):
-        array = np.clip(image_tensor[index].detach().cpu().numpy() * 255.0, 0, 255).astype(np.uint8)
-        image = Image.fromarray(array).convert("RGB")
-        buffer = io.BytesIO()
-        image.save(buffer, format="PNG")
-        encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
-        data_uris.append(f"data:image/png;base64,{encoded}")
-    return data_uris
+    return tensor_to_png_data_uris(image_tensor)
 
 
 def _sanitized_result(value):

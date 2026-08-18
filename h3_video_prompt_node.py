@@ -22,6 +22,7 @@ import requests
 from PIL import Image
 
 from .network_error_utils import friendly_443_status, friendly_network_error
+from .image_input_utils import IMAGE_429_HINT
 
 
 API_BASE_URL = "https://api.dapaoai.com"
@@ -626,7 +627,7 @@ def _tensor_to_data_uris(image_tensor):
     for index in range(image_tensor.shape[0]):
         array = np.clip(image_tensor[index].detach().cpu().numpy() * 255.0, 0, 255).astype(np.uint8)
         image = Image.fromarray(array).convert("RGB")
-        uris.append(_pil_to_data_uri(image, max_side=1536, quality=90))
+        uris.append(_pil_to_data_uri(image, max_side=2048, quality=90))
     return uris
 
 
@@ -1152,7 +1153,7 @@ class H3PromptLLMClient:
         if response.status_code >= 400:
             if response.status_code == 443:
                 raise RuntimeError(friendly_443_status())
-            labels = {400: "请求参数错误", 401: "认证失败", 402: "余额不足", 403: "没有模型权限", 404: "映射模型不存在", 429: "请求过频"}
+            labels = {400: "请求参数错误", 401: "认证失败", 402: "余额不足", 403: "没有模型权限", 404: "映射模型不存在", 429: IMAGE_429_HINT}
             raise RuntimeError(f"{labels.get(response.status_code, '中转站请求失败')} {response.status_code}：{_response_error(response)}")
         try:
             return response.json()

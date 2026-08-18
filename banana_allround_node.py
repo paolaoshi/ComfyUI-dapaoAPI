@@ -21,6 +21,7 @@ import torch
 from PIL import Image
 
 from .network_error_utils import friendly_443_status, friendly_network_error
+from .image_input_utils import IMAGE_429_HINT, tensor_to_png_inline_parts
 
 try:
     import comfy.model_management
@@ -130,21 +131,7 @@ def _pil_to_tensor(image):
 
 
 def _tensor_to_inline_parts(image_tensor):
-    parts = []
-    for index in range(image_tensor.shape[0]):
-        array = np.clip(image_tensor[index].detach().cpu().numpy() * 255.0, 0, 255).astype(np.uint8)
-        image = Image.fromarray(array).convert("RGB")
-        buffer = io.BytesIO()
-        image.save(buffer, format="PNG")
-        parts.append(
-            {
-                "inlineData": {
-                    "mimeType": "image/png",
-                    "data": base64.b64encode(buffer.getvalue()).decode("ascii"),
-                }
-            }
-        )
-    return parts
+    return tensor_to_png_inline_parts(image_tensor)
 
 
 def _response_error(response):
@@ -171,7 +158,7 @@ class DapaoBananaAPIError(RuntimeError):
             402: "余额不足，请充值后重试",
             403: "没有模型或接口权限",
             404: "接口或映射模型不存在",
-            429: "请求过频，请稍后重试",
+            429: IMAGE_429_HINT,
             500: (
                 "服务内部出现异常，本次任务未完成，请稍后重试。\n"
                 "如果当前使用香蕉模型，请在节点的‘模型’下拉框中切换到‘香蕉pro官方稳定版’或‘香蕉2官方稳定版’后再试"

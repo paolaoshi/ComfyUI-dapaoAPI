@@ -15,6 +15,7 @@ import torch.nn.functional as torch_functional
 from PIL import Image
 
 from .network_error_utils import friendly_443_status, friendly_network_error
+from .image_input_utils import IMAGE_429_HINT, resize_pil_for_input
 
 try:
     import comfy.model_management
@@ -81,7 +82,7 @@ class DapaoSeedreamLayerAPIError(RuntimeError):
             403: "当前账户没有图层拆分模型权限",
             404: "中转站没有配置 seedream-v5-pro/layer-decomposition 模型",
             413: "待拆分图片超过接口大小限制",
-            429: "请求过于频繁，图层拆分通道繁忙，请稍后再试",
+            429: IMAGE_429_HINT,
             500: "图层拆分服务内部异常，本次任务未完成，请稍后重试",
             502: "中转站连接上游图层拆分服务失败，请稍后重试",
             503: "图层拆分模型通道暂时不可用，可能正在维护或排队繁忙",
@@ -327,13 +328,14 @@ def _tensor_to_png_data_uri(image_tensor):
     if image_array.ndim != 3 or image_array.shape[2] < 3:
         raise ValueError("待拆分图像必须是 RGB 图像。")
     height, width = image_array.shape[:2]
-    if width < 512 or height < 512 or width > 6000 or height > 6000:
-        raise ValueError(f"图片尺寸需在512到6000像素之间，当前为{width}x{height}。")
+    if width < 512 or height < 512:
+        raise ValueError(f"图片尺寸需至少为512像素，当前为{width}x{height}；超过2K的图片会自动等比压缩。")
     ratio = width / height
     if ratio < 1 / 16 or ratio > 16:
         raise ValueError(f"图片宽高比需在1:16到16:1之间，当前为{width}:{height}。")
     rgb = np.clip(image_array[:, :, :3] * 255.0, 0, 255).astype(np.uint8)
-    image = Image.fromarray(rgb, mode="RGB")
+    image = resize_pil_for_input(Image.fromarray(rgb, mode="RGB"))
+    width, height = image.size
     buffer = io.BytesIO()
     image.save(buffer, format="PNG")
     content = buffer.getvalue()
@@ -345,7 +347,7 @@ def _tensor_to_png_data_uri(image_tensor):
 def _tensor_to_rgb_image(image_tensor):
     image_array = image_tensor[0].detach().cpu().numpy()
     rgb = np.clip(image_array[:, :, :3] * 255.0, 0, 255).astype(np.uint8)
-    return Image.fromarray(rgb, mode="RGB")
+    return resize_pil_for_input(Image.fromarray(rgb, mode="RGB"))
 
 
 def _record_to_rgba(client, record):

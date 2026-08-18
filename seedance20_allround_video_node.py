@@ -19,6 +19,7 @@ import requests
 from PIL import Image
 
 from .network_error_utils import friendly_443_status, friendly_network_error
+from .image_input_utils import IMAGE_429_HINT, tensor_to_png_bytes
 
 try:
     import comfy.model_management
@@ -135,7 +136,7 @@ class DapaoSeedanceAPIError(RuntimeError):
             402: "余额不足，请充值后重试",
             403: "没有模型或接口权限",
             404: "接口或任务不存在",
-            429: "请求过频，请稍后重试",
+            429: IMAGE_429_HINT,
         }
         normalized = self.api_message.lower()
         if "insufficient_user_quota" in normalized or "insufficient quota" in normalized or "预扣费额度" in self.api_message:
@@ -155,14 +156,7 @@ class DapaoSeedanceAPIError(RuntimeError):
 
 def _tensor_to_png_bytes(image_tensor):
     """Encode ComfyUI IMAGE batches to PNG bytes without creating data URIs."""
-    images = []
-    for index in range(image_tensor.shape[0]):
-        array = np.clip(image_tensor[index].detach().cpu().numpy() * 255.0, 0, 255).astype(np.uint8)
-        image = Image.fromarray(array).convert("RGB")
-        buffer = io.BytesIO()
-        image.save(buffer, format="PNG")
-        images.append(buffer.getvalue())
-    return images
+    return tensor_to_png_bytes(image_tensor)
 
 
 def _audio_to_wav_bytes(audio_input):

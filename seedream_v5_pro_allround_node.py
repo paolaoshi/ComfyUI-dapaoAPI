@@ -19,6 +19,7 @@ import torch
 from PIL import Image
 
 from .network_error_utils import friendly_443_status, friendly_network_error
+from .image_input_utils import IMAGE_429_HINT, tensor_to_pil_images
 
 try:
     import comfy.model_management
@@ -107,7 +108,7 @@ class DapaoSeedreamV5ProAPIError(RuntimeError):
             403: "当前账户没有该模型或接口权限",
             404: "中转站接口或 seedream-v5-pro 模型映射不存在",
             413: "参考图或请求内容过大",
-            429: "请求过于频繁，当前通道繁忙，请稍后再试",
+            429: IMAGE_429_HINT,
             500: "服务内部出现异常，本次任务未完成，请稍后重试",
             502: "中转站连接上游 Seedream 服务失败，请稍后重试",
             503: "Seedream 模型通道暂时不可用，可能正在维护或排队繁忙",
@@ -129,19 +130,16 @@ def _mask_for_index(mask_tensor, index, width, height):
 
 def _tensor_to_png_items(image_tensor, transparency_mask=None):
     items = []
-    for index in range(image_tensor.shape[0]):
-        array = np.clip(image_tensor[index].detach().cpu().numpy() * 255.0, 0, 255).astype(np.uint8)
-        if array.ndim != 3 or array.shape[2] < 3:
-            raise ValueError("参考图必须是 RGB 或 RGBA IMAGE。")
-        height, width = array.shape[:2]
-        has_alpha = array.shape[2] >= 4
-        alpha = array[:, :, 3] if has_alpha else None
+    for index, source_image in enumerate(tensor_to_pil_images(image_tensor)):
+        width, height = source_image.size
+        has_alpha = source_image.mode == "RGBA"
+        alpha = np.asarray(source_image.getchannel("A")) if has_alpha else None
         mask = _mask_for_index(transparency_mask, index, width, height)
         if mask is not None:
             # ComfyUI MASK uses white for transparency, so alpha is its inverse.
             alpha = np.clip((1.0 - mask) * 255.0, 0, 255).astype(np.uint8)
             has_alpha = True
-        image = Image.fromarray(array[:, :, :3], mode="RGB")
+        image = source_image.convert("RGB")
         if has_alpha:
             image.putalpha(Image.fromarray(alpha, mode="L"))
         buffer = io.BytesIO()

@@ -21,6 +21,7 @@ import requests
 from PIL import Image
 
 from .network_error_utils import friendly_443_status, friendly_network_error
+from .image_input_utils import IMAGE_429_HINT, resize_pil_for_input
 
 
 API_BASE_URL = "https://api.dapaoai.com"
@@ -109,11 +110,11 @@ def _log_error(message):
     _safe_print(f"[dapaoAPI-电商详情页提示词] 错误：{message}")
 
 
-def _image_data_uris(image_tensor, max_side=1536):
+def _image_data_uris(image_tensor, max_side=2048):
     result = []
     for item in image_tensor:
         array = np.clip(item.detach().cpu().numpy() * 255.0, 0, 255).astype(np.uint8)
-        image = Image.fromarray(array).convert("RGB")
+        image = resize_pil_for_input(Image.fromarray(array).convert("RGB"), max_side)
         if max(image.size) > max_side:
             scale = max_side / max(image.size)
             image = image.resize((max(1, int(image.width * scale)), max(1, int(image.height * scale))), Image.Resampling.LANCZOS)
@@ -279,7 +280,7 @@ class DetailFlowLLMClient:
         if response.status_code >= 400:
             if response.status_code == 443:
                 raise RuntimeError(friendly_443_status())
-            labels = {400: "请求参数错误", 401: "认证失败", 402: "余额不足", 403: "没有模型权限", 404: "映射模型不存在", 429: "请求过频"}
+            labels = {400: "请求参数错误", 401: "认证失败", 402: "余额不足", 403: "没有模型权限", 404: "映射模型不存在", 429: IMAGE_429_HINT}
             try:
                 detail = response.json()
             except Exception:
@@ -585,8 +586,8 @@ REFERENCE COUNTS: product={len(product_images)}, style={len(style_images)}
                 raise ValueError(f"分屏数量只能选择1至{MAX_SCREEN_COUNT}。")
             if not brief:
                 raise ValueError("原始电商需求不能为空。")
-            product_images = self._collect_images(kwargs, "📦 产品图", MAX_PRODUCT_IMAGES, 1536)
-            style_images = self._collect_images(kwargs, "🎨 风格参考图", MAX_STYLE_IMAGES, 1024)
+            product_images = self._collect_images(kwargs, "📦 产品图", MAX_PRODUCT_IMAGES, 2048)
+            style_images = self._collect_images(kwargs, "🎨 风格参考图", MAX_STYLE_IMAGES, 2048)
             total_images = len(product_images) + len(style_images)
             if total_images > MAX_LLM_IMAGES:
                 raise ValueError(f"本次LLM最多接收{MAX_LLM_IMAGES}张图像，目前接入{total_images}张。")
