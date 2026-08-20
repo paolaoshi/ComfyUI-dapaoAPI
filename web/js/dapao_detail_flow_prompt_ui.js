@@ -4,10 +4,57 @@ import { api } from "../../../scripts/api.js";
 const NODE_TYPE = "DapaoDetailFlowPromptNode";
 const REGISTER_URL = "https://api.dapaoai.com/sign-up?aff=vcOZ";
 const REGISTER_WIDGET_NAME = "👉点此注册API密钥👈";
+const handledRegisterEvents = new WeakSet();
 
 function nodeType(node) { return node?.comfyClass || node?.type || ""; }
 function widget(node, name) { return node?.widgets?.find((item) => item.name === name) || null; }
 function value(node, name, fallback = "") { return widget(node, name)?.value ?? fallback; }
+
+function isPressEvent(event) {
+    const type = String(event?.type || "");
+    const pointerDown = globalThis.LiteGraph?.pointerevents_method
+        ? `${globalThis.LiteGraph.pointerevents_method}down`
+        : "";
+    return type === "pointerdown" || type === "mousedown" || type === "click" || type === pointerDown;
+}
+
+function openRegisterPage(event) {
+    if (event && typeof event === "object") {
+        if (handledRegisterEvents.has(event)) return true;
+        handledRegisterEvents.add(event);
+    }
+
+    // Keep the navigation in the original user gesture. Some browsers return
+    // null from window.open in the ComfyUI canvas, so fall back to a real link.
+    try {
+        const opened = window.open(REGISTER_URL, "_blank", "noopener,noreferrer");
+        if (opened) {
+            opened.opener = null;
+            return true;
+        }
+    } catch (_) {
+        // Try the anchor fallback below.
+    }
+    try {
+        const anchor = document.createElement("a");
+        anchor.href = REGISTER_URL;
+        anchor.target = "_blank";
+        anchor.rel = "noopener noreferrer";
+        anchor.style.display = "none";
+        document.body?.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        return true;
+    } catch (_) {
+        return false;
+    }
+}
+
+function pointInside(area, pos) {
+    return Boolean(area && Array.isArray(pos) && pos.length >= 2
+        && pos[0] >= area.x && pos[0] <= area.x + area.width
+        && pos[1] >= area.y && pos[1] <= area.y + area.height);
+}
 
 function setWidgetHidden(node, name, hidden) {
     const target = widget(node, name);
@@ -55,20 +102,21 @@ function ensureRegisterButton(node) {
             ctx.fillText(REGISTER_WIDGET_NAME, widgetWidth / 2, buttonY + buttonHeight / 2);
             ctx.restore();
             this._area = { x: margin, y: buttonY, width: widgetWidth - margin * 2, height: buttonHeight };
+            // onMouseDown receives node-local coordinates, while widget.mouse
+            // receives widget-local coordinates. Keep both hit regions current.
+            this._nodeArea = { x: margin, y: buttonY, width: widgetWidth - margin * 2, height: buttonHeight };
         },
         mouse(event, pos, nodeRef) {
             const area = this._area;
             if (!area) return false;
-            const inside = pos[0] >= area.x && pos[0] <= area.x + area.width
-                && pos[1] >= area.y && pos[1] <= area.y + area.height;
+            const inside = pointInside(area, pos);
             if (event.type === "pointermove") {
                 this._hovered = inside;
                 nodeRef.setDirtyCanvas?.(true, true);
                 return inside;
             }
-            if (event.type === "pointerdown" && inside) {
-                const opened = window.open(REGISTER_URL, "_blank");
-                if (opened) opened.opener = null;
+            if (isPressEvent(event) && inside) {
+                openRegisterPage(event);
                 return true;
             }
             return false;
@@ -76,6 +124,21 @@ function ensureRegisterButton(node) {
     };
     node.addCustomWidget(button);
     node.__dapaoDetailFlowRegisterWidget = button;
+}
+
+function installRegisterMouseFallback(node) {
+    if (!node || node.__dapaoDetailFlowRegisterMouseFallback) return;
+    const original = node.onMouseDown;
+    node.onMouseDown = function (event, pos) {
+        const button = this.__dapaoDetailFlowRegisterWidget;
+        if (isPressEvent(event) && pointInside(button?._nodeArea, pos)) {
+            openRegisterPage(event);
+            this.setDirtyCanvas?.(true, true);
+            return true;
+        }
+        return original?.apply(this, arguments);
+    };
+    node.__dapaoDetailFlowRegisterMouseFallback = true;
 }
 
 function refreshInputs(node) {
@@ -105,6 +168,7 @@ function refreshInputs(node) {
 function refresh(node) {
     if (nodeType(node) !== NODE_TYPE) return;
     ensureRegisterButton(node);
+    installRegisterMouseFallback(node);
     refreshInputs(node);
     if (node.computeSize) {
         const computed = node.computeSize();
@@ -153,6 +217,7 @@ app.registerExtension({
             const result = created?.apply(this, arguments);
             this.color = "#191412";
             this.bgcolor = "#211a17";
+            installRegisterMouseFallback(this);
             setTimeout(() => setup(this), 20);
             return result;
         };

@@ -92,7 +92,7 @@ function ensureRegisterButton(node) {
                 nodeRef.setDirtyCanvas?.(true, true);
                 return inside;
             }
-            if (event.type === "pointerdown" && inside) {
+            if (["pointerdown", "mousedown", "click"].includes(event.type) && inside) {
                 const opened = window.open(REGISTER_URL, "_blank");
                 if (opened) opened.opener = null;
                 return true;

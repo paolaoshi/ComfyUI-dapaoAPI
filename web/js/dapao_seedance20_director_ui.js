@@ -45,7 +45,7 @@ function ensureRegisterButton(node) {
             if (!area) return false;
             const inside = pos[0] >= area.x && pos[0] <= area.x + area.width && pos[1] >= area.y && pos[1] <= area.y + area.height;
             if (event.type === "pointermove") { this._hovered = inside; nodeRef.setDirtyCanvas?.(true, true); return inside; }
-            if (event.type === "pointerdown" && inside) { const opened = window.open(REGISTER_URL, "_blank"); if (opened) opened.opener = null; return true; }
+            if (["pointerdown", "mousedown", "click"].includes(event.type) && inside) { const opened = window.open(REGISTER_URL, "_blank"); if (opened) opened.opener = null; return true; }
             return false;
         },
     };
