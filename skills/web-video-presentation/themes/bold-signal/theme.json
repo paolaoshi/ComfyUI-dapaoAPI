@@ -1,0 +1,28 @@
+{
+  "id": "bold-signal",
+  "name": "Bold Signal",
+  "nameZh": "焦点信号",
+  "description": "Dark gradient backdrop with a hot orange focal card and Archivo Black / Space Grotesk typography. Signature: oversized orange focal card as the stage's anchor + tabular section numbers. Built for pitch decks, product launches and statement chapters.",
+  "descriptionZh": "暗渐变底 + 大橙色焦点色卡 + Archivo Black / Space Grotesk 字体。签名：占位主角色卡 + 大编号制表数。适合 pitch deck、产品发布、宣言型章节。",
+  "mood": [
+    "dark",
+    "bold",
+    "signal",
+    "hero",
+    "modern",
+    "pitch"
+  ],
+  "bestFor": [
+    "pitch deck / 投资人路演",
+    "产品发布 / 新品宣传",
+    "营销片头 / brand keynote",
+    "大字宣言 / 标题片",
+    "season hero / 主题营销"
+  ],
+  "preview": {
+    "shell": "#0c0c0c",
+    "surface": "#1a1a1a",
+    "text": "#f5f5f5",
+    "accent": "#ff5722"
+  }
+}

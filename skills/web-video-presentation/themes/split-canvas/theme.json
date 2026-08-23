@@ -1,0 +1,28 @@
+{
+  "id": "split-canvas",
+  "name": "Split Canvas",
+  "nameZh": "双拼画布",
+  "description": "Two-tone canvas: warm peach + cool lavender as paired surfaces. Outfit sans display, magenta accent. Signature: dual-tone surface (left peach / right lavender) — built for contrast and dialog chapters.",
+  "descriptionZh": "双色画布：暖蜜桃 + 冷薰衣草作为成对底色 + Outfit 几何无衬线 + 玫红强调。签名：双调底色（左桃 / 右紫），适合做对照与对话型章节。",
+  "mood": [
+    "light",
+    "playful",
+    "dual-tone",
+    "friendly",
+    "creative",
+    "warm-cool"
+  ],
+  "bestFor": [
+    "双主题对比 / 辩论",
+    "故事讲述 / 对话",
+    "创意分享",
+    "轻量品牌片",
+    "概念对照型科普"
+  ],
+  "preview": {
+    "shell": "#dcc7b8",
+    "surface": "#f5e6dc",
+    "text": "#1a1410",
+    "accent": "#d24a78"
+  }
+}

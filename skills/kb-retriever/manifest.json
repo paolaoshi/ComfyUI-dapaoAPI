@@ -1,0 +1,15 @@
+{
+  "name": "kb-retriever",
+  "version": "1.0.1",
+  "category": "Retrieval / Local Knowledge Base",
+  "description": "Local knowledge-base retriever with progressive search. Navigates layered data_structure.md indexes, enforces learn-before-process for PDF and Excel, bounds retrieval to at most five rounds, and answers with sources.",
+  "homepage": "https://github.com/ConardLi/garden-skills/tree/main/skills/kb-retriever",
+  "compat": [
+    "claude-code",
+    "claude-ai",
+    "cursor",
+    "codex-cli",
+    "gemini-cli",
+    "opencode"
+  ]
+}

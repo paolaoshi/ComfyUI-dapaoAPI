@@ -1,0 +1,75 @@
+/* ─────────────────────────────────────────────────────────────────────
+ * Theme · neon-cyber
+ *   Cyberpunk future-tech. Deep navy canvas, electric cyan as primary
+ *   accent, magenta as the secondary glow tint (used only via *-glow
+ *   alpha). Clash Display for display, Satoshi for body, JetBrains Mono
+ *   for terminal-y bits. Signature: faint cyan grid + neon text-shadow
+ *   on hero text.
+ *
+ *   character knobs:
+ *     • hero numbers   — Clash Display, weight 700, tabular figures
+ *     • rule           — 1px solid cyan (low alpha)
+ *     • card           — slight radius (8-12px) with cyan inset glow
+ *     • surface        — fine cyan grid (40px) + soft scan vignette
+ *     • motion         — snappy + futuristic (faster than midnight)
+ * ───────────────────────────────────────────────────────────────────── */
+:root {
+  /* ─── palette ─── */
+  --shell:        #04060f;
+  --surface:      #0a0f1c;
+  --surface-2:    #111828;
+  --surface-3:    #1a2238;
+  --text:         #e8f4ff;
+  --text-2:       #b8c8e0;
+  --text-mute:    #6a7a98;
+  --text-faint:   #3a4660;
+  --rule:         rgba(0, 255, 204, 0.22);
+  --accent:       #00ffcc;             /* electric cyan */
+  --accent-soft:  rgba(0, 255, 204, 0.10);
+  --accent-glow:  rgba(255, 0, 170, 0.55);   /* SIGNATURE — magenta glow */
+
+  /* ─── fonts ─── */
+  --font-display-cn: "Noto Sans SC", "Source Han Sans SC", -apple-system, sans-serif;
+  --font-display-en: "Clash Display", "Space Grotesk", "Manrope", "Inter", sans-serif;
+  --font-body:       "Satoshi", "Inter", "Noto Sans SC", -apple-system, sans-serif;
+  --font-mono:       "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+  --font-features:   "tnum", "ss01", "ss02", "zero";
+
+  /* ─── motion: snappy future ─── */
+  --dur-quick:     160ms;
+  --dur-base:      380ms;
+  --dur-slow:      650ms;
+  --dur-cinematic: 1050ms;
+
+  /* ─── design identity: cyber edge ─── */
+  --r-card:        var(--r-sm);
+  --r-stage:       0;
+  --rule-w:        1px;
+  --rule-style:    solid;
+  --hero-num-font:    var(--font-display-en);
+  --hero-num-style:   normal;
+  --hero-num-weight:  700;
+  --hero-num-track:   -0.02em;
+  --stage-pad-x:   100px;
+  --stage-pad-y:   80px;
+  --text-shadow:
+    0 0 12px rgba(0, 255, 204, 0.35),
+    0 0 24px rgba(255, 0, 170, 0.12);    /* SIGNATURE — cyan + magenta tail */
+  --card-shadow:
+    inset 0 0 0 1px var(--rule),
+    0 0 40px rgba(0, 255, 204, 0.06);
+  --shadow-stage:
+    0 60px 160px rgba(0, 30, 50, 0.65),
+    0 0 0 1px rgba(0, 255, 204, 0.18),
+    0 0 80px rgba(0, 255, 204, 0.08);
+
+  /* ─── decoration: cyan grid + soft scan vignette ─── */
+  --surface-pattern:
+    linear-gradient(rgba(0, 255, 204, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 204, 0.05) 1px, transparent 1px),
+    linear-gradient(rgba(0, 255, 204, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 204, 0.025) 1px, transparent 1px);
+  --surface-pattern-size: 200px 200px, 200px 200px, 40px 40px, 40px 40px;
+  --surface-vignette:
+    radial-gradient(ellipse at center, transparent 35%, rgba(0, 10, 25, 0.6) 100%);
+}

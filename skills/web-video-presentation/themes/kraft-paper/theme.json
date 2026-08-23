@@ -1,0 +1,28 @@
+{
+  "id": "kraft-paper",
+  "name": "Kraft Paper",
+  "nameZh": "牛皮纸",
+  "description": "Deep-brown ink on kraft beige — old notebook / hand-stamped envelope. Fraunces serif + Noto Serif SC + Source Serif body. Vintage, warm, hand-crafted, with a copper accent for editorial emphasis.",
+  "descriptionZh": "深棕当墨 + 牛皮米。像老笔记本或手戳信封：暖、有年代感、手作味。Fraunces + Noto Serif SC + Source Serif 正文 + 紫铜色 accent。",
+  "mood": [
+    "light",
+    "vintage",
+    "literary",
+    "kraft",
+    "hand-craft",
+    "warm"
+  ],
+  "bestFor": [
+    "书评 / 文学随笔",
+    "历史 / 怀旧 / 老物",
+    "独立杂志 / zine",
+    "手工艺 / 食物 / 农产品",
+    "慢生活 / 人文"
+  ],
+  "preview": {
+    "shell": "#dccab0",
+    "surface": "#eedfc7",
+    "text": "#2a1e13",
+    "accent": "#a35b2a"
+  }
+}

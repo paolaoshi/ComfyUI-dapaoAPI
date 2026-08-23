@@ -1,0 +1,70 @@
+/* ─────────────────────────────────────────────────────────────────────
+ * Theme · split-canvas
+ *   Dual-tone canvas. Warm peach left + cool lavender right (50/50 hard
+ *   vertical split realized via --surface-pattern). Outfit sans for all
+ *   display + body, magenta accent. Chapters can place content on either
+ *   side of the divide, or straddle it for compare / debate / dialog
+ *   layouts.
+ *
+ *   --surface stays peach (the "primary" half); --surface-2 = lavender
+ *   is exposed for cards / panels that need to live on the cool side.
+ *
+ *   character knobs:
+ *     • hero numbers   — Outfit, weight 800
+ *     • rule           — 1px solid warm
+ *     • card           — refined-md radius (12px)
+ *     • surface        — SIGNATURE — 50/50 peach/lavender hard split
+ *     • motion         — playful, medium-fast
+ * ───────────────────────────────────────────────────────────────────── */
+:root {
+  /* ─── palette ─── */
+  --shell:        #dcc7b8;
+  --surface:      #f5e6dc;             /* peach (left half default) */
+  --surface-2:    #e4dff0;             /* lavender (right half / cool card) */
+  --surface-3:    #f0d8c7;
+  --text:         #1a1410;
+  --text-2:       #322820;
+  --text-mute:    #6b5a4d;
+  --text-faint:   #9a8a7c;
+  --rule:         #b8a89a;
+  --accent:       #d24a78;             /* magenta */
+  --accent-soft:  rgba(210, 74, 120, 0.10);
+  --accent-glow:  rgba(210, 74, 120, 0.35);
+
+  /* ─── fonts ─── */
+  --font-display-cn: "Noto Sans SC", "Source Han Sans SC", -apple-system, sans-serif;
+  --font-display-en: "Outfit", "Plus Jakarta Sans", "Inter", -apple-system, sans-serif;
+  --font-body:       "Outfit", "Inter", "Noto Sans SC", -apple-system, sans-serif;
+  --font-mono:       "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+  --font-features:   "ss01", "ss02", "tnum";
+
+  /* ─── motion: playful medium ─── */
+  --dur-base:       480ms;
+  --dur-slow:       780ms;
+  --dur-cinematic:  1150ms;
+
+  /* ─── design identity: dual-tone ─── */
+  --r-card:        var(--r-md);
+  --r-stage:       0;
+  --rule-w:        1px;
+  --rule-style:    solid;
+  --hero-num-font:    var(--font-display-en);
+  --hero-num-style:   normal;
+  --hero-num-weight:  800;
+  --hero-num-track:   -0.04em;
+  --stage-pad-x:   100px;
+  --stage-pad-y:   80px;
+  --card-shadow:
+    0 1px 0 var(--rule),
+    0 20px 48px rgba(80, 50, 40, 0.12);
+  --shadow-stage:
+    0 60px 160px rgba(80, 50, 60, 0.30),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
+
+  /* ─── decoration: SIGNATURE — 50/50 hard peach/lavender split ─── */
+  --surface-pattern:
+    linear-gradient(90deg, transparent 0%, transparent 49.95%, #e4dff0 50.05%, #e4dff0 100%);
+  --surface-pattern-size: 100% 100%;
+  --surface-pattern-blend: normal;
+  --surface-pattern-opacity: 1;
+}

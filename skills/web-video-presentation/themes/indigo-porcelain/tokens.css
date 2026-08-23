@@ -1,0 +1,62 @@
+/* ─────────────────────────────────────────────────────────────────────
+ * Theme · indigo-porcelain
+ *   Deep-indigo ink on porcelain white. The signature isn't the accent
+ *   color — it's that the INK ITSELF is indigo (not black). All headings
+ *   / body / hero numbers render in deep navy-indigo, so the page reads
+ *   like a Chinese journal of contemporary thought or an academic
+ *   editorial. Playfair Display italic English vs Noto Serif SC for
+ *   display, IBM Plex Sans body adds a quiet technical undertone.
+ *
+ *   character knobs:
+ *     • hero numbers   — italic Playfair Display, weight 500
+ *     • rule           — 1px solid faint porcelain hairline
+ *     • card           — refined small radius (academic paper-lift)
+ *     • surface        — clean porcelain (no pattern; purity)
+ *     • motion         — quiet editorial pace (slower than warm-keynote)
+ * ───────────────────────────────────────────────────────────────────── */
+:root {
+  /* ─── palette ─── */
+  --shell:        #e4e8ec;
+  --surface:      #f1f3f5;
+  --surface-2:    #f8fafc;
+  --surface-3:    #e7ebef;
+  --text:         #0a1f3d;             /* SIGNATURE — indigo IS the ink */
+  --text-2:       #152a4a;
+  --text-mute:    #4a5a78;
+  --text-faint:   #8595ad;
+  --rule:         #c6cdd6;
+  --accent:       #1e3a8a;             /* slightly brighter indigo for emphasis */
+  --accent-soft:  rgba(30, 58, 138, 0.10);
+  --accent-glow:  rgba(30, 58, 138, 0.30);
+
+  /* ─── fonts ─── */
+  --font-display-cn: "Noto Serif SC", "Source Han Serif SC", serif;
+  --font-display-en: "Playfair Display", "GT Sectra", "Bodoni 72", "Times New Roman", serif;
+  --font-body:       "IBM Plex Sans", "Manrope", "Noto Sans SC", -apple-system, sans-serif;
+  --font-mono:       "IBM Plex Mono", "JetBrains Mono", ui-monospace, monospace;
+  --font-features:   "ss01", "tnum", "lnum", "kern";
+
+  /* ─── motion: quiet academic pace ─── */
+  --dur-base:       680ms;
+  --dur-slow:       1050ms;
+  --dur-cinematic:  1550ms;
+
+  /* ─── design identity: porcelain editorial ─── */
+  --r-card:        var(--r-sm);
+  --r-stage:       0;
+  --rule-w:        1px;
+  --rule-style:    solid;
+  --hero-num-font:    var(--font-display-en);
+  --hero-num-style:   italic;
+  --hero-num-weight:  500;
+  --hero-num-track:   -0.035em;
+  --stage-pad-x:   130px;
+  --stage-pad-y:   92px;
+  --card-shadow:
+    0 1px 0 var(--rule),
+    0 18px 48px rgba(10, 31, 61, 0.08);
+  --shadow-stage:
+    0 60px 160px rgba(10, 31, 61, 0.20),
+    0 0 0 1px rgba(10, 31, 61, 0.04);
+  /* SIGNATURE: NO surface-pattern — porcelain is meant to be clean. */
+}

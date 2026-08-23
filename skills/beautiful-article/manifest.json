@@ -1,0 +1,15 @@
+{
+  "name": "beautiful-article",
+  "version": "0.1.0",
+  "category": "Editorial · Any source → beautiful article",
+  "description": "Edit and design any source material (URL / PDF / DOCX / Markdown / plain text / screenshots / pasted notes) into a beautiful, share-ready article. Built on the reacticle component protocol with a theme-constrained Raw layer; runs a small source -> plan -> double-confirmation -> build -> final review -> repair harness, defaulting to 100% information retention long-form articles.",
+  "homepage": "https://github.com/ConardLi/garden-skills/tree/main/skills/beautiful-article",
+  "compat": [
+    "claude-code",
+    "claude-ai",
+    "cursor",
+    "codex-cli",
+    "gemini-cli",
+    "opencode"
+  ]
+}

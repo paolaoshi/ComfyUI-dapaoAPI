@@ -14,6 +14,7 @@ from PIL import Image
 
 from .network_error_utils import friendly_443_status, friendly_network_error
 from .image_input_utils import IMAGE_429_HINT, tensor_to_png_data_uris
+from .llm_model_options import DEFAULT_LLM_MODEL, LLM_MODEL_OPTIONS
 
 
 API_BASE_URL = "https://api.dapaoai.com"
@@ -21,19 +22,7 @@ CHAT_ENDPOINT = f"{API_BASE_URL}/v1/chat/completions"
 NODE_NAME = "DapaoGPTLLMChatNode"
 NODE_CATEGORY = "🤖dapaoAPI/🍬大炮AI主力维护🍬"
 DISPLAY_NAME = "🐠GPT-LLM智能对话@炮老师的小课堂"
-MODEL_OPTIONS = [
-    "gpt-5.5",
-    "gpt-5.6-luna",
-    "gpt-5.6-terra",
-    "gpt-5.6-sol",
-    "claude-fable-5",
-    "claude-opus-4-8",
-    "claude-opus-5",
-    "claude-sonnet-5",
-    "gemini-3.5-flash",
-    "gemini-3.5-flash-lite",
-    "gemini-3.7-flash",
-]
+MODEL_OPTIONS = list(LLM_MODEL_OPTIONS)
 
 
 def _safe_print(message):
@@ -88,6 +77,9 @@ class DapaoGPTLLMAPIError(RuntimeError):
             403: "没有模型或接口权限",
             404: "接口或映射模型不存在",
             429: IMAGE_429_HINT,
+            500: "服务端处理异常，请稍后重试或切换LLM模型",
+            502: "上游LLM暂时不可用，请稍后重试或切换LLM模型",
+            503: "LLM服务暂时繁忙，请稍后重试或切换LLM模型",
         }
         label = labels.get(self.status_code, "中转站请求失败")
         super().__init__(f"{label} {self.status_code}：{self.api_message}")
@@ -229,7 +221,7 @@ class DapaoGPTLLMChatNode:
                         "tooltip": "密钥只用于请求 https://api.dapaoai.com，不会写入配置文件。",
                     },
                 ),
-                "🤖 模型": (MODEL_OPTIONS, {"default": "gemini-3.7-flash"}),
+                "🤖 模型": (MODEL_OPTIONS, {"default": DEFAULT_LLM_MODEL}),
                 "🎯 系统角色": (
                     "STRING",
                     {
@@ -297,7 +289,7 @@ class DapaoGPTLLMChatNode:
 
     def _chat_sync(self, **kwargs):
         api_key = (kwargs.get("🔑 API密钥") or "").strip()
-        model_id = kwargs.get("🤖 模型", "gemini-3.7-flash")
+        model_id = kwargs.get("🤖 模型", DEFAULT_LLM_MODEL)
         system_role = (kwargs.get("🎯 系统角色") or "").strip()
         user_input = (kwargs.get("💬 用户输入") or "").strip()
         skip_error = bool(kwargs.get("🚫 出错时跳过", False))

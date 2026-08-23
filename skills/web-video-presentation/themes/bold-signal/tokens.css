@@ -1,0 +1,71 @@
+/* ─────────────────────────────────────────────────────────────────────
+ * Theme · bold-signal
+ *   Hero pitch-deck dark. Dark canvas with a single hot orange as the
+ *   focal accent — chapters build huge accent-colored cards on top of
+ *   the dark surface. Archivo Black for display (chunky modernist
+ *   slogans), Space Grotesk for body, JetBrains Mono for tabular badges.
+ *
+ *   --shell + --surface form a soft diagonal gradient (via
+ *   --surface-pattern) so the stage doesn't read as flat black.
+ *
+ *   character knobs:
+ *     • hero numbers   — Archivo Black, weight 900, near-zero tracking
+ *     • rule           — 2px solid (mid-weight, modern)
+ *     • card           — refined 12px radius (chunk + soft)
+ *     • surface        — gentle diagonal gradient (#1a1a1a → #2d2d2d)
+ *     • motion         — punchy ease-out (quick reveals)
+ * ───────────────────────────────────────────────────────────────────── */
+:root {
+  /* ─── palette ─── */
+  --shell:        #0c0c0c;
+  --surface:      #1a1a1a;
+  --surface-2:    #2d2d2d;
+  --surface-3:    #3a3a3a;
+  --text:         #f5f5f5;
+  --text-2:       #d8d8d8;
+  --text-mute:    #8a8a8a;
+  --text-faint:   #5a5a5a;
+  --rule:         #3d3d3d;
+  --accent:       #ff5722;             /* hot signal orange */
+  --accent-soft:  rgba(255, 87, 34, 0.14);
+  --accent-glow:  rgba(255, 87, 34, 0.50);
+
+  /* ─── fonts ─── */
+  --font-display-cn: "Noto Sans SC", "Source Han Sans SC", -apple-system, sans-serif;
+  --font-display-en: "Archivo Black", "Inter", "Helvetica Neue", sans-serif;
+  --font-body:       "Space Grotesk", "Inter", "Noto Sans SC", -apple-system, sans-serif;
+  --font-mono:       "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+  --font-features:   "tnum", "ss01", "ss02";
+
+  /* ─── motion: punchy pitch ─── */
+  --dur-quick:     180ms;
+  --dur-base:      420ms;
+  --dur-slow:      680ms;
+  --dur-cinematic: 1050ms;
+
+  /* ─── design identity: bold hero ─── */
+  --r-card:        var(--r-md);     /* 12px chunky-but-soft */
+  --r-stage:       0;
+  --rule-w:        2px;
+  --rule-style:    solid;
+  --hero-num-font:    var(--font-display-en);
+  --hero-num-style:   normal;
+  --hero-num-weight:  900;
+  --hero-num-track:   -0.04em;
+  --stage-pad-x:   100px;
+  --stage-pad-y:   80px;
+  --card-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+  --shadow-stage:
+    0 60px 160px rgba(0, 0, 0, 0.60),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+
+  /* ─── decoration: diagonal hero gradient (signal) ─── */
+  --surface-pattern:
+    linear-gradient(135deg, rgba(255, 87, 34, 0.0) 0%, rgba(255, 87, 34, 0.04) 40%, transparent 70%),
+    linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
+  --surface-pattern-size: 100% 100%, 100% 100%;
+  --surface-pattern-blend: normal, normal;
+  --surface-pattern-opacity: 1;
+}

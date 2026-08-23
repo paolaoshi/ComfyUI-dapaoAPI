@@ -1,0 +1,28 @@
+{
+  "id": "vintage-editorial",
+  "name": "Vintage Editorial",
+  "nameZh": "复古编辑",
+  "description": "Witty editorial cream canvas with chunky italic Fraunces and a warm terracotta accent. Signature: hairline geometric overlay (circle + line + dot). Personality-forward, conversational — like a magazine columnist who knows you'll laugh.",
+  "descriptionZh": "奶油底 + 厚体 Fraunces 斜体 + 暖陶强调色，有性格、会说话。签名：细线几何叠层（圆 + 线 + 点）。介于杂志专栏与艺术评论之间，俏皮、自信、有声音。",
+  "mood": [
+    "light",
+    "vintage",
+    "editorial",
+    "opinionated",
+    "witty",
+    "personality"
+  ],
+  "bestFor": [
+    "个人见解 / 评论",
+    "文化随笔 / 美学话题",
+    "有声音的博主",
+    "设计 / 字体话题",
+    "文艺类长文改编"
+  ],
+  "preview": {
+    "shell": "#e8e0cf",
+    "surface": "#f5f3ee",
+    "text": "#1a1a1a",
+    "accent": "#c25e3a"
+  }
+}

@@ -3,17 +3,19 @@
 
 当前维护分组：
 - 大炮 AI 主力维护：GPT-image-2、Banana、Seedream 5.0 Pro、Seedream 图层拆分、GPT-LLM、Seedance2
-- 大炮 API 常用工具：H3、Seedance 导演、Music3、视觉风格和详情页提示词
+- 大炮 API 常用工具：H3、Seedance 导演、Music3、视觉风格、详情页提示词和Skill多轮对话
 - API 通用工具：Gemini 多功能、通用 HTTP、通用图像生成与编辑
 - RH 功能专区：RunningHub 图像、视频、LLM 与应用节点
 
 作者：@炮老师的小课堂
-版本：v1.7.4
+版本：v1.9.1
 """
 
 import asyncio
 import aiohttp.web
+import json
 import server
+import tempfile
 from pathlib import Path
 
 # 首位菜单分组：大炮 AI 主力维护节点
@@ -75,6 +77,18 @@ from .detail_flow_prompt_node import (
 from .music3_caption_prompt_node import (
     NODE_CLASS_MAPPINGS as MUSIC3_CAPTION_PROMPT_MAPPINGS,
     NODE_DISPLAY_NAME_MAPPINGS as MUSIC3_CAPTION_PROMPT_DISPLAY_MAPPINGS,
+)
+
+from .api_multi_turn_chat_node import (
+    NODE_CLASS_MAPPINGS as API_MULTI_TURN_CHAT_MAPPINGS,
+    NODE_DISPLAY_NAME_MAPPINGS as API_MULTI_TURN_CHAT_DISPLAY_MAPPINGS,
+    optimize_skill_display_names,
+)
+from .api_skill_runtime import (
+    MAX_SKILL_UPLOAD_BYTES,
+    install_uploaded_skills,
+    set_skill_display_name,
+    skill_catalog,
 )
 
 from .seedance20_allround_video_node import (
@@ -195,6 +209,7 @@ NODE_CLASS_MAPPINGS = {
     **DETAIL_FLOW_PROMPT_MAPPINGS,
     **MUSIC3_CAPTION_PROMPT_MAPPINGS,
     **IMAGE_PROMPT_DIRECTOR_MAPPINGS,
+    **API_MULTI_TURN_CHAT_MAPPINGS,
     **GEMINI3_MAPPINGS,
     **UNIVERSAL_MAPPINGS,
     **UNIVERSAL_TEXT_TO_IMAGE_MAPPINGS,
@@ -227,6 +242,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     **DETAIL_FLOW_PROMPT_DISPLAY_MAPPINGS,
     **MUSIC3_CAPTION_PROMPT_DISPLAY_MAPPINGS,
     **IMAGE_PROMPT_DIRECTOR_DISPLAY_MAPPINGS,
+    **API_MULTI_TURN_CHAT_DISPLAY_MAPPINGS,
     **GEMINI3_DISPLAY_MAPPINGS,
     **UNIVERSAL_DISPLAY_MAPPINGS,
     **UNIVERSAL_TEXT_TO_IMAGE_DISPLAY_MAPPINGS,
@@ -305,6 +321,98 @@ async def upload_rh_app_media(request: aiohttp.web.Request):
             message = message.replace(api_key, "***")
         return aiohttp.web.json_response({"error": message}, status=400)
 
+
+@server.PromptServer.instance.routes.get("/dapao/api-skills/catalog")
+async def get_dapao_skill_catalog(_request: aiohttp.web.Request):
+    try:
+        return aiohttp.web.json_response(await asyncio.to_thread(skill_catalog))
+    except Exception as error:
+        return aiohttp.web.json_response({"error": str(error)}, status=400)
+
+
+@server.PromptServer.instance.routes.post("/dapao/api-skills/display-name")
+async def update_dapao_skill_display_name(request: aiohttp.web.Request):
+    try:
+        body = await request.json()
+        display_name = None if body.get("reset") else body.get("display_name")
+        result = await asyncio.to_thread(
+            set_skill_display_name,
+            body.get("skill_id", ""),
+            display_name,
+            "manual",
+        )
+        return aiohttp.web.json_response(result)
+    except Exception as error:
+        return aiohttp.web.json_response({"error": str(error)}, status=400)
+
+
+@server.PromptServer.instance.routes.post("/dapao/api-skills/optimize-display-names")
+async def optimize_dapao_skill_names(request: aiohttp.web.Request):
+    body = {}
+    try:
+        body = await request.json()
+        result = await asyncio.to_thread(
+            optimize_skill_display_names,
+            body.get("config"),
+            body.get("scope", "issues"),
+            bool(body.get("overwrite_manual", False)),
+            body.get("skill_ids"),
+        )
+        return aiohttp.web.json_response(result)
+    except Exception as error:
+        message = str(error)
+        api_key = str((body.get("config") or {}).get("api_key") or "") if isinstance(body, dict) else ""
+        if api_key:
+            message = message.replace(api_key, "***")
+        return aiohttp.web.json_response({"error": message}, status=400)
+
+
+@server.PromptServer.instance.routes.post("/dapao/api-skills/install")
+async def install_dapao_skills(request: aiohttp.web.Request):
+    try:
+        reader = await request.multipart()
+        values = {}
+        uploaded = []
+        total = 0
+        with tempfile.TemporaryDirectory(prefix="dapao-skill-route-") as temporary:
+            temporary_root = Path(temporary)
+            while True:
+                field = await reader.next()
+                if field is None:
+                    break
+                if field.name != "files":
+                    values[field.name] = await field.text()
+                    continue
+                target = temporary_root / f"upload-{len(uploaded)}.bin"
+                with target.open("wb") as stream:
+                    while True:
+                        chunk = await field.read_chunk(size=1024 * 1024)
+                        if not chunk:
+                            break
+                        total += len(chunk)
+                        if total > MAX_SKILL_UPLOAD_BYTES:
+                            raise ValueError("上传内容总大小超过512MB上限。")
+                        stream.write(chunk)
+                uploaded.append((Path(field.filename or f"file-{len(uploaded)}").name, target))
+
+            try:
+                relative_paths = json.loads(values.get("paths", "[]"))
+            except json.JSONDecodeError as error:
+                raise ValueError("上传文件路径清单无效。") from error
+            if not isinstance(relative_paths, list) or len(relative_paths) != len(uploaded):
+                raise ValueError("上传文件数量与路径清单不一致。")
+            files = [(str(relative_paths[index]), path) for index, (_name, path) in enumerate(uploaded)]
+            result = await asyncio.to_thread(
+                install_uploaded_skills,
+                files,
+                values.get("mode", ""),
+                values.get("package_hint", "uploaded-skill"),
+            )
+        return aiohttp.web.json_response(result)
+    except Exception as error:
+        status = 409 if isinstance(error, FileExistsError) else 400
+        return aiohttp.web.json_response({"error": str(error)}, status=status)
+
 __all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS', 'WEB_DIRECTORY']
 
 # 启动信息
@@ -323,6 +431,7 @@ print(f"  🎉 RH 全能视频 X-video3：{len(RH_ALL_VIDEO_XVIDEO3_MAPPINGS)} �
 print(f"  📦 RH Seedance2.0素材：{len(RH_SEEDANCE_ASSET_MAPPINGS)} 个")
 print(f"  🎉 RH 视频超清：{len(RH_VIDEO_ENHANCE_MAPPINGS)} 个")
 print(f"  🪲 RH 应用：{len(RH_APP_MAPPINGS)} 个")
+print(f"  💬 dapaoAI Skill多轮对话：{len(API_MULTI_TURN_CHAT_MAPPINGS)} 个")
 print(f"  ✅ 总计：{len(NODE_CLASS_MAPPINGS)} 个节点")
 print(f"  👨‍🏫 作者：@炮老师的小课堂")
 print(f"  🎨 主题：紫色标题栏 + 橙棕色背景")

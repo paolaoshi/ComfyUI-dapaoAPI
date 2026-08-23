@@ -1,0 +1,68 @@
+/* ─────────────────────────────────────────────────────────────────────
+ * Theme · electric-studio
+ *   Corporate clarity. Near-black shell makes the white surface read as
+ *   "stage on dark", single electric-blue accent for emphasis. Manrope
+ *   for display + body (geometric corporate sans). SIGNATURE: a 4px
+ *   electric-blue accent bar baked into the bottom edge of the stage,
+ *   giving every chapter an instantly-recognizable corporate frame
+ *   without a navbar / footer.
+ *
+ *   character knobs:
+ *     • hero numbers   — Manrope, weight 800
+ *     • rule           — 1px solid mid-gray
+ *     • card           — refined-md radius (12px)
+ *     • surface        — clean white + bottom electric-blue accent bar
+ *     • motion         — punchy ease-out (corporate snap)
+ * ───────────────────────────────────────────────────────────────────── */
+:root {
+  /* ─── palette ─── */
+  --shell:        #0a0a0a;
+  --surface:      #ffffff;
+  --surface-2:    #f5f7fb;
+  --surface-3:    #e8ecf3;
+  --text:         #0a0a0a;
+  --text-2:       #1f2530;
+  --text-mute:    #5a6478;
+  --text-faint:   #98a0b0;
+  --rule:         #d8dde6;
+  --accent:       #4361ee;             /* electric corporate blue */
+  --accent-soft:  rgba(67, 97, 238, 0.10);
+  --accent-glow:  rgba(67, 97, 238, 0.32);
+
+  /* ─── fonts ─── */
+  --font-display-cn: "Noto Sans SC", "Source Han Sans SC", -apple-system, sans-serif;
+  --font-display-en: "Manrope", "Inter", -apple-system, sans-serif;
+  --font-body:       "Manrope", "Inter", "Noto Sans SC", -apple-system, sans-serif;
+  --font-mono:       "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+  --font-features:   "ss01", "ss02", "ss03", "cv02", "tnum";
+
+  /* ─── motion: punchy corporate ─── */
+  --dur-base:       420ms;
+  --dur-slow:       700ms;
+  --dur-cinematic:  1050ms;
+
+  /* ─── design identity: corporate clarity ─── */
+  --r-card:        var(--r-md);     /* 12px modern radius */
+  --r-stage:       0;
+  --rule-w:        1px;
+  --rule-style:    solid;
+  --hero-num-font:    var(--font-display-en);
+  --hero-num-style:   normal;
+  --hero-num-weight:  800;
+  --hero-num-track:   -0.035em;
+  --stage-pad-x:   110px;
+  --stage-pad-y:   80px;
+  --card-shadow:
+    0 1px 2px rgba(20, 30, 60, 0.06),
+    0 24px 56px rgba(20, 30, 60, 0.10);
+  --shadow-stage:
+    0 60px 160px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(0, 0, 0, 0.06);
+
+  /* ─── decoration: SIGNATURE — bottom electric-blue accent bar ─── */
+  --surface-pattern:
+    linear-gradient(0deg, #4361ee 0%, #4361ee 4px, transparent 4px, transparent 100%);
+  --surface-pattern-size: 100% 100%;
+  --surface-pattern-blend: normal;
+  --surface-pattern-opacity: 1;
+}

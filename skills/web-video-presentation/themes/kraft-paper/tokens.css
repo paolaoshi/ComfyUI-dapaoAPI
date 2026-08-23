@@ -1,0 +1,67 @@
+/* ─────────────────────────────────────────────────────────────────────
+ * Theme · kraft-paper
+ *   Deep-brown ink on warm kraft beige. Reads like the back of a kraft
+ *   envelope or the pages of a 70s notebook. Fraunces display + Source
+ *   Serif body keeps the hand-crafted character; copper-rust accent for
+ *   page numbers / kicker / link emphasis. SIGNATURE: coarse kraft
+ *   paper grain (warmer than newsroom, heavier than sunset-zine).
+ *
+ *   character knobs:
+ *     • hero numbers   — italic Fraunces, weight 600
+ *     • rule           — 1px solid kraft hairline
+ *     • card           — refined small radius
+ *     • surface        — coarse kraft paper grain (warm multiply)
+ *     • motion         — slow + tactile (turning a real page)
+ * ───────────────────────────────────────────────────────────────────── */
+:root {
+  /* ─── palette ─── */
+  --shell:        #dccab0;
+  --surface:      #eedfc7;
+  --surface-2:    #f3e9d6;
+  --surface-3:    #e0d0b6;
+  --text:         #2a1e13;             /* SIGNATURE — deep kraft brown ink */
+  --text-2:       #3a2a1d;
+  --text-mute:    #6e5a40;
+  --text-faint:   #a08c70;
+  --rule:         #b8a486;
+  --accent:       #a35b2a;             /* copper-rust */
+  --accent-soft:  rgba(163, 91, 42, 0.10);
+  --accent-glow:  rgba(163, 91, 42, 0.32);
+
+  /* ─── fonts ─── */
+  --font-display-cn: "Noto Serif SC", "Source Han Serif SC", serif;
+  --font-display-en: "Fraunces", "Recoleta", "GT Sectra", "Playfair Display", serif;
+  --font-body:       "Source Serif 4", "Source Serif Pro", "Noto Serif SC", serif;
+  --font-mono:       "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+  --font-features:   "ss01", "ss02", "tnum", "dlig";
+
+  /* ─── motion: tactile turn-a-page pace ─── */
+  --dur-base:       720ms;
+  --dur-slow:       1100ms;
+  --dur-cinematic:  1550ms;
+
+  /* ─── design identity: kraft notebook ─── */
+  --r-card:        var(--r-sm);
+  --r-stage:       0;
+  --rule-w:        1px;
+  --rule-style:    solid;
+  --hero-num-font:    var(--font-display-en);
+  --hero-num-style:   italic;
+  --hero-num-weight:  600;
+  --hero-num-track:   -0.035em;
+  --stage-pad-x:   130px;
+  --stage-pad-y:   92px;
+  --card-shadow:
+    0 1px 0 var(--rule),
+    0 22px 56px rgba(60, 40, 20, 0.16);
+  --shadow-stage:
+    0 60px 160px rgba(60, 40, 20, 0.40),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+
+  /* ─── decoration: SIGNATURE — coarse warm kraft grain ─── */
+  --surface-pattern:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' seed='7'/><feColorMatrix values='0 0 0 0 0.45 0 0 0 0 0.32 0 0 0 0 0.18 0 0 0 0.28 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  --surface-pattern-size: 260px 260px;
+  --surface-pattern-blend: multiply;
+  --surface-pattern-opacity: 0.55;
+}

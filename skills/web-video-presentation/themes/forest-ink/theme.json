@@ -1,0 +1,28 @@
+{
+  "id": "forest-ink",
+  "name": "Forest Ink",
+  "nameZh": "森林墨",
+  "description": "Deep-forest-green ink on ivory cream — the green IS the ink. Source Serif body + Playfair Display + Noto Serif SC display. Reads like a vintage National Geographic issue — sustainable, grounded, considered.",
+  "descriptionZh": "深森林绿当墨（绿就是字色本身）+ 象牙暖纸。Source Serif 正文 + Playfair Display + Noto Serif SC。像旧版《国家地理》，沉稳、有呼吸感、克制。",
+  "mood": [
+    "light",
+    "forest",
+    "nature",
+    "editorial",
+    "documentary",
+    "warm"
+  ],
+  "bestFor": [
+    "自然 / 可持续 / 环保",
+    "户外品牌 / 农业",
+    "纪录 / 非虚构",
+    "文化 / 行业观察",
+    "慢生活 / 文学农庄"
+  ],
+  "preview": {
+    "shell": "#ece7da",
+    "surface": "#f5f1e8",
+    "text": "#1a2e1f",
+    "accent": "#4d7a4d"
+  }
+}

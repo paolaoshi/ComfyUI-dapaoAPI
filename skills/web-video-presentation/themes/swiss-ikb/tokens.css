@@ -1,0 +1,77 @@
+/* ─────────────────────────────────────────────────────────────────────
+ * Theme · swiss-ikb
+ *   Swiss International Style. The signature is two-fold:
+ *     1) ALL display + hero text uses extra-light (200 weight) Inter /
+ *        Helvetica. Tight tracking, big sizes — "越大越细" (bigger gets
+ *        thinner). This is the opposite of bauhaus-bold's 900 weight.
+ *     2) A 1px hairline grid (#e0e0e0) is baked into the stage as the
+ *        designer's invisible-but-visible scaffolding.
+ *   The single saturated accent is IKB (International Klein Blue) —
+ *   crisp, deep, encyclopedic. Used for kicker / kpi / link emphasis.
+ *
+ *   Swap accent for the other 3 guizang Swiss flavors by changing
+ *   --accent only:
+ *     • lemon yellow  #FFD500 — set --accent-on to #0a0a0a (yellow can't
+ *       carry white text)
+ *     • lemon green   #C5E803 — same, --accent-on = #0a0a0a
+ *     • safety orange #FF6B35 — keep --accent-on white but use weight ≥ 600
+ *
+ *   character knobs:
+ *     • hero numbers   — Inter, weight 200 (SIGNATURE — extra-light)
+ *     • rule           — 1px solid hairline grey
+ *     • card           — flat 0 radius (Swiss = direct rectangles)
+ *     • surface        — 1px hairline grid (very faint)
+ *     • motion         — punchy + linear (Swiss isn't springy)
+ * ───────────────────────────────────────────────────────────────────── */
+:root {
+  /* ─── palette ─── */
+  --shell:        #e8e8e6;
+  --surface:      #fafaf8;
+  --surface-2:    #f0f0ee;
+  --surface-3:    #d4d4d2;
+  --text:         #0a0a0a;
+  --text-2:       #2a2a2a;
+  --text-mute:    #737373;
+  --text-faint:   #a8a8a8;
+  --rule:         #e0e0e0;
+  --accent:       #002fa7;             /* IKB — International Klein Blue */
+  --accent-soft:  rgba(0, 47, 167, 0.08);
+  --accent-glow:  rgba(0, 47, 167, 0.35);
+
+  /* ─── fonts (sans everywhere — Swiss is anti-serif) ─── */
+  --font-display-cn: "Noto Sans SC", "Source Han Sans SC", -apple-system, sans-serif;
+  --font-display-en: "Inter", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+  --font-body:       "Inter", "Helvetica Neue", "Noto Sans SC", -apple-system, sans-serif;
+  --font-mono:       "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+  --font-features:   "tnum", "ss01", "ss02", "cv02";
+
+  /* ─── motion: punchy + linear (Swiss isn't springy) ─── */
+  --dur-quick:     180ms;
+  --dur-base:      400ms;
+  --dur-slow:      650ms;
+  --dur-cinematic: 1000ms;
+
+  /* ─── design identity: international style ─── */
+  --r-card:        var(--r-flat);     /* SIGNATURE — direct rectangles */
+  --r-stage:       0;
+  --rule-w:        1px;
+  --rule-style:    solid;
+  --hero-num-font:    var(--font-display-en);
+  --hero-num-style:   normal;
+  --hero-num-weight:  200;             /* SIGNATURE — extra-light */
+  --hero-num-track:   -0.04em;
+  --stage-pad-x:   96px;
+  --stage-pad-y:   72px;
+  --card-shadow:   inset 0 0 0 1px var(--rule);
+  --shadow-stage:
+    0 60px 160px rgba(0, 0, 0, 0.18),
+    0 0 0 1px rgba(0, 0, 0, 0.06);
+
+  /* ─── decoration: SIGNATURE — 1px hairline grid (the Swiss scaffold) ─── */
+  --surface-pattern:
+    linear-gradient(rgba(10, 10, 10, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(10, 10, 10, 0.045) 1px, transparent 1px);
+  --surface-pattern-size: 64px 64px;
+  --surface-pattern-blend: normal;
+  --surface-pattern-opacity: 0.85;
+}

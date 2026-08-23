@@ -1,0 +1,28 @@
+{
+  "id": "neon-cyber",
+  "name": "Neon Cyber",
+  "nameZh": "霓虹赛博",
+  "description": "Deep-navy canvas with electric cyan + magenta glow and Clash Display + Satoshi typography. Signature: cyan grid + dual-tone neon outline. Futurist cyberpunk for AI, web3, security and future-tech content.",
+  "descriptionZh": "深海军底 + 电光青 + 玫红双霓虹 + Clash Display / Satoshi 字体。签名：青色发光网格 + 双色霓虹描边。赛博朋克未来派审美。",
+  "mood": [
+    "dark",
+    "cyberpunk",
+    "neon",
+    "futuristic",
+    "technical",
+    "saturated"
+  ],
+  "bestFor": [
+    "AI / 大模型评测",
+    "web3 / 区块链",
+    "网络安全 / 黑客向",
+    "未来主义产品",
+    "赛博朋克 / 科幻话题"
+  ],
+  "preview": {
+    "shell": "#04060f",
+    "surface": "#0a0f1c",
+    "text": "#e8f4ff",
+    "accent": "#00ffcc"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "id": "dark-botanical",
+  "name": "Dark Botanical",
+  "nameZh": "暗夜植物",
+  "description": "Premium editorial dark with elegant Cormorant italic and warm terracotta / blush / gold accents. Soft blurred light pools as the signature — magazine-cover sophistication for fashion, lifestyle, brand storytelling.",
+  "descriptionZh": "高级感暗底 + Cormorant 斜体衬线 + 暖陶 / 玫粉 / 鎏金叠层。签名：柔光晕染 (blurred light pool)。气质介于时尚刊物封面与博物馆图录之间。",
+  "mood": [
+    "dark",
+    "elegant",
+    "editorial",
+    "premium",
+    "sophisticated",
+    "botanical"
+  ],
+  "bestFor": [
+    "品牌故事 / 形象片",
+    "时尚 / 美妆",
+    "生活方式 / 旅行",
+    "文化 / 艺术评论",
+    "高端产品发布"
+  ],
+  "preview": {
+    "shell": "#0a0a0a",
+    "surface": "#141312",
+    "text": "#e8e4df",
+    "accent": "#d4a574"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "id": "pastel-dream",
+  "name": "Pastel Dream",
+  "nameZh": "柔光梦",
+  "description": "Soft pastel canvas with cream card and a single sage-green accent. Plus Jakarta Sans throughout, generous rounded cards. Signature: faint multi-tone pill ribbon along one edge — friendly without being saccharine.",
+  "descriptionZh": "柔粉蓝灰底 + 奶油卡 + 单一鼠尾草绿强调色 + Plus Jakarta Sans。签名：单边多色 pill 色条。友好但不腻，适合女性向 / 教学 / onboarding。",
+  "mood": [
+    "light",
+    "pastel",
+    "friendly",
+    "soft",
+    "approachable",
+    "warm"
+  ],
+  "bestFor": [
+    "产品 onboarding / 教程",
+    "友好教学 / 知识科普",
+    "女性向 / 生活方式",
+    "心理 / 健康 / 母婴",
+    "情绪向品牌片"
+  ],
+  "preview": {
+    "shell": "#c8d9e6",
+    "surface": "#faf9f7",
+    "text": "#1f2429",
+    "accent": "#5a7c6a"
+  }
+}

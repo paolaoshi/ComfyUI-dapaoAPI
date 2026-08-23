@@ -1,0 +1,27 @@
+{
+  "id": "warm-keynote",
+  "name": "Warm Keynote",
+  "nameZh": "暖色 Keynote",
+  "description": "Cream paper backdrop with a single teal accent and a soft warm grid drawn on the stage. SaaS keynote / editorial vibe.",
+  "descriptionZh": "奶油纸底 + 单一青色强调色 + 舞台上的暖色网格. SaaS Keynote 与编辑器气质.",
+  "mood": [
+    "light",
+    "keynote",
+    "editorial",
+    "warm",
+    "spring",
+    "saas"
+  ],
+  "bestFor": [
+    "SaaS 产品 keynote",
+    "B 端产品发布",
+    "工具产品讲解",
+    "团队对外汇报"
+  ],
+  "preview": {
+    "shell": "#FDFBF7",
+    "surface": "#FFFFFF",
+    "text": "#43302B",
+    "accent": "#14B8A6"
+  }
+}

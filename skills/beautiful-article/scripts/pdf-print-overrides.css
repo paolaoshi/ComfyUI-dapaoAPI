@@ -1,0 +1,192 @@
+/*
+ * PDF print overrides for Beautiful Article.
+ *
+ * Injected by scripts/html-to-pdf.sh into article.html's <head> right before
+ * Chromium headless prints it. reacticle's own print.css already handles
+ * hiding export bars and break-inside on cards.
+ *
+ * This file adds four groups on top of that:
+ *   0) Theme surface — keep the article theme background / text colors in PDF.
+ *   A) TOC layout — force the sidebar TOC to stack above the article and
+ *      page-break after it, so the article body starts on a fresh page.
+ *   B) Page break behavior — undo reacticle's `.ra-section { break-inside:
+ *      avoid-page }` (which causes huge empty pages for multi-page sections),
+ *      glue headings to the following content, keep Hero / Lead / figures
+ *      atomic, and apply widow/orphan control to paragraphs.
+ *   C) Cover — if the article uses the 3:4 Cover component (default), keep
+ *      its authored geometry intact and only force a page break after it.
+ *      See references/cover.md.
+ *
+ * Why a separate file:
+ *   - macOS BSD awk rejects multi-line strings via -v; reading from a file
+ *     with getline sidesteps that.
+ *   - CSS is independently editable / lintable / diff-friendly here.
+ *   - Easy to swap or extend without touching the shell script.
+ */
+
+@media print {
+  @page {
+    margin: 0;
+  }
+
+  /* ============================================================
+   * 0 · Theme surface (preserve paper color in PDF)
+   * ============================================================ */
+
+  .ra-root {
+    background: var(--ra-color-bg, #ffffff) !important;
+    color: var(--ra-color-text, #111111) !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+    position: relative;
+    z-index: 0;
+    box-sizing: border-box;
+    min-height: 100vh;
+    padding: 0.45in !important;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+
+  .ra-root::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: var(--ra-color-bg, #ffffff);
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  /* ============================================================
+   * A · TOC layout (TOC above article, not beside it)
+   * ============================================================ */
+
+  /* A1) reacticle's TOC layout is a 2-col grid on desktop and `display: block`
+   *     on mobile (<= 999px). Force the mobile branch for print so the TOC
+   *     sits ABOVE the article column instead of beside it. */
+  .ra-article-layout--with-toc {
+    display: block !important;
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
+  /* A2) TOC: kill sticky (only paints once on print), add breathing room, and
+   *     push the article to its own pages by breaking after the TOC. */
+  .ra-toc {
+    position: static !important;
+    margin-bottom: 1.5rem !important;
+    page-break-after: always;
+    break-after: page;
+  }
+
+  /* A3) Long TOCs save paper as a 2-column layout; short ones collapse
+   *     naturally back to one column. */
+  .ra-toc__list {
+    column-count: 2;
+    column-gap: 1.5rem;
+    column-fill: balance;
+  }
+
+  /* A4) Never split a TOC item across columns / pages. */
+  .ra-toc__item {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* A5) Let the article column flow naturally on the page after the TOC. */
+  .ra-article-layout--with-toc > .ra-article {
+    break-before: auto;
+  }
+
+  /* A6) Strip underlines from TOC + body links in print (chrome already shows
+   *     them as link-blue; the colophon footer keeps its underline because it
+   *     sets its own text-decoration inline). */
+  .ra-toc a,
+  .ra-article a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  /* ============================================================
+   * B · Page break behavior (fixes huge empty pages in long sections)
+   * ============================================================ */
+
+  /* B1) reacticle's print.css aggressively sets `.ra-section { break-inside:
+   *     avoid-page }`. For multi-page sections that rule backfires badly:
+   *     the browser pushes the whole oversized section to the next page,
+   *     leaving the previous page nearly empty, then the section overflows
+   *     anyway. UNDO IT — let long sections break naturally across pages. */
+  .ra-section,
+  .ra-subsection,
+  .ra-section__body,
+  .ra-subsection__body {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
+  /* B2) But never strand a heading at the bottom of a page. Glue Section /
+   *     Subsection headings to whatever follows, and keep the heading row
+   *     (index + title) intact. */
+  .ra-section__head,
+  .ra-subsection__head,
+  .ra-hero__title,
+  .ra-hero__subtitle,
+  h1,
+  h2,
+  h3,
+  h4 {
+    break-after: avoid;
+    page-break-after: avoid;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* B3) Hero / Lead / Conclusion are short, atomic blocks — never split them
+   *     across pages. (Hero often holds title + subtitle + meta; ugly when
+   *     subtitle ends up alone on next page.) */
+  .ra-hero,
+  .ra-lead,
+  .ra-conclusion {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* B4) Widows / orphans — never leave 1–2 stranded lines of a paragraph at
+   *     the top / bottom of a page. */
+  p,
+  li,
+  blockquote,
+  .ra-aside,
+  .ra-quote {
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* B5) Atomic visual blocks: figures, tables, code blocks. Keep them whole
+   *     when reasonable; very long ones still split (the browser falls back). */
+  figure,
+  .ra-table,
+  .ra-codeblock,
+  .ra-formula,
+  .ra-image,
+  .ra-raw {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* ============================================================
+   * C · Cover (the 3:4 cover above TOC, see references/cover.md)
+   * ============================================================ */
+
+  /* C1) Keep the cover's screen-authored 3:4 geometry in print. Earlier
+   *     versions stretched .ra-cover to height:100vh, but Chromium print can
+   *     clip absolutely positioned / grid-based cover internals after that
+   *     resize. The stable default is: preserve the cover and start the TOC on
+   *     the next page. Article-specific covers may opt into full-page print
+   *     sizing only after visual PDF verification. */
+  .ra-cover {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    break-after: page;
+    page-break-after: always;
+  }
+}

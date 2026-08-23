@@ -1,0 +1,3 @@
+display-name-zh: Music 3提示词重写器
+name: music-caption-rewriter
+summary-cn: 将简短音乐描述和可选歌词标签重写为结构化的 Music 3 专业生成提示词。

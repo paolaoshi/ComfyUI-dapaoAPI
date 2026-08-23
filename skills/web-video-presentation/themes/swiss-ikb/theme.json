@@ -1,0 +1,28 @@
+{
+  "id": "swiss-ikb",
+  "name": "Swiss IKB",
+  "nameZh": "瑞士克莱因蓝",
+  "description": "Swiss International Style. Ultra-thin 200-weight Inter / Helvetica, crisp warm-white canvas, IKB (International Klein Blue) as the single high-saturation accent. Signature: 1px hairline grid + 200-weight hero numbers. Massimo Vignelli + Helvetica Forever energy.",
+  "descriptionZh": "瑞士国际主义风。**极细 200 weight** Inter / Helvetica + 净暖白底 + 克莱因蓝（IKB）单一锚点色。签名：1px 发丝网格 + 200 重字 hero 数字。Massimo Vignelli / Helvetica Forever 那种克制冷静。",
+  "mood": [
+    "light",
+    "swiss",
+    "modernist",
+    "international-style",
+    "grid",
+    "extra-light"
+  ],
+  "bestFor": [
+    "AI / 科技产品发布",
+    "年度总结 / 数据汇报",
+    "设计 / 工程领域分享",
+    "严肃学术 / 国际化品牌",
+    "信息驱动设计 / 信息图"
+  ],
+  "preview": {
+    "shell": "#e8e8e6",
+    "surface": "#fafaf8",
+    "text": "#0a0a0a",
+    "accent": "#002fa7"
+  }
+}

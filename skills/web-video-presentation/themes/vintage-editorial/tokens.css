@@ -1,0 +1,66 @@
+/* ─────────────────────────────────────────────────────────────────────
+ * Theme · vintage-editorial
+ *   Witty light editorial. Warm cream canvas, chunky italic Fraunces
+ *   display, Work Sans body, warm-terra accent. Signature decoration:
+ *   hairline geometric overlay (very faint dot + ring rhythm) so the
+ *   stage reads "designed magazine" rather than blank cream.
+ *
+ *   character knobs:
+ *     • hero numbers   — italic Fraunces, weight 700 (chunky editorial)
+ *     • rule           — 1px solid warm hairline
+ *     • card           — refined small radius
+ *     • surface        — faint geometric dot + ring overlay
+ *     • motion         — medium pace with subtle overshoot (witty)
+ * ───────────────────────────────────────────────────────────────────── */
+:root {
+  /* ─── palette ─── */
+  --shell:        #e8e0cf;
+  --surface:      #f5f3ee;
+  --surface-2:    #fbf9f3;
+  --surface-3:    #ebe4d2;
+  --text:         #1a1a1a;
+  --text-2:       #2e2a25;
+  --text-mute:    #6b6357;
+  --text-faint:   #9a9385;
+  --rule:         #c8bfa8;
+  --accent:       #c25e3a;             /* warm terracotta */
+  --accent-soft:  rgba(194, 94, 58, 0.10);
+  --accent-glow:  rgba(194, 94, 58, 0.32);
+
+  /* ─── fonts ─── */
+  --font-display-cn: "Noto Serif SC", "Source Han Serif SC", serif;
+  --font-display-en: "Fraunces", "Recoleta", "GT Sectra", "Playfair Display", serif;
+  --font-body:       "Work Sans", "Inter", "Noto Sans SC", -apple-system, sans-serif;
+  --font-mono:       "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+  --font-features:   "ss01", "ss02", "tnum", "dlig";
+
+  /* ─── motion: medium with subtle witty overshoot ─── */
+  --dur-base:       600ms;
+  --dur-slow:       950ms;
+  --dur-cinematic:  1400ms;
+
+  /* ─── design identity: witty editorial ─── */
+  --r-card:        var(--r-sm);
+  --r-stage:       0;
+  --rule-w:        1px;
+  --rule-style:    solid;
+  --hero-num-font:    var(--font-display-en);
+  --hero-num-style:   italic;
+  --hero-num-weight:  700;
+  --hero-num-track:   -0.04em;
+  --stage-pad-x:   120px;
+  --stage-pad-y:   88px;
+  --card-shadow:
+    0 1px 0 var(--rule),
+    0 18px 48px rgba(60, 40, 20, 0.10);
+  --shadow-stage:
+    0 60px 160px rgba(60, 40, 20, 0.28),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+
+  /* ─── decoration: SIGNATURE — faint geometric dot + ring overlay ─── */
+  --surface-pattern:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'><g fill='none' stroke='%23a89878' stroke-width='1' opacity='0.16'><circle cx='80' cy='90' r='52'/><circle cx='340' cy='250' r='78'/><circle cx='180' cy='320' r='2.5' fill='%23a89878' stroke='none'/><circle cx='280' cy='110' r='2.5' fill='%23a89878' stroke='none'/><line x1='40' y1='200' x2='110' y2='200'/><line x1='300' y1='370' x2='370' y2='370'/></g></svg>");
+  --surface-pattern-size: 400px 400px;
+  --surface-pattern-blend: multiply;
+  --surface-pattern-opacity: 0.85;
+}

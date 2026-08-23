@@ -1,0 +1,5 @@
+interface:
+  display_name: "DetailFlow"
+  short_description: "Plan, generate, audit, and deliver ecommerce detail pages."
+  default_prompt: "Use $detail-flow to create an 8-screen ecommerce detail page from my product image and style reference."
+

@@ -1,0 +1,68 @@
+/* ─────────────────────────────────────────────────────────────────────
+ * Theme · dark-botanical
+ *   Premium editorial dark. Near-black canvas with warm terracotta gold
+ *   accent, Cormorant italic English vs Noto Serif SC Chinese, IBM Plex
+ *   Sans body. Signature: soft blurred light pools (botanical glow) in
+ *   the corners — a single decoration, never grain, never grid.
+ *
+ *   character knobs:
+ *     • hero numbers   — italic Cormorant, weight 400 (editorial)
+ *     • rule           — 1px solid faint warm hairline
+ *     • card           — refined small radius (paper-lift)
+ *     • surface        — soft blurred light pool (gold/terra haze)
+ *     • motion         — slow + cinematic (editorial pace)
+ * ───────────────────────────────────────────────────────────────────── */
+:root {
+  /* ─── palette ─── */
+  --shell:        #0a0a0a;
+  --surface:      #141312;
+  --surface-2:    #1c1a18;
+  --surface-3:    #25221f;
+  --text:         #e8e4df;
+  --text-2:       #c8c0b6;
+  --text-mute:    #7a7268;
+  --text-faint:   #4a4540;
+  --rule:         #2a2622;
+  --accent:       #d4a574;             /* warm terracotta gold */
+  --accent-soft:  rgba(212, 165, 116, 0.12);
+  --accent-glow:  rgba(212, 165, 116, 0.45);
+
+  /* ─── fonts ─── */
+  --font-display-cn: "Noto Serif SC", "Source Han Serif SC", serif;
+  --font-display-en: "Cormorant", "Cormorant Garamond", "GT Sectra", "Playfair Display", Georgia, serif;
+  --font-body:       "IBM Plex Sans", "Manrope", "Noto Sans SC", -apple-system, sans-serif;
+  --font-mono:       "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+  --font-features:   "ss01", "tnum", "kern";
+
+  /* ─── motion: slow, editorial ─── */
+  --dur-base:       750ms;
+  --dur-slow:       1200ms;
+  --dur-cinematic:  1700ms;
+
+  /* ─── design identity: elegant editorial ─── */
+  --r-card:        var(--r-sm);     /* refined paper-lift, not flat */
+  --r-stage:       0;
+  --rule-w:        1px;
+  --rule-style:    solid;
+  --hero-num-font:    var(--font-display-en);
+  --hero-num-style:   italic;
+  --hero-num-weight:  400;
+  --hero-num-track:   -0.035em;
+  --stage-pad-x:   140px;
+  --stage-pad-y:   100px;
+  --card-shadow:
+    0 1px 0 var(--rule),
+    0 20px 60px rgba(0, 0, 0, 0.45);
+  --shadow-stage:
+    0 60px 160px rgba(0, 0, 0, 0.65),
+    0 0 0 1px rgba(212, 165, 116, 0.06);
+
+  /* ─── decoration: SIGNATURE — soft blurred light pools (botanical glow) ─── */
+  --surface-pattern:
+    radial-gradient(ellipse 60% 50% at 12% 22%, rgba(212, 165, 116, 0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 55% 45% at 88% 82%, rgba(232, 180, 184, 0.14) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 35% at 78% 18%, rgba(201, 184, 150, 0.10) 0%, transparent 60%);
+  --surface-pattern-size: 100% 100%;
+  --surface-vignette:
+    radial-gradient(circle at 50% 55%, transparent 0%, rgba(0, 0, 0, 0.55) 100%);
+}

@@ -1,0 +1,28 @@
+{
+  "id": "creative-voltage",
+  "name": "Creative Voltage",
+  "nameZh": "电压创意",
+  "description": "Saturated electric-blue canvas with neon-yellow accent and Syne / Space Mono typography. Signature: halftone dot pattern (retro-punk creative studio). Built for design weeks, creative-studio decks and visual culture talks.",
+  "descriptionZh": "饱和电光蓝底 + 霓虹黄强调 + Syne 几何衬线 / Space Mono 等宽。签名：halftone 网点纹理（复古朋克工作室感）。适合设计周、创意工作室、视觉文化话题。",
+  "mood": [
+    "dark",
+    "creative",
+    "energetic",
+    "retro-modern",
+    "electric",
+    "punk"
+  ],
+  "bestFor": [
+    "设计周 / 创意分享",
+    "工作室作品集 / showcase",
+    "视觉文化 / 字体话题",
+    "音乐 / 艺术节预热",
+    "复古朋克 / 街头文化"
+  ],
+  "preview": {
+    "shell": "#001a4d",
+    "surface": "#0033b8",
+    "text": "#ffffff",
+    "accent": "#d4ff00"
+  }
+}

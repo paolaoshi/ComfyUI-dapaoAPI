@@ -22,6 +22,7 @@ from PIL import Image
 
 from .network_error_utils import friendly_443_status, friendly_network_error
 from .image_input_utils import IMAGE_429_HINT
+from .llm_model_options import LLM_MODEL_OPTIONS
 
 
 API_BASE_URL = "https://api.dapaoai.com"
@@ -30,12 +31,7 @@ NODE_NAME = "DapaoSeedance20DirectorNode"
 NODE_CATEGORY = "🤖dapaoAPI/🍬大炮API常用工具🍬"
 DISPLAY_NAME = "😶‍🌫️Seedance2全能导演@炮老师的小课堂"
 
-MODEL_OPTIONS = [
-    "gpt-5.5", "gpt-5.6-luna", "gpt-5.6-terra", "gpt-5.6-sol",
-    "claude-fable-5", "claude-opus-4-8", "claude-opus-5", "claude-sonnet-5",
-    "gemini-3.5-flash", "gemini-3.5-flash-lite",
-    "gemini-3.7-flash",
-]
+MODEL_OPTIONS = list(LLM_MODEL_OPTIONS)
 MODE_OPTIONS = [
     "自动识别", "独立提示词", "T2V-文生视频", "I2V-图生视频", "V2V-视频参考",
     "R2V-全能参考", "FLF2V-首尾帧", "Edit-视频编辑", "Extend-视频续写",

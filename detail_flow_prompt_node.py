@@ -22,6 +22,7 @@ from PIL import Image
 
 from .network_error_utils import friendly_443_status, friendly_network_error
 from .image_input_utils import IMAGE_429_HINT, resize_pil_for_input
+from .llm_model_options import LLM_MODEL_OPTIONS
 
 
 API_BASE_URL = "https://api.dapaoai.com"
@@ -30,12 +31,7 @@ NODE_NAME = "DapaoDetailFlowPromptNode"
 NODE_CATEGORY = "🤖dapaoAPI/🍬大炮API常用工具🍬"
 DISPLAY_NAME = "🛍️电商详情页提示词@炮老师的小课堂"
 
-MODEL_OPTIONS = [
-    "gpt-5.5", "gpt-5.6-luna", "gpt-5.6-terra", "gpt-5.6-sol",
-    "claude-fable-5", "claude-opus-4-8", "claude-opus-5", "claude-sonnet-5",
-    "gemini-3.5-flash", "gemini-3.5-flash-lite",
-    "gemini-3.7-flash",
-]
+MODEL_OPTIONS = list(LLM_MODEL_OPTIONS)
 PAGE_TYPE_OPTIONS = ["实体商品详情页", "AI工具/模型产品页", "SaaS功能页", "开发者产品页", "自定义长页"]
 PRODUCT_CATEGORY_OPTIONS = [
     "自动识别", "食品饮料", "美妆个护", "3C数码", "家居家电", "服饰箱包", "母婴用品",

@@ -28,6 +28,7 @@ from PIL import Image, UnidentifiedImageError
 
 from .network_error_utils import friendly_443_status, friendly_network_error
 from .image_input_utils import IMAGE_429_HINT, resize_pil_for_input
+from .llm_model_options import LLM_MODEL_OPTIONS
 
 
 API_BASE_URL = "https://api.dapaoai.com"
@@ -52,19 +53,7 @@ DATABASE_VERSION = "2026-08-09-2111"
 TAXONOMY_VERSION = "oip-visual-v2"
 _DATABASE_LOCK = threading.Lock()
 
-MODEL_OPTIONS = [
-    "gpt-5.5",
-    "gpt-5.6-luna",
-    "gpt-5.6-terra",
-    "gpt-5.6-sol",
-    "claude-fable-5",
-    "claude-opus-4-8",
-    "claude-opus-5",
-    "claude-sonnet-5",
-    "gemini-3.5-flash",
-    "gemini-3.5-flash-lite",
-    "gemini-3.7-flash",
-]
+MODEL_OPTIONS = list(LLM_MODEL_OPTIONS)
 
 DOMAIN_FILES = {
     "产品广告": "product-advertising.md",

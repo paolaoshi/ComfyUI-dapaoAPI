@@ -1,0 +1,28 @@
+{
+  "id": "dune",
+  "name": "Dune",
+  "nameZh": "沙丘",
+  "description": "Charcoal-brown on desert sand — near-accent-less restraint. Inter sans display + Source Serif body. Architecture portfolio / gallery brochure / desert dusk aesthetic — quiet, sophisticated, design-first.",
+  "descriptionZh": "炭褐当墨 + 沙底，几乎不用 accent —— 克制、高级。Inter 显示 + Source Serif 正文。像建筑作品集、画廊手册、沙漠黄昏的色温。",
+  "mood": [
+    "light",
+    "dune",
+    "sand",
+    "muted",
+    "architecture",
+    "gallery"
+  ],
+  "bestFor": [
+    "建筑 / 室内 / 空间",
+    "艺术展览 / 画廊手册",
+    "设计师 / 工作室作品集",
+    "时尚 / 高端品牌",
+    "审美优先的私享会"
+  ],
+  "preview": {
+    "shell": "#dcc8a5",
+    "surface": "#f0e6d2",
+    "text": "#1f1a14",
+    "accent": "#8c6a48"
+  }
+}

@@ -20,6 +20,7 @@ from PIL import Image
 
 from .network_error_utils import friendly_443_status, friendly_network_error
 from .image_input_utils import IMAGE_429_HINT, resize_pil_for_input
+from .llm_model_options import LLM_MODEL_OPTIONS
 
 
 API_BASE_URL = "https://api.dapaoai.com"
@@ -28,19 +29,7 @@ NODE_NAME = "DapaoAllroundImagePromptNode"
 NODE_CATEGORY = "🤖dapaoAPI/🍬大炮API常用工具🍬"
 DISPLAY_NAME = "🪂全能image提示词生成@炮老师的小课堂"
 
-MODEL_OPTIONS = [
-    "gpt-5.5",
-    "gpt-5.6-luna",
-    "gpt-5.6-terra",
-    "gpt-5.6-sol",
-    "claude-fable-5",
-    "claude-opus-4-8",
-    "claude-opus-5",
-    "claude-sonnet-5",
-    "gemini-3.5-flash",
-    "gemini-3.5-flash-lite",
-    "gemini-3.7-flash",
-]
+MODEL_OPTIONS = list(LLM_MODEL_OPTIONS)
 
 TASK_OPTIONS = [
     "自动识别",

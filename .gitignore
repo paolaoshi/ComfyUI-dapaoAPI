@@ -58,6 +58,7 @@ gpt_config.json
 *.bak
 .cache/
 dapao_user_templates.json
+data/skill_display_names.json
 
 # Open Image Prompts 数据库由节点按官方清单自动下载并校验，避免提交大体积第三方数据
 data/open_image_prompts/prompts.db.gz

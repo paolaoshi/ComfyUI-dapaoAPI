@@ -16,6 +16,7 @@ from pathlib import Path
 import requests
 
 from .network_error_utils import friendly_443_status, friendly_network_error
+from .llm_model_options import LLM_MODEL_OPTIONS
 
 
 API_BASE_URL = "https://api.dapaoai.com"
@@ -26,19 +27,7 @@ DISPLAY_NAME = "🎵Music3音乐提示词生成@炮老师的小课堂"
 REGISTER_URL = "https://api.dapaoai.com/sign-up?aff=vcOZ"
 RESOURCE_ROOT = Path(__file__).resolve().parent / "resources" / "music3_caption_rewriter"
 
-MODEL_OPTIONS = [
-    "gpt-5.5",
-    "gpt-5.6-luna",
-    "gpt-5.6-terra",
-    "gpt-5.6-sol",
-    "claude-fable-5",
-    "claude-opus-4-8",
-    "claude-opus-5",
-    "claude-sonnet-5",
-    "gemini-3.5-flash",
-    "gemini-3.5-flash-lite",
-    "gemini-3.7-flash",
-]
+MODEL_OPTIONS = list(LLM_MODEL_OPTIONS)
 
 GENRE_FAMILIES = [
     "自动识别",

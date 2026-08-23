@@ -1,0 +1,28 @@
+{
+  "id": "electric-studio",
+  "name": "Electric Studio",
+  "nameZh": "电光企业",
+  "description": "Clean white canvas with single electric-blue accent and Manrope sans throughout. Signature: 4px electric-blue accent bar baked into the bottom of the stage — corporate confidence without coldness.",
+  "descriptionZh": "净白底 + 单一电光蓝 + Manrope 全场。签名：贴底 4px 电蓝色块。企业感、清晰、自信，不冷漠，适合 B2B 与投资人场景。",
+  "mood": [
+    "light",
+    "corporate",
+    "electric",
+    "confident",
+    "enterprise",
+    "clean"
+  ],
+  "bestFor": [
+    "B2B 产品演讲",
+    "投资人 / 路演 deck",
+    "企业财报 / 季度更新",
+    "行业研究 / 趋势报告",
+    "企业咨询 / 培训"
+  ],
+  "preview": {
+    "shell": "#0a0a0a",
+    "surface": "#ffffff",
+    "text": "#0a0a0a",
+    "accent": "#4361ee"
+  }
+}

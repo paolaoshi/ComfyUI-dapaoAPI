@@ -1,0 +1,112 @@
+[
+  {
+    "id": "tufte",
+    "runtimeTheme": "tufte",
+    "label": "Tufte · Data-Ink",
+    "mood": "证据、数据、克制、低装饰；让读者凑近去读",
+    "bestFor": ["longform", "full-report", "explainer", "review", "tutorial"],
+    "notFor": ["十米外观看的演示幻灯片", "移动端优先且需要大量边注的场景"],
+    "profile": "tufte.md",
+    "canonicalRuntimeMd": "src/theme/themes/tufte/tufte.md"
+  },
+  {
+    "id": "press",
+    "runtimeTheme": "press",
+    "label": "Press · 书卷 / 编辑",
+    "mood": "出版、叙事、温暖、编辑感；请你从一臂之外读一本书",
+    "bestFor": ["essay", "briefing", "visual-essay", "longform", "explainer"],
+    "notFor": ["极度密集、需大量边注的数据型报告（那是 tufte 主场）", "演示幻灯片"],
+    "profile": "press.md",
+    "canonicalRuntimeMd": "src/theme/themes/press/press.md"
+  },
+  {
+    "id": "shannon",
+    "runtimeTheme": "shannon",
+    "label": "Shannon · 暗色工程证据",
+    "mood": "暗底工程现场、仪表信号、克制、低装饰；在暗纸上读工程证据",
+    "bestFor": ["postmortem", "system-design", "benchmark", "explainer", "review", "tutorial"],
+    "notFor": ["需打印的正式文档（暗底费墨）", "温暖叙事 / 出版随笔", "演示幻灯片"],
+    "profile": "shannon.md",
+    "canonicalRuntimeMd": "src/theme/themes/shannon/shannon.md"
+  },
+  {
+    "id": "vignelli",
+    "runtimeTheme": "vignelli",
+    "label": "Vignelli · 瑞士国际主义文档",
+    "mood": "冷中性、sans、网格、系统化；清晰可扫读的中性文档",
+    "bestFor": ["docs", "spec", "changelog", "reference", "explainer", "tutorial"],
+    "notFor": ["温暖叙事（press）", "正式学术论文（knuth）", "暗底工程现场（shannon）", "演示幻灯片"],
+    "profile": "vignelli.md",
+    "canonicalRuntimeMd": "src/theme/themes/vignelli/vignelli.md"
+  },
+  {
+    "id": "knuth",
+    "runtimeTheme": "knuth",
+    "label": "Knuth · 学术预印本",
+    "mood": "正式、严谨、公式与编号优先；像读一篇 arXiv 论文",
+    "bestFor": ["paper", "preprint", "research", "literature-review", "explainer", "full-report"],
+    "notFor": ["温暖叙事（press）", "中性产品文档（vignelli）", "暗底工程现场（shannon）", "演示幻灯片"],
+    "profile": "knuth.md",
+    "canonicalRuntimeMd": "src/theme/themes/knuth/knuth.md"
+  },
+  {
+    "id": "freddie",
+    "runtimeTheme": "freddie",
+    "label": "Freddie · 暖黄 / 友善",
+    "mood": "暖白 + 明黄、机灵有人味；黑字荧光、俏皮衬线，专业但不端着",
+    "bestFor": ["explainer", "tutorial", "product-intro", "changelog", "faq"],
+    "notFor": ["正式学术论文（knuth）", "冷调系统规格（vignelli）", "暗底工程现场（shannon）", "柔软治愈向（andy）", "演示幻灯片"],
+    "profile": "freddie.md",
+    "canonicalRuntimeMd": "src/theme/themes/freddie/freddie.md"
+  },
+  {
+    "id": "andy",
+    "runtimeTheme": "andy",
+    "label": "Andy · 静谧 / 温柔",
+    "mood": "暖奶油 + 暖橙、柔软平静治愈；大圆角 + 柔阴影、通体圆体，让人安心",
+    "bestFor": ["explainer", "tutorial", "wellness", "onboarding", "lifestyle"],
+    "notFor": ["正式学术论文（knuth）", "冷调系统规格（vignelli）", "暗底工程现场（shannon）", "俏皮黄黑（freddie）", "需要锋利严肃感的内容", "演示幻灯片"],
+    "profile": "andy.md",
+    "canonicalRuntimeMd": "src/theme/themes/andy/andy.md"
+  },
+  {
+    "id": "bodoni",
+    "runtimeTheme": "bodoni",
+    "label": "Bodoni · 报刊 / Didone 高反差",
+    "mood": "极致黑白、戏剧高反差；像一份精心排过的大报 / 时装刊头",
+    "bestFor": ["longform", "essay", "manifesto", "feature", "review"],
+    "notFor": ["暖调亲和（press / freddie）", "柔软治愈（andy）", "冷调规格（vignelli）", "暗底工程（shannon / fuller）", "学术论文（knuth）", "彩色活泼（bayer / sottsass）", "演示幻灯片"],
+    "profile": "bodoni.md",
+    "canonicalRuntimeMd": "src/theme/themes/bodoni/bodoni.md"
+  },
+  {
+    "id": "bayer",
+    "runtimeTheme": "bayer",
+    "label": "Bayer · 包豪斯 / 三原色几何",
+    "mood": "响亮而理性；三原色当结构色、蓝圆章节号、三色刊头条、几何构成",
+    "bestFor": ["explainer", "tutorial", "manifesto", "product-intro", "brand"],
+    "notFor": ["学术论文（knuth）", "黑白大刊（bodoni）", "暗底工程（shannon / fuller）", "柔软治愈（andy）", "极致中性规格（vignelli）", "演示幻灯片"],
+    "profile": "bayer.md",
+    "canonicalRuntimeMd": "src/theme/themes/bayer/bayer.md"
+  },
+  {
+    "id": "fuller",
+    "runtimeTheme": "fuller",
+    "label": "Fuller · 蓝图 / 工程制图",
+    "mood": "冷峻技术暗色；蓝图底 + 制图青 + 方格纸标题块、等宽尺寸标注",
+    "bestFor": ["spec", "system-design", "rfc", "reference", "explainer"],
+    "notFor": ["需打印的文档（暗底费墨）", "温暖叙事（press / freddie）", "柔软治愈（andy）", "彩色活泼（bayer / sottsass）", "学术论文（knuth）", "黑白大刊（bodoni）", "演示幻灯片"],
+    "profile": "fuller.md",
+    "canonicalRuntimeMd": "src/theme/themes/fuller/fuller.md"
+  },
+  {
+    "id": "sottsass",
+    "runtimeTheme": "sottsass",
+    "label": "Sottsass · 孟菲斯 / 80s 撞色",
+    "mood": "最叛逆好玩；撞色粉彩 + 无模糊硬投影 + 旋转药丸 + 波浪下划线 + 彩屑",
+    "bestFor": ["explainer", "tutorial", "culture", "launch", "design-writing"],
+    "notFor": ["学术（knuth）", "黑白大刊（bodoni）", "冷调规格（vignelli）", "暗底工程（shannon / fuller）", "严肃克制内容", "安静治愈（andy）", "演示幻灯片"],
+    "profile": "sottsass.md",
+    "canonicalRuntimeMd": "src/theme/themes/sottsass/sottsass.md"
+  }
+]

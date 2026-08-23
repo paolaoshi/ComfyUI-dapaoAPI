@@ -1,0 +1,68 @@
+/* ─────────────────────────────────────────────────────────────────────
+ * Theme · creative-voltage
+ *   Retro-modern creative studio. Saturated electric-blue surface (the
+ *   brand color IS the canvas) + neon-yellow accent for shock contrast.
+ *   Syne for display (curved geometric serif-sans hybrid), Space Mono
+ *   for body / mono badges (creative-coder vibe). SIGNATURE: subtle
+ *   halftone dot pattern overlay.
+ *
+ *   character knobs:
+ *     • hero numbers   — Syne, weight 800 (geometric chunk)
+ *     • rule           — 2px solid neon yellow (bold, decisive)
+ *     • card           — refined-sm radius (mostly sharp)
+ *     • surface        — halftone dot pattern (retro print signature)
+ *     • motion         — punchy + slight overshoot (energy)
+ * ───────────────────────────────────────────────────────────────────── */
+:root {
+  /* ─── palette ─── */
+  --shell:        #001a4d;
+  --surface:      #0033b8;             /* saturated electric blue */
+  --surface-2:    #00257d;
+  --surface-3:    #001f5e;
+  --text:         #ffffff;
+  --text-2:       #e8eaff;
+  --text-mute:    #98a4d8;
+  --text-faint:   #6878b8;
+  --rule:         rgba(212, 255, 0, 0.32);
+  --accent:       #d4ff00;             /* neon yellow */
+  --accent-soft:  rgba(212, 255, 0, 0.14);
+  --accent-glow:  rgba(212, 255, 0, 0.50);
+
+  /* ─── fonts ─── */
+  --font-display-cn: "Noto Sans SC", "Source Han Sans SC", -apple-system, sans-serif;
+  --font-display-en: "Syne", "Archivo Black", "Inter", sans-serif;
+  --font-body:       "Space Mono", "JetBrains Mono", "Inter", "Noto Sans SC", monospace;
+  --font-mono:       "Space Mono", "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+  --font-features:   "ss01", "ss02", "tnum";
+
+  /* ─── motion: punchy energy ─── */
+  --dur-quick:     200ms;
+  --dur-base:      450ms;
+  --dur-slow:      720ms;
+  --dur-cinematic: 1100ms;
+
+  /* ─── design identity: punk studio ─── */
+  --r-card:        var(--r-sm);
+  --r-stage:       0;
+  --rule-w:        2px;             /* SIGNATURE — bold dividers */
+  --rule-style:    solid;
+  --hero-num-font:    var(--font-display-en);
+  --hero-num-style:   normal;
+  --hero-num-weight:  800;
+  --hero-num-track:   -0.03em;
+  --stage-pad-x:   96px;
+  --stage-pad-y:   72px;
+  --card-shadow:
+    0 1px 0 var(--rule),
+    8px 8px 0 rgba(212, 255, 0, 0.30);    /* offset neon-yellow shadow */
+  --shadow-stage:
+    0 60px 160px rgba(0, 20, 60, 0.65),
+    0 0 0 1px rgba(212, 255, 0, 0.18);
+
+  /* ─── decoration: SIGNATURE — halftone dot pattern overlay ─── */
+  --surface-pattern:
+    radial-gradient(circle, rgba(212, 255, 0, 0.18) 1.5px, transparent 2px);
+  --surface-pattern-size: 18px 18px;
+  --surface-pattern-blend: normal;
+  --surface-pattern-opacity: 0.55;
+}

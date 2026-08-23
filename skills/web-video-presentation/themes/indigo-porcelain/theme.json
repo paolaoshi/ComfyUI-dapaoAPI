@@ -1,0 +1,28 @@
+{
+  "id": "indigo-porcelain",
+  "name": "Indigo Porcelain",
+  "nameZh": "靛蓝瓷",
+  "description": "Deep-indigo ink on porcelain white — the indigo IS the ink, not just an accent. Playfair Display + Noto Serif SC + IBM Plex Sans body. Academic, scholarly, like a Chinese journal of contemporary thought.",
+  "descriptionZh": "深靛蓝当墨（靛蓝就是字色本身，而非 accent）+ 瓷白纸。Playfair Display + Noto Serif SC + IBM Plex Sans。学术、有深度，像蓝印花瓷器或一本当代思想期刊。",
+  "mood": [
+    "light",
+    "indigo",
+    "porcelain",
+    "academic",
+    "editorial",
+    "scholarly"
+  ],
+  "bestFor": [
+    "学术 / 研究 / 论文解读",
+    "AI / 数据 / 工程深度",
+    "中国当代文化",
+    "技术发布会 / 严肃汇报",
+    "思想型 / 评论型长文改编"
+  ],
+  "preview": {
+    "shell": "#e4e8ec",
+    "surface": "#f1f3f5",
+    "text": "#0a1f3d",
+    "accent": "#1e3a8a"
+  }
+}
