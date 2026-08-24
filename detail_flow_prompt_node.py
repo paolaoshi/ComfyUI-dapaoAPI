@@ -8,20 +8,16 @@ runtime.
 """
 
 import asyncio
-import base64
-import io
 import json
 import re
 import sys
 import time
 import traceback
 
-import numpy as np
 import requests
-from PIL import Image
 
 from .network_error_utils import friendly_443_status, friendly_network_error
-from .image_input_utils import IMAGE_429_HINT, resize_pil_for_input
+from .image_input_utils import IMAGE_429_HINT, tensor_to_png_data_uris
 from .llm_model_options import LLM_MODEL_OPTIONS
 
 
@@ -38,7 +34,8 @@ PRODUCT_CATEGORY_OPTIONS = [
     "宠物用品", "汽车用品", "运动户外", "珠宝饰品", "AI软件/模型", "SaaS服务", "开发者工具", "其他",
 ]
 PLATFORM_OPTIONS = ["自动适配", "淘宝/天猫", "京东", "抖音小店", "拼多多", "小红书", "独立站", "通用长图"]
-MAX_SCREEN_COUNT = 8
+DEFAULT_SCREEN_COUNT = 8
+MAX_SCREEN_COUNT = 24
 SCREEN_COUNT_OPTIONS = [str(index) for index in range(1, MAX_SCREEN_COUNT + 1)]
 CONTINUITY_OPTIONS = ["严格连续详情页（推荐）", "统一视觉、分屏独立构图"]
 TEXT_STRATEGY_OPTIONS = [
@@ -84,14 +81,26 @@ STYLE_OPTIONS = [
     CUSTOM_OPTION,
 ]
 
-MAX_PRODUCT_IMAGES = 6
-MAX_STYLE_IMAGES = 3
-MAX_LLM_IMAGES = 9
+MAX_PRODUCT_IMAGES = 12
+MAX_STYLE_IMAGES = 6
+MAX_LLM_IMAGES = MAX_PRODUCT_IMAGES + MAX_STYLE_IMAGES
 BLUEPRINT_FIELDS = {
     "slice_id", "buyer_question", "claim_seed", "screen_job", "evidence_type", "content_density",
     "copy_structure_pattern", "primary_module", "secondary_modules", "text_exact", "composition_shift",
-    "top_edge_anchor", "bottom_edge_anchor", "visual_composition", "risk_unknowns",
+    "top_edge_anchor", "bottom_edge_anchor", "visual_composition", "risk_unknowns", "chapter_id", "chapter_role",
 }
+
+FIXED_RETURN_NAMES = (
+    "🧭 可选视觉母版提示词",
+    "📋 详情页完整蓝图JSON",
+    "📝 全部准确画面文案",
+    "⚠️ 事实与连续性提醒",
+    "📄 LLM完整响应",
+    "ℹ️ 处理信息",
+    "📚 所选分屏多行提示词",
+    "🧩 所选分屏批量提示词",
+)
+SCREEN_RETURN_NAMES = tuple(f"🖼️ 第{index:02d}屏提示词" for index in range(1, MAX_SCREEN_COUNT + 1))
 
 
 def _safe_print(message):
@@ -107,17 +116,7 @@ def _log_error(message):
 
 
 def _image_data_uris(image_tensor, max_side=2048):
-    result = []
-    for item in image_tensor:
-        array = np.clip(item.detach().cpu().numpy() * 255.0, 0, 255).astype(np.uint8)
-        image = resize_pil_for_input(Image.fromarray(array).convert("RGB"), max_side)
-        if max(image.size) > max_side:
-            scale = max_side / max(image.size)
-            image = image.resize((max(1, int(image.width * scale)), max(1, int(image.height * scale))), Image.Resampling.LANCZOS)
-        buffer = io.BytesIO()
-        image.save(buffer, format="JPEG", quality=90)
-        result.append("data:image/jpeg;base64," + base64.b64encode(buffer.getvalue()).decode("ascii"))
-    return result
+    return tensor_to_png_data_uris(image_tensor, max_edge=max_side)
 
 
 def _content_text(content):
@@ -258,6 +257,43 @@ def _prompt_rows(prompts):
     return "\n".join(rows)
 
 
+def _screen_scale_policy(screen_count):
+    """Keep long-page requests structured without padding them with invented claims."""
+    count = max(1, min(MAX_SCREEN_COUNT, int(screen_count)))
+    if count <= 8:
+        seed_range = "2至4"
+        prompt_length = "300至600"
+        chapter_size = count
+    elif count <= 16:
+        seed_range = "3至5"
+        prompt_length = "220至450"
+        chapter_size = 8
+    else:
+        seed_range = "4至6"
+        prompt_length = "180至380"
+        chapter_size = 8
+    chapter_count = (count + chapter_size - 1) // chapter_size
+    return {
+        "seed_range": seed_range,
+        "prompt_length": prompt_length,
+        "chapter_count": chapter_count,
+        "chapter_size": chapter_size,
+        "instruction": (
+            f"本次共{count}屏，先规划{chapter_count}个连续叙事章节，每章最多{chapter_size}屏；"
+            f"使用{seed_range}个互补卖点种子，每屏提示词建议{prompt_length}字。"
+            "章节只用于组织长页，不得把每章写成重复的开场和CTA，也不得为凑屏数编造新事实。"
+        ),
+    }
+
+
+def _claim_seed_bounds(screen_count):
+    if int(screen_count) <= 8:
+        return 2, 4
+    if int(screen_count) <= 16:
+        return 3, 5
+    return 4, 6
+
+
 class DetailFlowLLMClient:
     def __init__(self, api_key, timeout):
         self.api_key = api_key
@@ -276,7 +312,17 @@ class DetailFlowLLMClient:
         if response.status_code >= 400:
             if response.status_code == 443:
                 raise RuntimeError(friendly_443_status())
-            labels = {400: "请求参数错误", 401: "认证失败", 402: "余额不足", 403: "没有模型权限", 404: "映射模型不存在", 429: IMAGE_429_HINT}
+            labels = {
+                400: "请求参数错误，请检查模型、令牌上限和输入内容",
+                401: "认证失败，请检查API密钥",
+                402: "余额不足，请充值后再试",
+                403: "没有所选模型的调用权限",
+                404: "映射模型不存在，请更换LLM模型",
+                429: IMAGE_429_HINT,
+                500: "服务内部暂时异常，本次付费请求不会自动重试，请稍后手动重试",
+                502: "上游模型网关暂时无响应，本次付费请求不会自动重试，请稍后手动重试",
+                503: "服务当前繁忙或维护中，本次付费请求不会自动重试，请稍后手动重试",
+            }
             try:
                 detail = response.json()
             except Exception:
@@ -294,7 +340,7 @@ SYSTEM_PROMPT = r"""
 你必须把一个产品组织成一套有购买逻辑的连续详情页，而不是多张互不相关的海报。先区分：图片可见事实、用户确认事实、合理但未确认的推断、不能出现的未知信息。严禁编造精确参数、认证、奖项、医疗/功效结论、折扣、销量、合作方和品牌事实。
 
 严格执行以下规则：
-1. 首屏先确定2至4个具体卖点种子；后续每个分屏必须展开、证明、可视化、比较或情境化其中至少一个种子，不得突然加入无铺垫的新卖点。
+1. 根据SCREEN SCALE POLICY确定卖点种子数量；后续每个分屏必须展开、证明、可视化、比较或情境化其中至少一个种子，不得突然加入无铺垫的新卖点。
 2. 每个分屏只承担一个不同的购买问题和页面任务。相邻分屏不能使用相同的文案语法、同样的主视觉和同样的标签堆叠。
 3. 首屏可以使用强标题；后续优先使用问答、细节标注、三点拆解、场景字幕、步骤、信任清单、对比条目或安静收尾，不要让所有分屏重复“标题+副标题+产品主视觉”。
 4. 每个分屏都必须写明primary_module、secondary_modules、content_density、composition_shift、top_edge_anchor和bottom_edge_anchor。上下边缘只承担视觉衔接，不放核心标题和关键证明。
@@ -306,13 +352,15 @@ SYSTEM_PROMPT = r"""
 10. 目标图像模型只用于调整提示词写法，不得声称已经设置下游图像节点的真实分辨率或比例。通用模式不绑定具体比例；其他模式仅给出保守建议，最终尺寸以用户连接的图像节点参数为准。
 11. 用户选择“自动”选项时，必须根据产品品类、产品图、平台和目标人群生成具体结论；最终提示词中不能出现“自动匹配”“自动推荐”等占位词。多个自动卖点必须彼此互补，不能重复。
 
-工作方式只有一种：一次完成产品诊断、卖点种子、用户指定数量的详情页蓝图、文字视觉母版和全部分屏提示词。必须严格服从SCREEN COUNT，不得多生成或少生成。屏数少于8时，合并叙事阶段并保留“开场—证明—转化”的完整购买逻辑。不要等待确认，也不要要求用户回接中间结果。
+工作方式只有一种：一次完成产品诊断、卖点种子、用户指定数量的详情页蓝图、文字视觉母版和全部分屏提示词。必须严格服从SCREEN COUNT，不得多生成或少生成。屏数少于8时合并叙事阶段；超过8屏时按SCREEN SCALE POLICY划分连续章节，但整套页面仍然只能有一个正式开场和一个最终CTA。不要等待确认，也不要要求用户回接中间结果。
 
-用户选择的屏数就是一套完整详情页的全部屏数，不是8屏模板的前N屏截断：
+用户选择的屏数就是一套完整详情页的全部屏数，不是固定模板的前N屏截断：
 - 第01屏必须承担产品身份、核心购买理由和整页开场；top_edge_anchor应明确为自然起始，不得假设前面还有页面。
 - 最后一屏必须完成价值总结、信任收束和CTA；bottom_edge_anchor应明确为自然收尾，不得留下“下一屏继续”、未展开卖点或悬空视觉线索。
 - 中间屏负责展开卖点、可视化证据和使用场景；相邻屏的底部与顶部视觉锚点必须成对衔接。
-- 屏数较少时合并任务，屏数较多时拆分证据，但无论选择1至8中的哪个数量，都必须形成从开场到收尾闭环的完整详情页。
+- 屏数较少时合并任务，屏数较多时拆分证据、细节、场景与信任模块；无论选择1至24中的哪个数量，都必须形成从开场到收尾闭环的完整详情页。
+- 9至24屏必须分成连续章节。每项blueprint写明chapter_id和chapter_role；章节边界也必须保持上下视觉锚点配对，不能在每8屏重复产品开场、价值总结或CTA。
+- 长页不得靠同义改写凑屏数。资料不足时宁可把屏幕任务细化为结构、材质、步骤、场景、证据呈现与选择指南，并在risk_unknowns标记资料缺口。
 
 页面类型的默认叙事：
 - 实体商品：产品身份与核心购买理由→痛点/欲望→核心利益→结构材质工艺→使用场景→证据与信任→对比/价值构成→CTA收尾。
@@ -324,9 +372,9 @@ SYSTEM_PROMPT = r"""
 必须只返回一个紧凑JSON对象，不要Markdown围栏，不要解释内部规则。JSON字段固定为：
 product_analysis、claim_seeds、blueprint、visual_master、screen_prompts、audit_report、exact_copy_master、production_notes。
 
-blueprint项数必须严格等于SCREEN COUNT。每项只需包含：slice_id、buyer_question、claim_seed、screen_job、evidence_type、content_density、copy_structure_pattern、primary_module、secondary_modules、text_exact、composition_shift、top_edge_anchor、bottom_edge_anchor、visual_composition、risk_unknowns。字段内容保持紧凑，避免重复描述。
+blueprint项数必须严格等于SCREEN COUNT。每项只需包含：slice_id、chapter_id、chapter_role、buyer_question、claim_seed、screen_job、evidence_type、content_density、copy_structure_pattern、primary_module、secondary_modules、text_exact、composition_shift、top_edge_anchor、bottom_edge_anchor、visual_composition、risk_unknowns。字段内容保持紧凑，避免重复描述。
 visual_master必须包含：visual_master_spec、master_reference_prompt、visual_style_dna、product_identity_lock、continuity_rules、recommended_master_ratio、recommended_slice_ratio。
-screen_prompts必须是对象，键从01开始连续编号，数量严格等于SCREEN COUNT。共享的产品身份、风格和连续性规则写入visual_master，不要在各分屏提示词中机械重复；每个分屏提示词重点写当前屏任务、准确文字、画面构图、上下边缘衔接和禁止事项。每屏控制在信息完整但不重复的长度内，中文通常300至600字。节点会自动把visual_master共享规则合并到每一屏，形成可直接交给图像模型的完整提示词。
+screen_prompts必须是对象，键从01开始连续编号，数量严格等于SCREEN COUNT。共享的产品身份、风格和连续性规则写入visual_master，不要在各分屏提示词中机械重复；每个分屏提示词重点写当前屏任务、准确文字、画面构图、上下边缘衔接和禁止事项。每屏长度服从SCREEN SCALE POLICY，在长页中主动压缩重复的共享说明。节点会自动把visual_master共享规则合并到每一屏，形成可直接交给图像模型的完整提示词。
 audit_report必须包含observed_problems、severity、unsupported_claims、continuity_findings和next_action。
 """
 
@@ -366,9 +414,9 @@ class DapaoDetailFlowPromptNode:
             "🚫 出错时跳过": ("BOOLEAN", {"default": False}),
         }
         for index in range(1, MAX_PRODUCT_IMAGES + 1):
-            optional[f"📦 产品图{index}"] = ("IMAGE", {"tooltip": f"产品身份事实参考图{index}。"})
+            optional[f"📦 产品图{index}"] = ("IMAGE", {"tooltip": f"产品身份事实参考图{index}；全部端口及批次合计最多12张，每张上传前独立缩放到最长边不超过2K并使用PNG。"})
         for index in range(1, MAX_STYLE_IMAGES + 1):
-            optional[f"🎨 风格参考图{index}"] = ("IMAGE", {"tooltip": f"只提取抽象风格DNA的参考图{index}。"})
+            optional[f"🎨 风格参考图{index}"] = ("IMAGE", {"tooltip": f"只提取抽象风格DNA的参考图{index}；全部端口及批次合计最多6张，每张上传前独立缩放到最长边不超过2K并使用PNG。"})
         return {
             "required": {
                 "🔑 API密钥": ("STRING", {"default": "", "placeholder": "填入 dapaoAI API 密钥", "tooltip": "密钥只用于请求 https://api.dapaoai.com。"}),
@@ -376,7 +424,7 @@ class DapaoDetailFlowPromptNode:
                 "🧭 页面类型": (PAGE_TYPE_OPTIONS, {"default": "实体商品详情页"}),
                 "🗂️ 产品品类": (PRODUCT_CATEGORY_OPTIONS, {"default": "自动识别"}),
                 "🛒 适配平台": (PLATFORM_OPTIONS, {"default": "自动适配"}),
-                "🔢 分屏数量": (SCREEN_COUNT_OPTIONS, {"default": "8", "tooltip": "选择1至8屏；无论数量多少，都会从首屏开场到末屏CTA完整收尾。"}),
+                "🔢 分屏数量": (SCREEN_COUNT_OPTIONS, {"default": str(DEFAULT_SCREEN_COUNT), "tooltip": "手动选择1至24屏；右侧分屏提示词输出口会同步显示相同数量。无论数量多少，都会从首屏开场到末屏CTA完整收尾。"}),
                 "🔗 页面连续方式": (CONTINUITY_OPTIONS, {"default": "严格连续详情页（推荐）"}),
                 "✍️ 画面文字方案": (TEXT_STRATEGY_OPTIONS, {"default": "自动规划不同屏文字（推荐）"}),
                 "🧱 视觉母版方式": (MASTER_OPTIONS, {"default": "自动生成可选母版提示词（推荐）", "tooltip": "母版输出是可选增强项；不连接它也不影响所选分屏提示词。"}),
@@ -387,7 +435,7 @@ class DapaoDetailFlowPromptNode:
                 "🎲 随机种": ("INT", {"default": 0, "min": 0, "max": 0xFFFFFFFFFFFFFFFF, "control_after_generate": "randomize", "tooltip": "只用于ComfyUI缓存控制，不发送给LLM；测试生图时可让上游提示词重新执行。"}),
                 "⚙️ 显示高级设置": ("BOOLEAN", {"default": False}),
                 "🌡️ 温度": ("FLOAT", {"default": 0.3, "min": 0.0, "max": 2.0, "step": 0.01}),
-                "📝 最大输出令牌": ("INT", {"default": 12000, "min": 2048, "max": 65536, "step": 1}),
+                "📝 最大输出令牌": ("INT", {"default": 32768, "min": 2048, "max": 65536, "step": 1, "tooltip": "长页JSON输出较大；9至24屏建议保留默认32768。调低可能导致响应截断，节点不会自动重试付费请求。"}),
                 "🎲 Top_P": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "step": 0.01}),
                 "🔄 每次重新生成提示词": ("BOOLEAN", {"default": False, "tooltip": "关闭时复用ComfyUI缓存；开启后每次Queue都会重新请求LLM。"}),
                 "⌛ 请求超时": ("INT", {"default": 600, "min": 30, "max": 1800, "step": 10}),
@@ -395,16 +443,12 @@ class DapaoDetailFlowPromptNode:
             "optional": optional,
         }
 
-    RETURN_TYPES = ("STRING", "STRING", "STRING", "STRING", "STRING", "STRING", "STRING", "STRING", "STRING", "STRING", "STRING", "STRING", "STRING", "STRING", "STRING", "STRING")
-    RETURN_NAMES = (
-        "🧭 可选视觉母版提示词", "🖼️ 第01屏提示词", "🖼️ 第02屏提示词", "🖼️ 第03屏提示词", "🖼️ 第04屏提示词",
-        "🖼️ 第05屏提示词", "🖼️ 第06屏提示词", "🖼️ 第07屏提示词", "🖼️ 第08屏提示词", "📋 详情页完整蓝图JSON",
-        "📝 全部准确画面文案", "⚠️ 事实与连续性提醒", "📄 LLM完整响应", "ℹ️ 处理信息", "📚 所选分屏多行提示词", "🧩 所选分屏批量提示词",
-    )
-    OUTPUT_IS_LIST = (False,) * 15 + (True,)
+    RETURN_TYPES = ("STRING",) * (len(FIXED_RETURN_NAMES) + MAX_SCREEN_COUNT)
+    RETURN_NAMES = FIXED_RETURN_NAMES + SCREEN_RETURN_NAMES
+    OUTPUT_IS_LIST = (False,) * 7 + (True,) + (False,) * MAX_SCREEN_COUNT
     FUNCTION = "generate_prompt"
     CATEGORY = NODE_CATEGORY
-    DESCRIPTION = "一次生成1至8屏完整连续电商详情页提示词；提供独立分屏、CR多行文本和ComfyUI批量列表三种连接方式。"
+    DESCRIPTION = "手动选择1至24屏并动态显示对应分屏输出口；提供独立分屏、CR多行文本和ComfyUI批量列表三种连接方式。"
 
     @classmethod
     def IS_CHANGED(cls, **kwargs):
@@ -427,6 +471,7 @@ class DapaoDetailFlowPromptNode:
     @staticmethod
     def _build_user_content(kwargs, product_images, style_images, screen_count):
         brief = _merged_brief(kwargs)
+        scale_policy = _screen_scale_policy(screen_count)
         buyer = _selected_value(kwargs, "👥 目标购买人群", "📝 自定义目标人群")
         selling_points = [
             _selected_value(kwargs, "💡 主卖点方向", "📝 自定义主卖点"),
@@ -446,6 +491,7 @@ PAGE TYPE: {kwargs.get('🧭 页面类型', '实体商品详情页')}
 PRODUCT CATEGORY: {kwargs.get('🗂️ 产品品类', '自动识别')}
 PLATFORM: {kwargs.get('🛒 适配平台', '自动适配')}
 SCREEN COUNT: {screen_count} (this is the complete page from opening through final CTA, not a truncated prefix)
+SCREEN SCALE POLICY: {scale_policy['instruction']}
 CONTINUITY: {kwargs.get('🔗 页面连续方式', '严格连续详情页（推荐）')}
 TEXT AND COPY PLAN: {text_plan}
 MASTER STRATEGY: {kwargs.get('🧱 视觉母版方式', '自动生成可选母版提示词（推荐）')}
@@ -543,8 +589,14 @@ REFERENCE COUNTS: product={len(product_images)}, style={len(style_images)}
         issues = []
         if not blueprint:
             return issues
-        if not 2 <= len(claim_seeds or []) <= 4:
-            issues.append("首屏卖点种子数量应为2至4个。")
+        min_seeds, max_seeds = _claim_seed_bounds(screen_count)
+        if not min_seeds <= len(claim_seeds or []) <= max_seeds:
+            issues.append(f"{screen_count}屏详情页的卖点种子数量应为{min_seeds}至{max_seeds}个。")
+        seen_values = {
+            "buyer_question": {},
+            "copy_structure_pattern": {},
+            "composition_shift": {},
+        }
         for index, item in enumerate(blueprint[:screen_count], 1):
             if not isinstance(item, dict):
                 continue
@@ -553,6 +605,10 @@ REFERENCE COUNTS: product={len(product_images)}, style={len(style_images)}
                 issues.append(f"第{index:02d}屏缺少规划字段：{', '.join(missing)}。")
             if not item.get("claim_seed"):
                 issues.append(f"第{index:02d}屏没有绑定首屏卖点种子。")
+            for field, seen in seen_values.items():
+                value = re.sub(r"\s+", "", str(item.get(field) or "")).lower()
+                if value:
+                    seen.setdefault(value, []).append(index)
             if index > 1:
                 previous = blueprint[index - 2] if isinstance(blueprint[index - 2], dict) else {}
                 if item.get("buyer_question") and item.get("buyer_question") == previous.get("buyer_question"):
@@ -561,6 +617,16 @@ REFERENCE COUNTS: product={len(product_images)}, style={len(style_images)}
                     issues.append(f"第{index - 1:02d}屏与第{index:02d}屏文案结构相同。")
                 if item.get("composition_shift") and item.get("composition_shift") == previous.get("composition_shift"):
                     issues.append(f"第{index - 1:02d}屏与第{index:02d}屏构图变化策略重复。")
+        for field, seen in seen_values.items():
+            label = {
+                "buyer_question": "购买问题",
+                "copy_structure_pattern": "文案结构",
+                "composition_shift": "构图变化策略",
+            }[field]
+            for indexes in seen.values():
+                if len(indexes) >= 3:
+                    joined = "、".join(f"{index:02d}" for index in indexes)
+                    issues.append(f"第{joined}屏重复使用同一{label}。")
         return issues
 
     async def generate_prompt(self, **kwargs):
@@ -572,7 +638,7 @@ REFERENCE COUNTS: product={len(product_images)}, style={len(style_images)}
         try:
             api_key = (kwargs.get("🔑 API密钥") or "").strip()
             model = kwargs.get("🤖 LLM模型", "gemini-3.7-flash")
-            screen_count = int(kwargs.get("🔢 分屏数量", "8"))
+            screen_count = int(kwargs.get("🔢 分屏数量", str(DEFAULT_SCREEN_COUNT)))
             brief = _merged_brief(kwargs)
             if not api_key:
                 raise ValueError("请填写 dapaoAI API 密钥。")
@@ -587,6 +653,14 @@ REFERENCE COUNTS: product={len(product_images)}, style={len(style_images)}
             total_images = len(product_images) + len(style_images)
             if total_images > MAX_LLM_IMAGES:
                 raise ValueError(f"本次LLM最多接收{MAX_LLM_IMAGES}张图像，目前接入{total_images}张。")
+            max_tokens = int(kwargs.get("📝 最大输出令牌", 32768))
+            recommended_tokens = 12000 if screen_count <= 8 else 24000 if screen_count <= 16 else 32768
+            token_notice = (
+                f"⚠️ 当前最大输出令牌{max_tokens}低于{screen_count}屏建议值{recommended_tokens}，响应可能截断；"
+                "为避免额外扣费，节点不会自动重试。"
+                if max_tokens < recommended_tokens else
+                f"✅ 最大输出令牌{max_tokens}满足当前{screen_count}屏建议值。"
+            )
             payload = {
                 "model": model,
                 "messages": [
@@ -594,7 +668,7 @@ REFERENCE COUNTS: product={len(product_images)}, style={len(style_images)}
                     {"role": "user", "content": self._build_user_content(kwargs, product_images, style_images, screen_count)},
                 ],
                 "temperature": float(kwargs.get("🌡️ 温度", 0.3)),
-                "max_tokens": int(kwargs.get("📝 最大输出令牌", 12000)),
+                "max_tokens": max_tokens,
                 "top_p": float(kwargs.get("🎲 Top_P", 1.0)),
                 "stream": False,
             }
@@ -631,6 +705,8 @@ REFERENCE COUNTS: product={len(product_images)}, style={len(style_images)}
                 f"🌐 中转站：{API_BASE_URL}\n🤖 LLM模型：{model}\n🎛️ 模式：一键直出提示词包\n"
                 f"🧭 页面类型：{kwargs.get('🧭 页面类型', '实体商品详情页')}\n🔢 分屏：{screen_count}屏完整详情页\n"
                 f"📦 产品图：{len(product_images)}张｜🎨 风格图：{len(style_images)}张\n"
+                f"🧱 长页结构：{_screen_scale_policy(screen_count)['chapter_count']}个连续章节｜LLM请求：1次（不自动重试）\n"
+                f"{token_notice}\n"
                 f"🔎 本地结构提醒：{len(local_audit)}项\n"
                 f"🌐 输出语言：{kwargs.get('🌐 提示词语言', '中文提示词')}\n"
                 f"📥 输入令牌：{usage.get('prompt_tokens', usage.get('input_tokens', '未知'))}\n📤 输出令牌：{usage.get('completion_tokens', usage.get('output_tokens', '未知'))}\n"
@@ -638,7 +714,6 @@ REFERENCE COUNTS: product={len(product_images)}, style={len(style_images)}
             )
             return (
                 str(master.get("master_reference_prompt") or master.get("visual_master_spec") or "").strip(),
-                *page_prompts,
                 json.dumps(blueprint, ensure_ascii=False, indent=2),
                 json.dumps(exact_copy, ensure_ascii=False, indent=2) if not isinstance(exact_copy, str) else exact_copy,
                 json.dumps(analysis, ensure_ascii=False, indent=2),
@@ -646,6 +721,7 @@ REFERENCE COUNTS: product={len(product_images)}, style={len(style_images)}
                 info,
                 _prompt_rows(selected_prompts),
                 selected_prompts,
+                *page_prompts,
             )
         except Exception as error:
             message = f"❌ 电商详情页提示词生成失败：{error}"
@@ -653,7 +729,7 @@ REFERENCE COUNTS: product={len(product_images)}, style={len(style_images)}
             _log_error(traceback.format_exc())
             response = json.dumps({"error": str(error), "response": _sanitized(result)}, ensure_ascii=False, indent=2)
             if kwargs.get("🚫 出错时跳过", False):
-                return ("", "", "", "", "", "", "", "", "", "", "", message, response, message, "", [])
+                return ("", "", "", message, response, message, "", [], *([""] * MAX_SCREEN_COUNT))
             raise RuntimeError(message) from error
 
 

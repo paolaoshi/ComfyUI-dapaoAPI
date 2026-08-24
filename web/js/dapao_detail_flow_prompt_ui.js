@@ -4,11 +4,95 @@ import { api } from "../../../scripts/api.js";
 const NODE_TYPE = "DapaoDetailFlowPromptNode";
 const REGISTER_URL = "https://api.dapaoai.com/sign-up?aff=vcOZ";
 const REGISTER_WIDGET_NAME = "👉点此注册API密钥👈";
+const SCREEN_COUNT_WIDGET = "🔢 分屏数量";
+const MAX_SCREEN_COUNT = 24;
+const FIXED_OUTPUT_NAMES = [
+    "🧭 可选视觉母版提示词",
+    "📋 详情页完整蓝图JSON",
+    "📝 全部准确画面文案",
+    "⚠️ 事实与连续性提醒",
+    "📄 LLM完整响应",
+    "ℹ️ 处理信息",
+    "📚 所选分屏多行提示词",
+    "🧩 所选分屏批量提示词",
+];
 const handledRegisterEvents = new WeakSet();
 
 function nodeType(node) { return node?.comfyClass || node?.type || ""; }
 function widget(node, name) { return node?.widgets?.find((item) => item.name === name) || null; }
 function value(node, name, fallback = "") { return widget(node, name)?.value ?? fallback; }
+function screenOutputName(index) { return `🖼️ 第${String(index).padStart(2, "0")}屏提示词`; }
+
+function outputLinkIds(output) {
+    const links = output?.links;
+    if (links instanceof Set) return Array.from(links);
+    if (Array.isArray(links)) return links.filter((item) => item != null);
+    return links == null ? [] : [links];
+}
+
+function graphLink(graph, linkId) {
+    if (!graph || linkId == null) return null;
+    if (linkId && typeof linkId === "object") return linkId;
+    if (graph.links instanceof Map) return graph.links.get(linkId) || null;
+    return graph.links?.[linkId] || null;
+}
+
+function setLinkOriginSlot(link, slotIndex) {
+    if (!link) return;
+    if (Array.isArray(link)) link[2] = slotIndex;
+    else {
+        link.origin_slot = slotIndex;
+        if ("originSlot" in link) link.originSlot = slotIndex;
+    }
+}
+
+function refreshOutputs(node) {
+    if (!node || nodeType(node) !== NODE_TYPE || !Array.isArray(node.outputs)) return;
+    const countWidget = widget(node, SCREEN_COUNT_WIDGET);
+    let selectedCount = Number(countWidget?.value ?? 8);
+    selectedCount = Number.isFinite(selectedCount) ? Math.round(selectedCount) : 8;
+    selectedCount = Math.max(1, Math.min(MAX_SCREEN_COUNT, selectedCount));
+
+    const existing = new Map();
+    for (const output of node.outputs) {
+        if (output?.name && !existing.has(output.name)) existing.set(output.name, output);
+    }
+
+    // Never silently remove a connected screen. If the user lowers the count
+    // past an active link, keep that port and reflect the safe effective count.
+    let effectiveCount = selectedCount;
+    for (let index = selectedCount + 1; index <= MAX_SCREEN_COUNT; index++) {
+        const output = existing.get(screenOutputName(index));
+        if (outputLinkIds(output).length) effectiveCount = index;
+    }
+    if (countWidget && effectiveCount !== selectedCount) countWidget.value = String(effectiveCount);
+
+    function ensureOutput(name) {
+        let output = existing.get(name);
+        if (!output) {
+            node.addOutput?.(name, "STRING");
+            output = node.outputs?.[node.outputs.length - 1];
+            if (output) existing.set(name, output);
+        }
+        return output;
+    }
+
+    const desiredNames = [
+        ...FIXED_OUTPUT_NAMES,
+        ...Array.from({ length: effectiveCount }, (_, index) => screenOutputName(index + 1)),
+    ];
+    const desiredOutputs = desiredNames.map(ensureOutput).filter(Boolean);
+    node.outputs = desiredOutputs;
+
+    const graph = node.graph || app.graph;
+    desiredOutputs.forEach((output, slotIndex) => {
+        output.slot_index = slotIndex;
+        for (const linkId of outputLinkIds(output)) {
+            setLinkOriginSlot(graphLink(graph, linkId), slotIndex);
+        }
+    });
+    node.__dapaoDetailFlowVisibleScreens = effectiveCount;
+}
 
 function isPressEvent(event) {
     const type = String(event?.type || "");
@@ -170,6 +254,7 @@ function refresh(node) {
     ensureRegisterButton(node);
     installRegisterMouseFallback(node);
     refreshInputs(node);
+    refreshOutputs(node);
     if (node.computeSize) {
         const computed = node.computeSize();
         node.setSize([Math.max(Number(node.size?.[0]) || 0, computed[0], 560), computed[1]]);
