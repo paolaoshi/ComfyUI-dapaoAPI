@@ -37,13 +37,14 @@ NODE_NAME = "DapaoSeedance20AllroundVideoNode"
 NODE_CATEGORY = "🤖dapaoAPI/🍬大炮AI主力维护🍬"
 DISPLAY_NAME = "🐠Seedance2.0全能视频@炮老师的小课堂"
 MODEL_ID = "SD2-face"
-STANDARD_UPSTREAM_MODEL = "SD2"
-MODEL_OPTIONS = [MODEL_ID, STANDARD_UPSTREAM_MODEL]
+STANDARD_UPSTREAM_MODEL = "SD2.0-mini"
+FAST_UPSTREAM_MODEL = "SD2-fast"
+MODEL_OPTIONS = [MODEL_ID, STANDARD_UPSTREAM_MODEL, FAST_UPSTREAM_MODEL]
 UPSTREAM_REFERENCE_MODEL = "seedance-2.0-face"
 MODE_OPTIONS = ["文生视频", "图生视频", "首尾帧生视频", "多模态参考"]
 DURATION_OPTIONS = [str(value) for value in range(4, 16)]
 ASPECT_RATIO_OPTIONS = ["16:9", "9:16"]
-RESOLUTION_OPTIONS = ["720P", "1080P"]
+RESOLUTION_OPTIONS = ["720P"]
 MAX_IMAGE_REFERENCES = 9
 MAX_VIDEO_REFERENCES = 3
 MAX_AUDIO_REFERENCES = 3
@@ -147,7 +148,7 @@ class DapaoSeedanceAPIError(RuntimeError):
             hint = "（服务端任务适配器未返回 seconds 计费倍率；节点已提交 duration 和 seconds，需修复中转站适配器或计费配置）"
         elif "model name not specified" in self.api_message.lower() or "model name cannot be empty" in self.api_message.lower():
             label = "中转站模型映射为空"
-            hint = "（节点已发送模型字段；请在 dapaoAI 的视频路由中检查 SD2/SD2-face 的目标模型是否为空或未绑定可用渠道）"
+            hint = "（节点已发送模型字段；请在 dapaoAI 的视频路由中检查 SD2-face、SD2.0-mini、SD2-fast 的目标模型是否为空或未绑定可用渠道）"
         else:
             label = labels.get(self.status_code, "中转站请求失败")
             hint = ""
@@ -447,7 +448,7 @@ class DapaoSeedanceRelayClient:
                 raise RuntimeError(friendly_443_status())
             raise RuntimeError(
                 f"中转站素材上传接口 /v1/files（model={model_name}）失败 {response.status_code}：{_response_error(response)}。"
-                "此错误发生在视频提交前，不代表 SD2/SD2-face 模型映射失败。"
+                "此错误发生在视频提交前，不代表 SD2-face、SD2.0-mini、SD2-fast 模型映射失败。"
             )
         try:
             result = response.json()
@@ -534,11 +535,11 @@ class DapaoSeedance20AllroundVideoNode:
                 ),
                 "🧩 分辨率": (
                     RESOLUTION_OPTIONS,
-                    {"default": "720P", "tooltip": "1080P 使用映射模型 SD2，并自动关闭真人模式。"},
+                    {"default": "720P", "tooltip": "当前暂时只开放 720P。"},
                 ),
                 "👤 真人模式": (
                     "BOOLEAN",
-                    {"default": True, "tooltip": "开启时使用映射模型 SD2-face，仅支持720P；选择1080P会自动关闭并切换 SD2。"},
+                    {"default": True, "tooltip": "开启时切换到 SD2-face；关闭时默认切换到 SD2.0-mini。直接选择 SD2.0-mini 或 SD2-fast 时会自动关闭。"},
                 ),
                 "⏱️ 时长(秒)": (DURATION_OPTIONS, {"default": "5"}),
                 "📐 视频比例": (ASPECT_RATIO_OPTIONS, {"default": "16:9"}),
@@ -628,23 +629,16 @@ class DapaoSeedance20AllroundVideoNode:
         return result
 
     @staticmethod
-    def _select_request_model(resolution_label, face_mode):
-        """Select a model that is compatible with the requested capability.
-
-        The relay exposes two mapping IDs with different capabilities. Keep
-        the selection deterministic: face mode is only valid for 720P; 1080P
-        always uses the standard mapping.
-        """
-        if resolution_label == "1080P":
-            # 1080P uses the directly enabled standard model. This avoids any
-            # mixed-capability route group and never targets a face-only path.
-            return STANDARD_UPSTREAM_MODEL
-        return MODEL_ID if face_mode else STANDARD_UPSTREAM_MODEL
+    def _select_request_model(model_id):
+        """Return the exact dapaoAI mapping selected by the user."""
+        if model_id not in MODEL_OPTIONS:
+            raise ValueError(f"未知界面模型：{model_id}")
+        return model_id
 
     @staticmethod
     def _expected_dimensions(resolution_label, aspect_ratio):
         """Return the expected encoded dimensions for downstream VIDEO nodes."""
-        long_side = 1920 if resolution_label == "1080P" else 1280
+        long_side = 1280
         if aspect_ratio == "9:16":
             return round(long_side * 9 / 16), long_side
         return long_side, round(long_side * 9 / 16)
@@ -684,15 +678,11 @@ class DapaoSeedance20AllroundVideoNode:
             if not prompt:
                 raise ValueError("提示词不能为空。")
             if resolution_label not in RESOLUTION_OPTIONS:
-                raise ValueError("分辨率仅支持 720P 或 1080P。")
-            # 1080P 与真人版冲突，分辨率优先并强制使用标准模型。
-            if resolution_label == "1080P":
-                face_mode = False
-                model_id = STANDARD_UPSTREAM_MODEL
-            else:
-                # At 720P the explicitly selected model is authoritative.
-                face_mode = model_id == MODEL_ID
-            request_model = self._select_request_model(resolution_label, face_mode)
+                raise ValueError("当前分辨率仅支持 720P。")
+            # The model selector is authoritative; face mode is a convenience
+            # control and status indicator for the dedicated face mapping.
+            face_mode = model_id == MODEL_ID
+            request_model = self._select_request_model(model_id)
             if duration not in range(4, 16):
                 raise ValueError("时长仅支持 4–15 秒。")
             if aspect_ratio not in ASPECT_RATIO_OPTIONS:
@@ -788,12 +778,10 @@ class DapaoSeedance20AllroundVideoNode:
             video_url = _extract_video_url(final)
             if not video_url:
                 raise RuntimeError(f"任务完成但没有找到视频URL：{json.dumps(_sanitized_result(final), ensure_ascii=False)[:1600]}")
-            if resolution_label == "1080P":
-                parameter_profile = "SD2（1080P标准版）"
-            elif face_mode:
+            if face_mode:
                 parameter_profile = "SD2-face（720P真人版）"
             else:
-                parameter_profile = "SD2（标准版）"
+                parameter_profile = f"{request_model}（720P）"
             info = (
                 "✅ Seedance2.0 全能视频任务完成\n"
                 f"🌐 中转站：{API_BASE_URL}\n"
@@ -845,6 +833,7 @@ __all__ = [
     "DapaoSeedance20AllroundVideoNode",
     "MODEL_ID",
     "STANDARD_UPSTREAM_MODEL",
+    "FAST_UPSTREAM_MODEL",
     "UPSTREAM_REFERENCE_MODEL",
     "NODE_CLASS_MAPPINGS",
     "NODE_DISPLAY_NAME_MAPPINGS",

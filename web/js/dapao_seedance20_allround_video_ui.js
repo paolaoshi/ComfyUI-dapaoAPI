@@ -3,7 +3,8 @@ import { api } from "../../../scripts/api.js";
 
 const NODE_TYPE = "DapaoSeedance20AllroundVideoNode";
 const FACE_MODEL = "SD2-face";
-const STANDARD_MODEL = "SD2";
+const DEFAULT_NON_FACE_MODEL = "SD2.0-mini";
+const SUPPORTED_MODELS = new Set([FACE_MODEL, DEFAULT_NON_FACE_MODEL, "SD2-fast"]);
 const PRICE_PER_SECOND = 0.48;
 const REGISTER_URL = "https://api.dapaoai.com/sign-up?aff=vcOZ";
 const REGISTER_WIDGET_NAME = "👉点此注册API密钥👈";
@@ -141,43 +142,28 @@ function syncModelControls(node, sourceName = "") {
         const modelWidget = widget(node, "🤖 模型");
         if (!resolutionWidget || !faceModeWidget || !modelWidget) return;
 
-        const resolution = String(resolutionWidget.value || "720P");
-        const model = String(modelWidget.value || FACE_MODEL);
+        let model = String(modelWidget.value || FACE_MODEL);
         const faceMode = Boolean(faceModeWidget.value);
+        resolutionWidget.value = "720P";
 
         if (sourceName === "🤖 模型") {
-            if (model === FACE_MODEL) {
-                resolutionWidget.value = "720P";
-                faceModeWidget.value = true;
-            } else {
-                modelWidget.value = STANDARD_MODEL;
-                faceModeWidget.value = false;
+            if (!SUPPORTED_MODELS.has(model)) {
+                model = faceMode ? FACE_MODEL : DEFAULT_NON_FACE_MODEL;
+                modelWidget.value = model;
             }
+            faceModeWidget.value = model === FACE_MODEL;
         } else if (sourceName === "👤 真人模式") {
             if (faceMode) {
-                resolutionWidget.value = "720P";
                 modelWidget.value = FACE_MODEL;
-            } else {
-                modelWidget.value = STANDARD_MODEL;
+            } else if (model === FACE_MODEL || !SUPPORTED_MODELS.has(model)) {
+                modelWidget.value = DEFAULT_NON_FACE_MODEL;
             }
-        } else if (sourceName === "🧩 分辨率") {
-            if (resolution === "1080P") {
-                faceModeWidget.value = false;
-                modelWidget.value = STANDARD_MODEL;
-            } else if (faceMode) {
-                modelWidget.value = FACE_MODEL;
-            } else if (model !== FACE_MODEL && model !== STANDARD_MODEL) {
-                modelWidget.value = STANDARD_MODEL;
-            }
-        } else if (resolution === "1080P") {
-            faceModeWidget.value = false;
-            modelWidget.value = STANDARD_MODEL;
-        } else if (model === FACE_MODEL) {
-            faceModeWidget.value = true;
-        } else if (model === STANDARD_MODEL) {
-            faceModeWidget.value = false;
         } else {
-            modelWidget.value = faceMode ? FACE_MODEL : STANDARD_MODEL;
+            if (!SUPPORTED_MODELS.has(model)) {
+                model = faceMode ? FACE_MODEL : DEFAULT_NON_FACE_MODEL;
+                modelWidget.value = model;
+            }
+            faceModeWidget.value = model === FACE_MODEL;
         }
     } finally {
         node.__dapaoSeedance20Syncing = false;
