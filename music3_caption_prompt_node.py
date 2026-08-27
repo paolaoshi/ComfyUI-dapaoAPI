@@ -17,6 +17,7 @@ import requests
 
 from .network_error_utils import friendly_443_status, friendly_network_error
 from .llm_model_options import LLM_MODEL_OPTIONS
+from .dreambrush_runtime import submit_json_task
 
 
 API_BASE_URL = "https://api.dapaoai.com"
@@ -683,29 +684,22 @@ class Music3CaptionLLMClient:
             "Content-Type": "application/json",
             "User-Agent": "ComfyUI-dapaoAPI/Music3CaptionCompiler",
         }
+        labels = {
+            400: "请求参数错误", 401: "API密钥无效或认证失败", 402: "账户余额不足",
+            403: "当前密钥没有该模型权限", 404: "LLM模型映射不存在",
+            429: "请求过于频繁，请稍后重试", 500: "服务端处理异常",
+            502: "上游LLM暂时不可用", 503: "LLM服务暂时繁忙",
+        }
         try:
-            response = requests.post(CHAT_ENDPOINT, headers=headers, json=payload, timeout=self.timeout)
+            return submit_json_task(
+                api_key=self.api_key, base_url=API_BASE_URL, endpoint="/v1/chat/completions",
+                payload=payload, timeout=self.timeout, user_agent=headers["User-Agent"],
+                error_factory=lambda status, message: RuntimeError(
+                    f"{labels.get(status, 'LLM请求失败')} {status}：{message}"
+                ),
+            )
         except (requests.ConnectionError, requests.Timeout) as error:
-            raise RuntimeError(f"{friendly_network_error(error, '提交LLM请求')} LLM请求不会自动重试，以免重复扣费。") from error
-        if response.status_code >= 400:
-            if response.status_code == 443:
-                raise RuntimeError(friendly_443_status())
-            labels = {
-                400: "请求参数错误",
-                401: "API密钥无效或认证失败",
-                402: "账户余额不足",
-                403: "当前密钥没有该模型权限",
-                404: "LLM模型映射不存在",
-                429: "请求过于频繁，请稍后重试",
-                500: "服务端处理异常，请稍后重试或切换LLM模型",
-                502: "上游LLM暂时不可用，请稍后重试或切换LLM模型",
-                503: "LLM服务暂时繁忙，请稍后重试或切换LLM模型",
-            }
-            raise RuntimeError(f"{labels.get(response.status_code, 'LLM请求失败')} {response.status_code}：{_response_error(response)}")
-        try:
-            return response.json()
-        except json.JSONDecodeError as error:
-            raise RuntimeError(f"中转站返回内容不是 JSON：{response.text[:500]}") from error
+            raise RuntimeError(f"{friendly_network_error(error, '提交LLM请求')} 已保存原幂等键供恢复。") from error
 
 
 class DapaoMusic3CaptionPromptNode:

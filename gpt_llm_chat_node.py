@@ -15,6 +15,7 @@ from PIL import Image
 from .network_error_utils import friendly_443_status, friendly_network_error
 from .image_input_utils import IMAGE_429_HINT, tensor_to_png_data_uris
 from .llm_model_options import DEFAULT_LLM_MODEL, LLM_MODEL_OPTIONS
+from .dreambrush_runtime import submit_json_task
 
 
 API_BASE_URL = "https://api.dapaoai.com"
@@ -118,17 +119,17 @@ class DapaoGPTLLMClient:
             "User-Agent": "ComfyUI-dapaoAPI/GPTLLMChat",
         }
         try:
-            response = requests.post(CHAT_ENDPOINT, headers=headers, json=payload, timeout=self.timeout)
+            return submit_json_task(
+                api_key=self.api_key,
+                base_url=API_BASE_URL,
+                endpoint="/v1/chat/completions",
+                payload=payload,
+                timeout=self.timeout,
+                user_agent=headers["User-Agent"],
+                error_factory=DapaoGPTLLMAPIError,
+            )
         except (requests.ConnectionError, requests.Timeout) as error:
             raise RuntimeError(f"{friendly_network_error(error, '提交对话请求')} 对话请求不会自动重试，以免重复扣费。") from error
-        if response.status_code >= 400:
-            if response.status_code == 443:
-                raise RuntimeError(friendly_443_status())
-            raise DapaoGPTLLMAPIError(response.status_code, _response_error(response))
-        try:
-            return response.json()
-        except json.JSONDecodeError as error:
-            raise RuntimeError(f"中转站返回内容不是 JSON：{response.text[:500]}") from error
 
 
 def _content_text(content):

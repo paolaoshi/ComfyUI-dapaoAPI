@@ -19,6 +19,7 @@ import requests
 from .network_error_utils import friendly_443_status, friendly_network_error
 from .image_input_utils import IMAGE_429_HINT, tensor_to_png_data_uris
 from .llm_model_options import LLM_MODEL_OPTIONS
+from .dreambrush_runtime import submit_json_task
 
 
 API_BASE_URL = "https://api.dapaoai.com"
@@ -305,33 +306,31 @@ class DetailFlowLLMClient:
             "Content-Type": "application/json",
             "User-Agent": "ComfyUI-dapaoAPI/DetailFlowPrompt",
         }
+        labels = {
+            400: "请求参数错误，请检查模型、令牌上限和输入内容",
+            401: "认证失败，请检查API密钥",
+            402: "余额不足，请充值后再试",
+            403: "没有所选模型的调用权限",
+            404: "映射模型不存在，请更换LLM模型",
+            429: IMAGE_429_HINT,
+            500: "服务内部暂时异常",
+            502: "上游模型网关暂时无响应",
+            503: "服务当前繁忙或维护中",
+        }
         try:
-            response = requests.post(CHAT_ENDPOINT, headers=headers, json=payload, timeout=self.timeout)
+            return submit_json_task(
+                api_key=self.api_key,
+                base_url=API_BASE_URL,
+                endpoint="/v1/chat/completions",
+                payload=payload,
+                timeout=self.timeout,
+                user_agent=headers["User-Agent"],
+                error_factory=lambda status, message: RuntimeError(
+                    f"{labels.get(status, '中转站请求失败')} {status}：{message}"
+                ),
+            )
         except (requests.ConnectionError, requests.Timeout) as error:
-            raise RuntimeError(f"{friendly_network_error(error, '提交LLM请求')} LLM请求不会自动重试，以免重复扣费。") from error
-        if response.status_code >= 400:
-            if response.status_code == 443:
-                raise RuntimeError(friendly_443_status())
-            labels = {
-                400: "请求参数错误，请检查模型、令牌上限和输入内容",
-                401: "认证失败，请检查API密钥",
-                402: "余额不足，请充值后再试",
-                403: "没有所选模型的调用权限",
-                404: "映射模型不存在，请更换LLM模型",
-                429: IMAGE_429_HINT,
-                500: "服务内部暂时异常，本次付费请求不会自动重试，请稍后手动重试",
-                502: "上游模型网关暂时无响应，本次付费请求不会自动重试，请稍后手动重试",
-                503: "服务当前繁忙或维护中，本次付费请求不会自动重试，请稍后手动重试",
-            }
-            try:
-                detail = response.json()
-            except Exception:
-                detail = response.text[:1000]
-            raise RuntimeError(f"{labels.get(response.status_code, '中转站请求失败')} {response.status_code}：{detail}")
-        try:
-            return response.json()
-        except json.JSONDecodeError as error:
-            raise RuntimeError(f"中转站返回内容不是JSON：{response.text[:500]}") from error
+            raise RuntimeError(f"{friendly_network_error(error, '提交LLM请求')} 已保留原幂等键供恢复。") from error
 
 
 SYSTEM_PROMPT = r"""

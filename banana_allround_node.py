@@ -22,6 +22,7 @@ from PIL import Image
 
 from .network_error_utils import friendly_443_status, friendly_network_error
 from .image_input_utils import IMAGE_429_HINT, tensor_to_png_inline_parts
+from .dreambrush_runtime import submit_json_task
 
 try:
     import comfy.model_management
@@ -183,24 +184,18 @@ class DapaoBananaRelayClient:
         self.base_url = API_BASE_URL.rstrip("/")
 
     def generate_content(self, model_id, payload):
-        url = f"{self.base_url}/v1beta/models/{model_id}:generateContent"
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-            "User-Agent": "ComfyUI-dapaoAPI/BananaAllround",
-        }
         try:
-            response = requests.post(url, headers=headers, json=payload, timeout=self.timeout)
+            return submit_json_task(
+                api_key=self.api_key,
+                base_url=self.base_url,
+                endpoint=f"/v1beta/models/{model_id}:generateContent",
+                payload=payload,
+                timeout=self.timeout,
+                user_agent="ComfyUI-dapaoAPI/BananaAllround",
+                error_factory=DapaoBananaAPIError,
+            )
         except (requests.ConnectionError, requests.Timeout) as error:
             raise RuntimeError(f"{friendly_network_error(error, '提交图像任务')} 生成请求不会自动重试，以免重复扣费。") from error
-        if response.status_code >= 400:
-            if response.status_code == 443:
-                raise RuntimeError(friendly_443_status())
-            raise DapaoBananaAPIError(response.status_code, _response_error(response))
-        try:
-            return response.json()
-        except json.JSONDecodeError as error:
-            raise RuntimeError(f"中转站返回内容不是 JSON：{response.text[:500]}") from error
 
     def download(self, url):
         try:

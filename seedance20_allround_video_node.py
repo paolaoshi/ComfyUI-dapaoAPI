@@ -20,6 +20,7 @@ from PIL import Image
 
 from .network_error_utils import friendly_443_status, friendly_network_error
 from .image_input_utils import IMAGE_429_HINT, tensor_to_png_bytes
+from .dreambrush_runtime import ensure_asset_references, queue_job_metadata, submit_json_task
 
 try:
     import comfy.model_management
@@ -218,8 +219,8 @@ def _video_to_bytes(video_input):
 
 def _validate_public_url(value, label):
     value = str(value or "").strip()
-    if not value.startswith(("http://", "https://")):
-        raise ValueError(f"{label}必须是公网 HTTP/HTTPS URL，不能使用本地路径、localhost 或 data URI。")
+    if not value.startswith(("http://", "https://", "asset://")):
+        raise ValueError(f"{label}必须是公网 HTTP/HTTPS URL 或 asset:// 素材引用，不能使用本地路径、localhost 或 data URI。")
     return value
 
 
@@ -273,6 +274,9 @@ def _response_layers(result):
 
 
 def _task_id(result):
+    queue_id = queue_job_metadata(result).get("job_id")
+    if queue_id:
+        return str(queue_id)
     for layer in _response_layers(result):
         value = layer.get("task_id") or layer.get("id")
         if isinstance(value, (str, int)) and str(value):
@@ -374,9 +378,10 @@ class DapaoVideoAdapter:
 
 
 class DapaoSeedanceRelayClient:
-    def __init__(self, api_key, timeout):
+    def __init__(self, api_key, timeout, max_poll_seconds=1200):
         self.api_key = api_key
         self.timeout = timeout
+        self.max_poll_seconds = int(max_poll_seconds)
         self.base_url = API_BASE_URL.rstrip("/")
 
     def _headers(self):
@@ -404,14 +409,7 @@ class DapaoSeedanceRelayClient:
             raise RuntimeError(f"中转站返回内容不是 JSON：{response.text[:500]}") from error
 
     def upload_file(self, content, filename, mime_type, model_name):
-        """Upload a reference and require a public URL for Seedance to fetch.
-
-        Seedance's upstream worker runs outside the user's ComfyUI machine, so
-        local paths and data URIs cannot be used as references.  dapaoAI
-        deployments using the asset upload route return a public URL in the
-        response envelope; deployments returning only a
-        private file id are rejected with an actionable message.
-        """
+        """Resolve or upload one reusable gateway asset."""
         if not isinstance(content, (bytes, bytearray)) or not content:
             raise ValueError(f"{filename}内容为空，无法上传。")
         media_limit = {
@@ -421,51 +419,19 @@ class DapaoSeedanceRelayClient:
         }.get(str(mime_type).split("/", 1)[0])
         if media_limit and len(content) > media_limit[0]:
             raise ValueError(f"{media_limit[1]}素材超过上传上限 {media_limit[0] // 1024 // 1024}MB，请压缩后重试。")
-        model_name = str(model_name or "").strip()
-        if not model_name:
-            raise ValueError("素材上传缺少模型ID，无法选择上传通道。")
-        # dapaoAI's file relay needs a model to select the backing channel.
-        # Multipart parsers differ across relay versions, so provide the same
-        # model in both the query string and form body.
-        url = f"{self.base_url}/v1/files"
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "User-Agent": "ComfyUI-dapaoAPI/Seedance20Allround",
-        }
-        try:
-            response = requests.post(
-                url,
-                headers=headers,
-                params={"model": model_name},
-                files={"file": (filename, bytes(content), mime_type)},
-                data={"model": model_name, "purpose": "user_data"},
-                timeout=max(self.timeout, 120),
-            )
-        except (requests.ConnectionError, requests.Timeout) as error:
-            raise RuntimeError(friendly_network_error(error, "上传视频参考素材")) from error
-        if response.status_code >= 400:
-            if response.status_code == 443:
-                raise RuntimeError(friendly_443_status())
-            raise RuntimeError(
-                f"中转站素材上传接口 /v1/files（model={model_name}）失败 {response.status_code}：{_response_error(response)}。"
-                "此错误发生在视频提交前，不代表 SD2-face、SD2.0-mini、SD2-fast 模型映射失败。"
-            )
-        try:
-            result = response.json()
-        except json.JSONDecodeError as error:
-            raise RuntimeError(f"中转站素材上传返回内容不是 JSON：{response.text[:500]}") from error
-        public_url = _extract_public_url(result)
-        if not public_url:
-            raise RuntimeError(
-                "中转站素材上传接口未返回公网 URL。Seedance 上游不能读取私有 file_id；"
-                "请在节点的“🌐 公网素材URL(JSON)”中填写可公网访问的 http(s) 地址，"
-                "或让 dapaoAI 的素材上传接口返回可公网访问的 url。"
-            )
-        return public_url
+        return ensure_asset_references(
+            self.api_key, [(bytes(content), filename, mime_type)],
+            base_url=self.base_url, timeout=self.timeout,
+        )[0]
 
     def submit(self, payload):
-        # dapaoAI 视频接口使用单数 video 路由；上游土豆文档的 videos 路由不能直接照搬。
-        return self._request_json("POST", "/v1/video/generations", json=payload)
+        return submit_json_task(
+            api_key=self.api_key, base_url=self.base_url, endpoint="/v1/video/generations",
+            payload=payload, timeout=self.timeout, user_agent="ComfyUI-dapaoAPI/Seedance20Allround",
+            error_factory=DapaoSeedanceAPIError,
+            interrupt_callback=(comfy.model_management.throw_exception_if_processing_interrupted if comfy is not None else None),
+            max_poll_seconds=self.max_poll_seconds,
+        )
 
     def poll(self, task_id, max_seconds, interval):
         started = time.monotonic()
@@ -562,7 +528,7 @@ class DapaoSeedance20AllroundVideoNode:
     RETURN_NAMES = ("🎬 视频", "🆔 任务ID", "📋 响应信息", "🔗 视频URL")
     FUNCTION = "generate"
     CATEGORY = NODE_CATEGORY
-    DESCRIPTION = "Seedance2.0 文生视频、多图参考、首尾参考、多模态参考；参考素材统一使用公网 HTTP/HTTPS URL"
+    DESCRIPTION = "Seedance2.0 文生视频、多图参考、首尾参考、多模态参考；本地素材自动复用 asset://，并使用持久队列"
 
     @staticmethod
     def _collect_image_parts(kwargs, limit=MAX_IMAGE_REFERENCES):
@@ -709,7 +675,7 @@ class DapaoSeedance20AllroundVideoNode:
                 if audio_parts and not image_parts and not video_parts and not overrides["images"] and not overrides["videos"]:
                     raise ValueError("参考音频不能单独使用，需同时接入参考图或参考视频。")
 
-            client = DapaoSeedanceRelayClient(api_key, timeout)
+            client = DapaoSeedanceRelayClient(api_key, timeout, max_seconds)
             stage = "media_upload"
             # Explicit public URLs are useful when a deployment does not expose
             # /v1/assets/uploads, and always take precedence over local tensors.
@@ -772,9 +738,15 @@ class DapaoSeedance20AllroundVideoNode:
             stage = "video_submit"
             submitted = client.submit(payload)
             task_identifier = _task_id(submitted)
-            if not task_identifier:
+            submitted_video_url = _extract_video_url(submitted)
+            if not task_identifier and not submitted_video_url:
                 raise RuntimeError(f"提交成功但没有返回任务ID：{json.dumps(_sanitized_result(submitted), ensure_ascii=False)[:1200]}")
-            final = client.poll(task_identifier, max_seconds, interval)
+            final = (
+                submitted
+                if queue_job_metadata(submitted).get("status") == "succeeded" or submitted_video_url
+                else client.poll(task_identifier, max_seconds, interval)
+            )
+            task_identifier = task_identifier or "同步返回"
             video_url = _extract_video_url(final)
             if not video_url:
                 raise RuntimeError(f"任务完成但没有找到视频URL：{json.dumps(_sanitized_result(final), ensure_ascii=False)[:1600]}")

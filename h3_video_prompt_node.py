@@ -22,8 +22,9 @@ import requests
 from PIL import Image
 
 from .network_error_utils import friendly_443_status, friendly_network_error
-from .image_input_utils import IMAGE_429_HINT
+from .image_input_utils import IMAGE_429_HINT, tensor_to_png_data_uris
 from .llm_model_options import LLM_MODEL_OPTIONS
+from .dreambrush_runtime import submit_json_task
 
 
 API_BASE_URL = "https://api.dapaoai.com"
@@ -612,12 +613,7 @@ def _response_error(response):
 
 
 def _tensor_to_data_uris(image_tensor):
-    uris = []
-    for index in range(image_tensor.shape[0]):
-        array = np.clip(image_tensor[index].detach().cpu().numpy() * 255.0, 0, 255).astype(np.uint8)
-        image = Image.fromarray(array).convert("RGB")
-        uris.append(_pil_to_data_uri(image, max_side=2048, quality=90))
-    return uris
+    return tensor_to_png_data_uris(image_tensor, max_edge=2048)
 
 
 def _pil_to_data_uri(image, max_side=1280, quality=86):
@@ -1135,19 +1131,17 @@ class H3PromptLLMClient:
             "Content-Type": "application/json",
             "User-Agent": "ComfyUI-dapaoAPI/H3PromptCompiler",
         }
+        labels = {400: "请求参数错误", 401: "认证失败", 402: "余额不足", 403: "没有模型权限", 404: "映射模型不存在", 429: IMAGE_429_HINT, 500: "服务内部暂时异常", 502: "上游模型连接失败", 503: "模型服务繁忙或维护"}
         try:
-            response = requests.post(CHAT_ENDPOINT, headers=headers, json=payload, timeout=self.timeout)
+            return submit_json_task(
+                api_key=self.api_key, base_url=API_BASE_URL, endpoint="/v1/chat/completions",
+                payload=payload, timeout=self.timeout, user_agent=headers["User-Agent"],
+                error_factory=lambda status, message: RuntimeError(
+                    f"{labels.get(status, '中转站请求失败')} {status}：{message}"
+                ),
+            )
         except (requests.ConnectionError, requests.Timeout) as error:
-            raise RuntimeError(f"{friendly_network_error(error, '提交LLM请求')} LLM请求不会自动重试，以免重复扣费。") from error
-        if response.status_code >= 400:
-            if response.status_code == 443:
-                raise RuntimeError(friendly_443_status())
-            labels = {400: "请求参数错误", 401: "认证失败", 402: "余额不足", 403: "没有模型权限", 404: "映射模型不存在", 429: IMAGE_429_HINT}
-            raise RuntimeError(f"{labels.get(response.status_code, '中转站请求失败')} {response.status_code}：{_response_error(response)}")
-        try:
-            return response.json()
-        except json.JSONDecodeError as error:
-            raise RuntimeError(f"中转站返回内容不是 JSON：{response.text[:500]}") from error
+            raise RuntimeError(f"{friendly_network_error(error, '提交LLM请求')} 已保存原幂等键供恢复。") from error
 
 
 class DapaoH3VideoPromptNode:

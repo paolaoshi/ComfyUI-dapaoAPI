@@ -20,6 +20,7 @@ from PIL import Image
 
 from .network_error_utils import friendly_443_status, friendly_network_error
 from .image_input_utils import IMAGE_429_HINT, tensor_to_pil_images
+from .dreambrush_runtime import queue_job_metadata, submit_json_task
 
 try:
     import comfy.model_management
@@ -176,6 +177,9 @@ def _response_layers(result):
 
 
 def _task_id(result):
+    queue_id = queue_job_metadata(result).get("job_id")
+    if queue_id:
+        return str(queue_id)
     for layer in _response_layers(result):
         value = layer.get("task_id") or layer.get("id")
         if isinstance(value, str) and value:
@@ -271,9 +275,10 @@ def _sanitized_result(value):
 
 
 class DapaoSeedreamV5ProRelayClient:
-    def __init__(self, api_key, timeout):
+    def __init__(self, api_key, timeout, max_poll_seconds=1200):
         self.api_key = api_key
         self.timeout = timeout
+        self.max_poll_seconds = int(max_poll_seconds)
         self.base_url = API_BASE_URL.rstrip("/")
 
     def _headers(self):
@@ -313,7 +318,13 @@ class DapaoSeedreamV5ProRelayClient:
         raise RuntimeError("中转站请求失败。")
 
     def generate(self, payload):
-        return self._request_json("POST", "/v1/images/generations", json=payload)
+        return submit_json_task(
+            api_key=self.api_key, base_url=self.base_url, endpoint="/v1/images/generations",
+            payload=payload, timeout=self.timeout, user_agent="ComfyUI-dapaoAPI/SeedreamV5ProAllround",
+            error_factory=DapaoSeedreamV5ProAPIError,
+            interrupt_callback=(comfy.model_management.throw_exception_if_processing_interrupted if comfy is not None else None),
+            max_poll_seconds=self.max_poll_seconds,
+        )
 
     def poll(self, task_identifier, max_seconds, interval):
         started = time.monotonic()
@@ -474,7 +485,7 @@ class DapaoSeedreamV5ProAllroundNode:
 
     @staticmethod
     def _submit_one(api_key, timeout, payload, max_poll_seconds, poll_interval):
-        client = DapaoSeedreamV5ProRelayClient(api_key, timeout)
+        client = DapaoSeedreamV5ProRelayClient(api_key, timeout, max_poll_seconds)
         submitted = client.generate(payload)
         final = submitted
         records = _extract_image_records(final)

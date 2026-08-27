@@ -19,6 +19,7 @@ from PIL import Image
 
 from .network_error_utils import friendly_443_status, friendly_network_error
 from .image_input_utils import IMAGE_429_HINT, tensor_to_png_bytes
+from .dreambrush_runtime import ensure_asset_references, queue_job_metadata, submit_json_task
 
 try:
     import comfy.model_management
@@ -200,6 +201,9 @@ def _response_layers(result):
 
 
 def _task_id(result):
+    queue_id = queue_job_metadata(result).get("job_id")
+    if queue_id:
+        return str(queue_id)
     for layer in _response_layers(result):
         value = layer.get("task_id") or layer.get("id")
         if isinstance(value, str) and value:
@@ -278,9 +282,10 @@ def _extract_image_items(result):
 
 
 class DapaoImage2RelayClient:
-    def __init__(self, api_key, timeout):
+    def __init__(self, api_key, timeout, max_poll_seconds=1200):
         self.api_key = api_key
         self.timeout = timeout
+        self.max_poll_seconds = int(max_poll_seconds)
         self.base_url = API_BASE_URL.rstrip("/")
 
     def _headers(self, json_body=False):
@@ -317,34 +322,30 @@ class DapaoImage2RelayClient:
         raise RuntimeError("中转站请求失败。")
 
     def generate(self, payload):
-        return self._request_json("POST", "/v1/images/generations", json=payload)
+        return submit_json_task(
+            api_key=self.api_key, base_url=self.base_url, endpoint="/v1/images/generations",
+            payload=payload, timeout=self.timeout, user_agent="ComfyUI-dapaoAPI/GPTImage2Allround",
+            error_factory=DapaoImage2APIError,
+            interrupt_callback=(comfy.model_management.throw_exception_if_processing_interrupted if comfy is not None else None),
+            max_poll_seconds=self.max_poll_seconds,
+        )
 
     def edit(self, payload, reference_images):
-        """Submit image editing through the OpenAI-compatible multipart API.
-
-        The relay's image editing route does not consume Base64 references from
-        the generations JSON body.  Each source image must be a repeated
-        ``image`` multipart field on ``/v1/images/edits``.
-        """
-        data = {}
-        for key, value in payload.items():
-            if key == "async":
-                continue
-            if isinstance(value, bool):
-                data[key] = "true" if value else "false"
-            else:
-                data[key] = str(value)
-        files = [
-            ("image", (f"image_{index}.png", content, "image/png"))
-            for index, content in enumerate(reference_images, start=1)
-        ]
-        params = {"async": "true"} if payload.get("async") else None
-        return self._request_json(
-            "POST",
-            "/v1/images/edits",
-            data=data,
-            files=files,
-            params=params,
+        """Use reusable asset IDs; the gateway adapts them to upstream multipart."""
+        references = ensure_asset_references(
+            self.api_key,
+            [(content, f"image_{index}.png", "image/png") for index, content in enumerate(reference_images, start=1)],
+            base_url=self.base_url,
+            timeout=self.timeout,
+        )
+        request_payload = {key: value for key, value in payload.items() if key != "async"}
+        request_payload["image_urls"] = references
+        return submit_json_task(
+            api_key=self.api_key, base_url=self.base_url, endpoint="/v1/images/generations",
+            payload=request_payload, timeout=self.timeout, user_agent="ComfyUI-dapaoAPI/GPTImage2Allround",
+            error_factory=DapaoImage2APIError,
+            interrupt_callback=(comfy.model_management.throw_exception_if_processing_interrupted if comfy is not None else None),
+            max_poll_seconds=self.max_poll_seconds,
         )
 
     def poll(self, task_id, max_seconds, interval, image_task=False):
@@ -431,7 +432,7 @@ class DapaoGPTImage2AllroundNode:
                 "🖼️ 出图数量": ("INT", {"default": 1, "min": 1, "max": 10, "step": 1}),
                 "⚡ 异步模式": (
                     "BOOLEAN",
-                    {"default": False, "tooltip": "仅控制中转站任务ID轮询；上游提示词列表会由ComfyUI自动并发，与此开关无关。"},
+                    {"default": False, "tooltip": "兼容旧工作流的保留开关；DreamBrush持久队列与幂等保护现在始终启用。"},
                 ),
                 "🎲 随机种": (
                     "INT",
@@ -538,7 +539,7 @@ class DapaoGPTImage2AllroundNode:
             if async_mode:
                 core_payload["async"] = True
 
-            client = DapaoImage2RelayClient(api_key, timeout)
+            client = DapaoImage2RelayClient(api_key, timeout, max_poll_seconds)
 
             _log_info(
                 f"提交任务：relay={API_BASE_URL}，model={model_id}，mode={mode}，"
