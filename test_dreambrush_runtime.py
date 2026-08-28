@@ -387,6 +387,34 @@ class DreamBrushRuntimeTests(unittest.TestCase):
         multi_turn = (root / "api_multi_turn_chat_node.py").read_text(encoding="utf-8")
         self.assertIn("from .gpt_llm_chat_node import DapaoGPTLLMClient", multi_turn)
 
+    def test_all_maintained_llm_nodes_share_the_deepseek_v4_catalogue(self):
+        from llm_model_options import DEFAULT_LLM_MODEL, LLM_MODEL_OPTIONS
+
+        expected = (
+            "deepseek-v4-flash-vision-exp",
+            "deepseek-v4-pro",
+            "deepseek-v4-flash",
+        )
+        self.assertEqual(DEFAULT_LLM_MODEL, "gemini-3.7-flash")
+        for model in expected:
+            self.assertEqual(LLM_MODEL_OPTIONS.count(model), 1)
+
+        root = Path(__file__).resolve().parent
+        llm_nodes = (
+            "gpt_llm_chat_node.py",
+            "h3_video_prompt_node.py",
+            "seedance20_director_node.py",
+            "image_prompt_director_node.py",
+            "visual_style_prompt_node.py",
+            "detail_flow_prompt_node.py",
+            "music3_caption_prompt_node.py",
+            "api_multi_turn_chat_node.py",
+        )
+        for filename in llm_nodes:
+            source = (root / filename).read_text(encoding="utf-8")
+            self.assertIn(".llm_model_options import", source, filename)
+            self.assertIn("LLM_MODEL_OPTIONS", source, filename)
+
     def test_all_maintained_network_execution_methods_are_coroutines(self):
         root = Path(__file__).resolve().parent
         target_categories = ("🍬大炮AI主力维护🍬", "🍬大炮API常用工具🍬")
