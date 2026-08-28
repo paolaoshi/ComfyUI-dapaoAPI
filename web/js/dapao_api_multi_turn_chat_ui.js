@@ -1762,6 +1762,7 @@ function setupSkillLoader(node) {
     const uploadRow = element("div", `${PREFIX}-skills__row`);
     const zipButton = element("button", `${PREFIX}-skills__upload`, "上传ZIP");
     const folderButton = element("button", `${PREFIX}-skills__upload`, "上传文件夹");
+    const refreshButton = element("button", "", "刷新列表");
     const status = element("div", `${PREFIX}-skills__status`, "显示名独立保存，不修改Skill内容。上传同名Skill不会覆盖。 ");
     const help = element("div", `${PREFIX}-skills__help`, "每次AI优化只调用上游模型一次并按Skill功能描述命名；全部优化不会覆盖手动名称。支持标准Skill目录及repo/skills/*仓库包。");
     const zipInput = document.createElement("input");
@@ -1772,17 +1773,18 @@ function setupSkillLoader(node) {
     folderInput.webkitdirectory = true;
     folderInput.setAttribute("webkitdirectory", "");
     zipInput.hidden = folderInput.hidden = true;
-    [saveButton, resetButton, optimizeCurrentButton, optimizeAllButton, zipButton, folderButton].forEach((button) => { button.type = "button"; });
+    [saveButton, resetButton, optimizeCurrentButton, optimizeAllButton, zipButton, folderButton, refreshButton].forEach((button) => { button.type = "button"; });
     header.append(element("strong", "", "Skill显示与安装"), count);
     nameRow.append(saveButton, resetButton);
     optimizeRow.append(optimizeCurrentButton, optimizeAllButton);
-    uploadRow.append(zipButton, folderButton);
+    uploadRow.style.gridTemplateColumns = "repeat(3, minmax(0, 1fr))";
+    uploadRow.append(zipButton, folderButton, refreshButton);
     root.append(header, current, nameInput, nameRow, optimizeRow, uploadRow, status, help, zipInput, folderInput);
     ["pointerdown", "mousedown", "mouseup", "click", "dblclick", "wheel"].forEach((name) => root.addEventListener(name, (event) => event.stopPropagation()));
 
     let catalog = { skills: [], counts: {} };
     let busy = false;
-    const buttons = [saveButton, resetButton, optimizeCurrentButton, optimizeAllButton, zipButton, folderButton];
+    const buttons = [saveButton, resetButton, optimizeCurrentButton, optimizeAllButton, zipButton, folderButton, refreshButton];
     const setStatus = (message, state = "idle") => {
         status.textContent = message;
         status.dataset.state = state;
@@ -1834,12 +1836,23 @@ function setupSkillLoader(node) {
             setStatus("当前仍在运行旧版Skill优化后端。请完整关闭并重新启动ComfyUI；为避免浪费token，AI优化按钮已禁用。", "error");
         }
     };
-    const refresh = async () => {
+    const fetchCatalog = async () => {
+        const response = await fetch(viewUrl(`/dapao/api-skills/catalog?_=${Date.now()}`), {
+            method: "GET",
+            cache: "no-store",
+            credentials: "same-origin",
+        });
+        return responseJson(response, "读取Skill列表失败");
+    };
+    const refresh = async (desiredId = skillIdFromLabel(selector.value), announce = false) => {
         try {
-            const response = await api.fetchApi("/dapao/api-skills/catalog");
-            applyCatalog(await responseJson(response, "读取Skill列表失败"));
+            const next = await fetchCatalog();
+            applyCatalog(next, desiredId);
+            if (announce) setStatus(`Skill列表已刷新：共 ${next.counts?.total ?? next.skills.length} 个。`);
+            return next;
         } catch (error) {
             setStatus(`读取失败：${error?.message || error}`, "error");
+            return null;
         }
     };
     const request = async (path, body, message) => {
@@ -1919,16 +1932,35 @@ function setupSkillLoader(node) {
             body.append("paths", JSON.stringify(paths));
             body.append("package_hint", paths[0]?.split(/[\\/]/)[0] || files[0]?.name || "uploaded-skill");
             files.forEach((file, index) => body.append("files", file, `skill-upload-${index}-${file.name}`));
-            const response = await api.fetchApi("/dapao/api-skills/install", { method: "POST", body });
+            // Keep multipart boundaries under the browser's control. Some
+            // ComfyUI api.fetchApi versions rewrite or drop multipart options.
+            const response = await fetch(viewUrl("/dapao/api-skills/install"), {
+                method: "POST",
+                body,
+                cache: "no-store",
+                credentials: "same-origin",
+            });
             const result = await responseJson(response, "Skill安装失败");
-            applyCatalog(result.catalog); refreshAllSkillLoaders(result.catalog);
+            const installedIds = Array.isArray(result.installed_ids) ? result.installed_ids : [];
+            const freshCatalog = await fetchCatalog();
+            const installedId = installedIds.find((id) => freshCatalog?.skills?.some((item) => item.id === id));
+            if (!installedId) throw new Error("Skill文件已上传，但安装结果没有出现在目录中，请查看后台日志。");
+            applyCatalog(freshCatalog, installedId);
+            refreshAllSkillLoaders(freshCatalog);
             const warning = result.warnings?.length ? `｜提示：${result.warnings.join("；")}` : "";
-            setStatus(`安装成功：${(result.installed_ids || []).join("、")}${result.bundle ? "（仓库包）" : ""}${warning}`);
-        } catch (error) { setStatus(`安装失败：${error?.message || error}`, "error"); }
+            const installedPaths = Array.isArray(result.installed_paths) ? result.installed_paths : [];
+            const pathMessage = installedPaths.length ? `｜保存到 skills/${installedPaths.join("、skills/")}` : "";
+            const action = result.reused ? "相同内容已存在，已直接选中" : "安装成功并已选中";
+            setStatus(`${action}：${installedIds.join("、")}${result.bundle ? "（仓库包）" : ""}${pathMessage}${warning}`);
+        } catch (error) {
+            await refresh();
+            setStatus(`安装失败：${error?.message || error}`, "error");
+        }
         finally { setBusy(false); zipInput.value = ""; folderInput.value = ""; render(); }
     };
     zipButton.addEventListener("click", () => zipInput.click());
     folderButton.addEventListener("click", () => folderInput.click());
+    refreshButton.addEventListener("click", () => refresh(skillIdFromLabel(selector.value), true));
     zipInput.addEventListener("change", () => upload(zipInput.files, "zip"));
     folderInput.addEventListener("change", () => upload(folderInput.files, "folder"));
 

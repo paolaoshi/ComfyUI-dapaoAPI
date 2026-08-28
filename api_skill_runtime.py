@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 import io
 import json
 import math
@@ -515,6 +516,25 @@ def _copytree_ignore(_directory, names):
     return [name for name in names if name in _IGNORED_PACKAGE_PARTS or name in {".DS_Store", "Thumbs.db"}]
 
 
+def _directory_manifest(root: Path) -> dict[str, tuple[int, str]]:
+    manifest = {}
+    for path in sorted(root.rglob("*")):
+        if not path.is_file():
+            continue
+        relative = path.relative_to(root)
+        if _ignore_package_path(relative):
+            continue
+        digest = hashlib.sha256()
+        with path.open("rb") as stream:
+            while True:
+                chunk = stream.read(1024 * 1024)
+                if not chunk:
+                    break
+                digest.update(chunk)
+        manifest[relative.as_posix()] = (path.stat().st_size, digest.hexdigest())
+    return manifest
+
+
 def _install_prepared_source(source: Path, package_hint: str) -> dict:
     root = _package_root(source)
     candidates = _candidate_skill_dirs(root)
@@ -539,16 +559,28 @@ def _install_prepared_source(source: Path, package_hint: str) -> dict:
             "ids": [item["id"]],
         } for item in validated)
 
-    conflicts = [item["destination"].name for item in installs if item["destination"].exists()]
+    reused = []
+    conflicts = []
+    for item in installs:
+        destination = item["destination"]
+        if not destination.exists():
+            continue
+        if destination.is_dir() and _directory_manifest(item["source"]) == _directory_manifest(destination):
+            reused.append(item)
+        else:
+            conflicts.append(str(destination))
     if conflicts:
-        raise FileExistsError(f"以下Skill或仓库目录已存在，未执行覆盖：{', '.join(conflicts)}")
+        raise FileExistsError(
+            "以下Skill或仓库目录已存在且内容不同，未执行覆盖：" + ", ".join(conflicts)
+        )
 
     SKILLS_ROOT.mkdir(parents=True, exist_ok=True)
     transaction = Path(tempfile.mkdtemp(prefix=".skill-install-", dir=SKILLS_ROOT))
     completed = []
     try:
         staged = []
-        for index, item in enumerate(installs):
+        pending_installs = [item for item in installs if item not in reused]
+        for index, item in enumerate(pending_installs):
             target = transaction / f"{index}-{item['destination'].name}"
             shutil.copytree(item["source"], target, ignore=_copytree_ignore)
             staged.append((target, item))
@@ -564,12 +596,29 @@ def _install_prepared_source(source: Path, package_hint: str) -> dict:
         shutil.rmtree(transaction, ignore_errors=True)
 
     warnings = [warning for item in validated for warning in item["warnings"]]
+    if reused:
+        warnings.append(
+            "检测到相同Skill内容已存在，已直接复用："
+            + ", ".join(item["destination"].name for item in reused)
+        )
+    catalog = skill_catalog()
+    catalog_ids = {item["id"] for item in catalog.get("skills", [])}
+    missing_ids = [skill_id for skill_id in ids if skill_id not in catalog_ids]
+    if missing_ids:
+        for path in completed:
+            if path.is_dir():
+                shutil.rmtree(path)
+        raise RuntimeError(
+            "Skill已复制但目录扫描未发现，安装已回滚：" + ", ".join(missing_ids)
+        )
     return {
         "installed_ids": ids,
         "installed_paths": [item["destination"].name for item in installs],
+        "reused_paths": [item["destination"].name for item in reused],
+        "reused": bool(reused),
         "bundle": bundle_mode,
         "warnings": warnings,
-        "catalog": skill_catalog(),
+        "catalog": catalog,
     }
 
 

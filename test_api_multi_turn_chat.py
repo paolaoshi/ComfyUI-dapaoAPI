@@ -523,8 +523,12 @@ class APIMultiTurnChatTests(unittest.TestCase):
             try:
                 result = runtime_module.install_uploaded_skills([(archive.name, archive)], "zip")
                 self.assertEqual(result["installed_ids"], ["safe-skill"])
+                self.assertIn("safe-skill", {item["id"] for item in result["catalog"]["skills"]})
                 self.assertTrue((root / "safe-skill" / "SKILL.md").is_file())
                 self.assertTrue((root / "safe-skill" / "scripts" / "tool.py").is_file())
+                repeated = runtime_module.install_uploaded_skills([(archive.name, archive)], "zip")
+                self.assertTrue(repeated["reused"])
+                self.assertEqual(repeated["reused_paths"], ["safe-skill"])
             finally:
                 runtime_module.SKILLS_ROOT = original_root
                 runtime_module.SKILL_ALIAS_PATH = original_alias
@@ -552,12 +556,43 @@ class APIMultiTurnChatTests(unittest.TestCase):
                 runtime_module.SKILLS_ROOT = original_root
                 runtime_module.SKILL_ALIAS_PATH = original_alias
 
+    def test_skill_install_rolls_back_when_new_skill_is_missing_from_catalog(self):
+        original_root = runtime_module.SKILLS_ROOT
+        original_alias = runtime_module.SKILL_ALIAS_PATH
+        original_catalog = runtime_module.skill_catalog
+        with tempfile.TemporaryDirectory() as temporary:
+            temporary_root = Path(temporary)
+            root = temporary_root / "skills"
+            skill_file = temporary_root / "SKILL.md"
+            skill_file.write_text(
+                "---\nname: rollback-skill\ndescription: Rollback test.\n---\n# Rollback\n",
+                encoding="utf-8",
+            )
+            runtime_module.SKILLS_ROOT = root
+            runtime_module.SKILL_ALIAS_PATH = temporary_root / "aliases.json"
+            runtime_module.skill_catalog = lambda: {"version": 2, "skills": [], "counts": {}}
+            try:
+                with self.assertRaisesRegex(RuntimeError, "安装已回滚"):
+                    runtime_module.install_uploaded_skills([
+                        ("rollback-skill/SKILL.md", skill_file),
+                    ], "folder")
+                self.assertFalse((root / "rollback-skill").exists())
+            finally:
+                runtime_module.SKILLS_ROOT = original_root
+                runtime_module.SKILL_ALIAS_PATH = original_alias
+                runtime_module.skill_catalog = original_catalog
+
     def test_skill_loader_frontend_exposes_alias_ai_zip_and_folder_controls(self):
         source = (ROOT / "web" / "js" / "dapao_api_multi_turn_chat_ui.js").read_text(encoding="utf-8")
-        for marker in ("保存显示名", "优化当前技能", "优化全部技能", "上传ZIP", "上传文件夹", "webkitdirectory"):
+        for marker in ("保存显示名", "优化当前技能", "优化全部技能", "上传ZIP", "上传文件夹", "刷新列表", "webkitdirectory"):
             self.assertIn(marker, source)
         self.assertIn("/dapao/api-skills/install", source)
         self.assertIn("/dapao/api-skills/optimize-display-names", source)
+        self.assertIn('fetch(viewUrl("/dapao/api-skills/install")', source)
+        self.assertIn("applyCatalog(freshCatalog, installedId)", source)
+        self.assertIn("安装成功并已选中", source)
+        self.assertIn("相同内容已存在，已直接选中", source)
+        self.assertIn("保存到 skills/", source)
 
     def test_zip_path_traversal_is_rejected(self):
         with tempfile.TemporaryDirectory() as temporary:
