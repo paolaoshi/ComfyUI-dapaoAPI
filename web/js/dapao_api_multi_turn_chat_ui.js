@@ -1667,22 +1667,6 @@ function setupChat(node) {
 function addConfigWidgets(node) {
     if (node.__dapaoAPIConfigWidgets || !node.addCustomWidget) return;
     node.__dapaoAPIConfigWidgets = true;
-    const price = {
-        name: "💰计费说明",
-        type: "DAPAO_API_PRICE_NOTE",
-        serialize: false,
-        computeSize: () => [180, 28],
-        draw(ctx, nodeRef, width, y) {
-            const actualWidth = Math.max(180, Number(nodeRef?.size?.[0]) || Number(width) || 180);
-            ctx.save();
-            ctx.fillStyle = "#b7bdc8";
-            ctx.font = "12px sans-serif";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText("💰 按 dapaoAI 后台实际 token 用量计费", actualWidth / 2, y + 14);
-            ctx.restore();
-        },
-    };
     const register = {
         name: REGISTER_LABEL,
         type: "DAPAO_API_REGISTER_BUTTON",
@@ -1719,7 +1703,6 @@ function addConfigWidgets(node) {
             return false;
         },
     };
-    node.addCustomWidget(price);
     node.addCustomWidget(register);
     node.setSize([Math.max(node.size?.[0] || 0, 340), node.computeSize?.()[1] || node.size?.[1] || 220]);
 }

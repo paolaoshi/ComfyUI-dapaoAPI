@@ -84,46 +84,6 @@ function setup(node) {
     node.setDirtyCanvas?.(true, true);
 }
 
-function roundRect(ctx, x, y, width, height, radius) {
-    const r = Math.min(radius, width / 2, height / 2);
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.lineTo(x + width - r, y);
-    ctx.quadraticCurveTo(x + width, y, x + width, y + r);
-    ctx.lineTo(x + width, y + height - r);
-    ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
-    ctx.lineTo(x + r, y + height);
-    ctx.quadraticCurveTo(x, y + height, x, y + height - r);
-    ctx.lineTo(x, y + r);
-    ctx.quadraticCurveTo(x, y, x + r, y);
-    ctx.closePath();
-}
-
-function drawBadge(node, ctx) {
-    const text = "价格待补";
-    ctx.save();
-    ctx.font = "bold 14px Arial, sans-serif";
-    const width = Math.max(92, ctx.measureText(text).width + 36);
-    const height = 24;
-    const x = Math.max(12, node.size[0] - width - 10);
-    const y = -height + 4;
-    ctx.fillStyle = "#5f5f66";
-    roundRect(ctx, x, y, width, height, 8);
-    ctx.fill();
-    ctx.fillStyle = "#d8d8dc";
-    ctx.beginPath();
-    ctx.arc(x + 13, y + height / 2, 8, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#5f5f66";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("?", x + 13, y + height / 2 + 0.5);
-    ctx.fillStyle = "#fff";
-    ctx.textAlign = "left";
-    ctx.fillText(text, x + 26, y + height / 2 + 0.5);
-    ctx.restore();
-}
-
 function refreshAllNodes() {
     app.graph?.findNodesByType(NODE_TYPE)?.forEach((node) => setup(node));
 }
@@ -164,11 +124,6 @@ app.registerExtension({
             setTimeout(() => setup(this), 50);
         };
 
-        const onDrawForeground = nodeTypeClass.prototype.onDrawForeground;
-        nodeTypeClass.prototype.onDrawForeground = function (ctx) {
-            onDrawForeground?.apply(this, arguments);
-            drawBadge(this, ctx);
-        };
     },
 });
 

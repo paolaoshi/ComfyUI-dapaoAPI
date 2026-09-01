@@ -261,6 +261,13 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     **RH_APP_DISPLAY_MAPPINGS,
 }
 
+# ComfyUI 会并行调度异步节点。大规模工作流会因此让多个付费 API 节点同时提交；
+# 这里恢复为不同节点逐个执行，同时保留同一节点的列表映射和节点内部出图并发。
+from .node_execution_gate import install_comfy_scheduler_wait, serialize_registered_nodes
+
+serialize_registered_nodes(NODE_CLASS_MAPPINGS)
+install_comfy_scheduler_wait(NODE_CLASS_MAPPINGS)
+
 # 声明 Web 目录，用于加载 JavaScript 扩展
 WEB_DIRECTORY = "./web"
 

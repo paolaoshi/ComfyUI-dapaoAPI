@@ -5,7 +5,6 @@ const NODE_TYPE = "DapaoSeedance20AllroundVideoNode";
 const FACE_MODEL = "SD2-face";
 const DEFAULT_NON_FACE_MODEL = "SD2.0-mini";
 const SUPPORTED_MODELS = new Set([FACE_MODEL, DEFAULT_NON_FACE_MODEL, "SD2-fast"]);
-const PRICE_PER_SECOND = 0.48;
 const REGISTER_URL = "https://api.dapaoai.com/sign-up?aff=vcOZ";
 const REGISTER_WIDGET_NAME = "👉点此注册API密钥👈";
 
@@ -19,52 +18,6 @@ function widget(node, name) {
 
 function value(node, name, fallback = "") {
     return widget(node, name)?.value ?? fallback;
-}
-
-function priceText(node) {
-    const duration = Math.max(4, Number(value(node, "⏱️ 时长(秒)", 5)) || 5);
-    return `¥${(duration * PRICE_PER_SECOND).toFixed(2)}/${duration}秒`;
-}
-
-function roundRect(ctx, x, y, width, height, radius) {
-    const r = Math.min(radius, width / 2, height / 2);
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.lineTo(x + width - r, y);
-    ctx.quadraticCurveTo(x + width, y, x + width, y + r);
-    ctx.lineTo(x + width, y + height - r);
-    ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
-    ctx.lineTo(x + r, y + height);
-    ctx.quadraticCurveTo(x, y + height, x, y + height - r);
-    ctx.lineTo(x, y + r);
-    ctx.quadraticCurveTo(x, y, x + r, y);
-    ctx.closePath();
-}
-
-function drawBadge(node, ctx) {
-    const text = priceText(node);
-    ctx.save();
-    ctx.font = "bold 14px Arial, sans-serif";
-    const width = Math.max(116, ctx.measureText(text).width + 36);
-    const height = 24;
-    const x = Math.max(12, node.size[0] - width - 10);
-    const y = -height + 4;
-    ctx.fillStyle = "#9c6a28";
-    roundRect(ctx, x, y, width, height, 8);
-    ctx.fill();
-    ctx.fillStyle = "#ffbf35";
-    ctx.beginPath();
-    ctx.arc(x + 13, y + height / 2, 8, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#7b4616";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.font = "bold 14px Arial, sans-serif";
-    ctx.fillText("¥", x + 13, y + height / 2 + 0.5);
-    ctx.fillStyle = "#fff";
-    ctx.textAlign = "left";
-    ctx.fillText(text, x + 26, y + height / 2 + 0.5);
-    ctx.restore();
 }
 
 function setInputHidden(node, name, hidden) {
@@ -262,11 +215,6 @@ app.registerExtension({
             return result;
         };
 
-        const onDrawForeground = nodeTypeClass.prototype.onDrawForeground;
-        nodeTypeClass.prototype.onDrawForeground = function (ctx) {
-            onDrawForeground?.apply(this, arguments);
-            drawBadge(this, ctx);
-        };
     },
 });
 
