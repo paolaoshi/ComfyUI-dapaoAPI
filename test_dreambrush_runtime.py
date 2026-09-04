@@ -326,6 +326,35 @@ class DreamBrushRuntimeTests(unittest.TestCase):
                             )
                         self.assertEqual(post_count, 1)
 
+    def test_failed_queue_job_includes_read_only_upstream_result_detail(self):
+        calls = []
+
+        def request(method, url, **kwargs):
+            calls.append((method, url))
+            if method == "POST":
+                return FakeResponse(202, {"id": "job-detail", "status": "queued"})
+            if url.endswith("/v1/queue/jobs/job-detail/result"):
+                return FakeResponse(400, {
+                    "error": {"code": "invalid_request", "message": "unknown field seconds"}
+                })
+            if url.endswith("/v1/queue/jobs/job-detail"):
+                return FakeResponse(200, {
+                    "id": "job-detail", "status": "failed",
+                    "error": {"code": "upstream_request_failed", "message": "HTTP 400"},
+                })
+            raise AssertionError(url)
+
+        with mock.patch.object(runtime.requests, "request", side_effect=request):
+            with self.assertRaisesRegex(runtime.DreamBrushRuntimeError, "unknown field seconds"):
+                runtime.submit_json_task(
+                    api_key="key-detail", endpoint="/v1/video/generations",
+                    payload={"model": "SD2.5", "prompt": "detail"}, timeout=30,
+                )
+
+        self.assertIn(
+            ("GET", f"{runtime.DEFAULT_BASE_URL}/v1/queue/jobs/job-detail/result"), calls
+        )
+
     def test_interruption_cancels_a_queued_job(self):
         deleted = []
 

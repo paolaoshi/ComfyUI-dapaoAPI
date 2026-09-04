@@ -1,15 +1,28 @@
 import { app } from "../../../scripts/app.js";
 import { api } from "../../../scripts/api.js";
 
-const NODE_TYPE = "DapaoSeedance20AllroundVideoNode";
-const FACE_MODEL = "SD2-face";
-const DEFAULT_NON_FACE_MODEL = "SD2.0-mini";
-const SUPPORTED_MODELS = new Set([FACE_MODEL, DEFAULT_NON_FACE_MODEL, "SD2-fast"]);
+const NODE_CONFIGS = {
+    DapaoSeedance20AllroundVideoNode: {
+        imageCount: 9, videoCount: 3, audioCount: 3,
+        faceModel: "SD2-face", defaultModel: "SD2.0-mini",
+        supportedModels: new Set(["SD2-face", "SD2.0-mini", "SD2-fast"]),
+        faceMode: true,
+    },
+    DapaoSeedance25AllroundVideoNode: {
+        imageCount: 30, videoCount: 10, audioCount: 10,
+        defaultModel: "SD2.5", supportedModels: new Set(["SD2.5"]),
+        faceMode: false,
+    },
+};
 const REGISTER_URL = "https://api.dapaoai.com/sign-up?aff=vcOZ";
 const REGISTER_WIDGET_NAME = "👉点此注册API密钥👈";
 
 function nodeType(node) {
     return node?.comfyClass || node?.type || "";
+}
+
+function nodeConfig(node) {
+    return NODE_CONFIGS[nodeType(node)] || null;
 }
 
 function widget(node, name) {
@@ -90,33 +103,42 @@ function syncModelControls(node, sourceName = "") {
     if (node.__dapaoSeedance20Syncing) return;
     node.__dapaoSeedance20Syncing = true;
     try {
+        const config = nodeConfig(node);
         const resolutionWidget = widget(node, "🧩 分辨率");
         const faceModeWidget = widget(node, "👤 真人模式");
         const modelWidget = widget(node, "🤖 模型");
-        if (!resolutionWidget || !faceModeWidget || !modelWidget) return;
+        if (!config || !resolutionWidget || !modelWidget) return;
 
-        let model = String(modelWidget.value || FACE_MODEL);
-        const faceMode = Boolean(faceModeWidget.value);
         resolutionWidget.value = "720P";
+        if (!config.faceMode) {
+            modelWidget.value = config.defaultModel;
+            return;
+        }
+
+        const faceModel = config.faceModel;
+        const defaultModel = config.defaultModel;
+        const supportedModels = config.supportedModels;
+        let model = String(modelWidget.value || faceModel);
+        const faceMode = Boolean(faceModeWidget.value);
 
         if (sourceName === "🤖 模型") {
-            if (!SUPPORTED_MODELS.has(model)) {
-                model = faceMode ? FACE_MODEL : DEFAULT_NON_FACE_MODEL;
+            if (!supportedModels.has(model)) {
+                model = faceMode ? faceModel : defaultModel;
                 modelWidget.value = model;
             }
-            faceModeWidget.value = model === FACE_MODEL;
+            faceModeWidget.value = model === faceModel;
         } else if (sourceName === "👤 真人模式") {
             if (faceMode) {
-                modelWidget.value = FACE_MODEL;
-            } else if (model === FACE_MODEL || !SUPPORTED_MODELS.has(model)) {
-                modelWidget.value = DEFAULT_NON_FACE_MODEL;
+                modelWidget.value = faceModel;
+            } else if (model === faceModel || !supportedModels.has(model)) {
+                modelWidget.value = defaultModel;
             }
         } else {
-            if (!SUPPORTED_MODELS.has(model)) {
-                model = faceMode ? FACE_MODEL : DEFAULT_NON_FACE_MODEL;
+            if (!supportedModels.has(model)) {
+                model = faceMode ? faceModel : defaultModel;
                 modelWidget.value = model;
             }
-            faceModeWidget.value = model === FACE_MODEL;
+            faceModeWidget.value = model === faceModel;
         }
     } finally {
         node.__dapaoSeedance20Syncing = false;
@@ -124,7 +146,8 @@ function syncModelControls(node, sourceName = "") {
 }
 
 function refreshNode(node, sourceName = "") {
-    if (nodeType(node) !== NODE_TYPE) return;
+    const config = nodeConfig(node);
+    if (!config) return;
     syncModelControls(node, sourceName);
     const mode = String(value(node, "🎛️ 生成模式", "文生视频"));
     const imageMode = mode === "图生视频" || mode === "多模态参考";
@@ -132,11 +155,13 @@ function refreshNode(node, sourceName = "") {
     const multimodalMode = mode === "多模态参考";
     setInputHidden(node, "🎬 首帧图", !frameMode);
     setInputHidden(node, "🏁 尾帧图", !frameMode);
-    for (let index = 1; index <= 9; index++) {
+    for (let index = 1; index <= config.imageCount; index++) {
         setInputHidden(node, `🖼️ 参考图${index}`, !imageMode);
     }
-    for (let index = 1; index <= 3; index++) {
+    for (let index = 1; index <= config.videoCount; index++) {
         setInputHidden(node, `🎞️ 参考视频${index}`, !multimodalMode);
+    }
+    for (let index = 1; index <= config.audioCount; index++) {
         setInputHidden(node, `🎵 参考音频${index}`, !multimodalMode);
     }
     ensureRegisterButton(node);
@@ -160,14 +185,16 @@ function wrapCallback(node, target) {
 }
 
 function setup(node) {
-    if (!node?.widgets || nodeType(node) !== NODE_TYPE) return;
+    if (!node?.widgets || !nodeConfig(node)) return;
     ensureRegisterButton(node);
     node.widgets.forEach((target) => wrapCallback(node, target));
     refreshNode(node);
 }
 
 function refreshAllNodes() {
-    app.graph?.findNodesByType(NODE_TYPE)?.forEach((node) => setup(node));
+    Object.keys(NODE_CONFIGS).forEach((type) => {
+        app.graph?.findNodesByType(type)?.forEach((node) => setup(node));
+    });
 }
 
 app.registerExtension({
@@ -178,13 +205,13 @@ app.registerExtension({
         });
     },
     nodeCreated(node) {
-        if (nodeType(node) === NODE_TYPE) setTimeout(() => setup(node), 20);
+        if (nodeConfig(node)) setTimeout(() => setup(node), 20);
     },
     loadedGraphNode(node) {
-        if (nodeType(node) === NODE_TYPE) setTimeout(() => setup(node), 50);
+        if (nodeConfig(node)) setTimeout(() => setup(node), 50);
     },
     async beforeRegisterNodeDef(nodeTypeClass, nodeData) {
-        if (nodeData.name !== NODE_TYPE) return;
+        if (!NODE_CONFIGS[nodeData.name]) return;
         const onNodeCreated = nodeTypeClass.prototype.onNodeCreated;
         nodeTypeClass.prototype.onNodeCreated = function () {
             onNodeCreated?.apply(this, arguments);

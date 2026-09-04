@@ -747,6 +747,32 @@ def submit_json_task(
                 return result
             if state in {"failed", "canceled", "expired", "indeterminate"}:
                 message = str(layer.get("error") or layer.get("message") or json.dumps(layer, ensure_ascii=False)[:1000])
+                # Failed queue jobs may keep the real upstream response only on
+                # the result endpoint. This is a read-only diagnostic request;
+                # it never resubmits the paid generation.
+                if state == "failed":
+                    try:
+                        failed_result_response = _request_with_retry(
+                            "GET", f"{base_url}/v1/queue/jobs/{job_id}/result",
+                            headers={"Authorization": f"Bearer {api_key}", "User-Agent": user_agent},
+                            timeout=min(timeout, 60), attempts=3, gate=_POLL_GATE,
+                        )
+                        if failed_result_response.status_code < 400:
+                            failed_result = _json_response(failed_result_response, "失败任务详情")
+                            failed_detail = str(
+                                failed_result.get("error")
+                                or failed_result.get("message")
+                                or failed_result.get("msg")
+                                or json.dumps(failed_result, ensure_ascii=False)[:1600]
+                            )
+                        else:
+                            failed_detail = _response_message(failed_result_response)
+                        if failed_detail and failed_detail not in message:
+                            message = f"{message}；上游详情：{failed_detail}"
+                    except Exception:
+                        # Preserve the original terminal error when an older
+                        # gateway does not expose failed results.
+                        pass
                 store.update_job(key, status=state, job_id=job_id, error=state)
                 if state == "indeterminate":
                     raise DreamBrushIndeterminateError(f"任务 {job_id} 状态无法确认：{message}；禁止自动重提。")

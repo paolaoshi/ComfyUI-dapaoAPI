@@ -149,7 +149,7 @@ class DapaoSeedanceAPIError(RuntimeError):
             hint = "（服务端任务适配器未返回 seconds 计费倍率；节点已提交 duration 和 seconds，需修复中转站适配器或计费配置）"
         elif "model name not specified" in self.api_message.lower() or "model name cannot be empty" in self.api_message.lower():
             label = "中转站模型映射为空"
-            hint = "（节点已发送模型字段；请在 dapaoAI 的视频路由中检查 SD2-face、SD2.0-mini、SD2-fast 的目标模型是否为空或未绑定可用渠道）"
+            hint = "（节点已发送模型字段；请在 dapaoAI 的视频路由中检查该模型ID的目标模型是否为空或未绑定可用渠道）"
         else:
             label = labels.get(self.status_code, "中转站请求失败")
             hint = ""
@@ -456,6 +456,23 @@ class DapaoSeedanceRelayClient:
 
 
 class DapaoSeedance20AllroundVideoNode:
+    MODEL_ID = MODEL_ID
+    STANDARD_UPSTREAM_MODEL = STANDARD_UPSTREAM_MODEL
+    MODEL_OPTIONS = MODEL_OPTIONS
+    MAX_IMAGE_REFERENCES = MAX_IMAGE_REFERENCES
+    MAX_VIDEO_REFERENCES = MAX_VIDEO_REFERENCES
+    MAX_AUDIO_REFERENCES = MAX_AUDIO_REFERENCES
+    DURATION_OPTIONS = DURATION_OPTIONS
+    VERSION_LABEL = "Seedance2.0"
+    HAS_FACE_MODE = True
+    INCLUDE_BILLING_SECONDS = True
+
+    def _log_info(self, message):
+        _safe_print(f"[dapaoAPI-{self.VERSION_LABEL}全能视频] 信息：{message}")
+
+    def _log_error(self, message):
+        _safe_print(f"[dapaoAPI-{self.VERSION_LABEL}全能视频] 错误：{message}")
+
     @classmethod
     def INPUT_TYPES(cls):
         optional = {
@@ -474,14 +491,13 @@ class DapaoSeedance20AllroundVideoNode:
             "⏱️ 轮询间隔": ("INT", {"default": 5, "min": 2, "max": 30, "step": 1}),
             "⌛ 请求超时": ("INT", {"default": 120, "min": 30, "max": 600, "step": 10}),
         }
-        for index in range(1, MAX_IMAGE_REFERENCES + 1):
-            optional[f"🖼️ 参考图{index}"] = ("IMAGE", {"tooltip": f"多图参考，第{index}路，最多{MAX_IMAGE_REFERENCES}张。"})
-        for index in range(1, MAX_VIDEO_REFERENCES + 1):
+        for index in range(1, cls.MAX_IMAGE_REFERENCES + 1):
+            optional[f"🖼️ 参考图{index}"] = ("IMAGE", {"tooltip": f"多图参考，第{index}路，最多{cls.MAX_IMAGE_REFERENCES}张。"})
+        for index in range(1, cls.MAX_VIDEO_REFERENCES + 1):
             optional[f"🎞️ 参考视频{index}"] = (IO.VIDEO, {"tooltip": "多模态参考视频。"})
-        for index in range(1, MAX_AUDIO_REFERENCES + 1):
+        for index in range(1, cls.MAX_AUDIO_REFERENCES + 1):
             optional[f"🎵 参考音频{index}"] = ("AUDIO", {"tooltip": "多模态参考音频，不能单独使用。"})
-        return {
-            "required": {
+        required = {
                 "🔑 API密钥": (
                     "STRING",
                     {
@@ -490,7 +506,7 @@ class DapaoSeedance20AllroundVideoNode:
                         "tooltip": "密钥只用于请求 https://api.dapaoai.com，不会写入配置文件。",
                     },
                 ),
-                "🤖 模型": (MODEL_OPTIONS, {"default": MODEL_ID}),
+                "🤖 模型": (cls.MODEL_OPTIONS, {"default": cls.MODEL_ID}),
                 "🎛️ 生成模式": (MODE_OPTIONS, {"default": "文生视频"}),
                 "📝 提示词": (
                     "STRING",
@@ -507,7 +523,7 @@ class DapaoSeedance20AllroundVideoNode:
                     "BOOLEAN",
                     {"default": True, "tooltip": "开启时切换到 SD2-face；关闭时默认切换到 SD2.0-mini。直接选择 SD2.0-mini 或 SD2-fast 时会自动关闭。"},
                 ),
-                "⏱️ 时长(秒)": (DURATION_OPTIONS, {"default": "5"}),
+                "⏱️ 时长(秒)": (cls.DURATION_OPTIONS, {"default": "5"}),
                 "📐 视频比例": (ASPECT_RATIO_OPTIONS, {"default": "16:9"}),
                 "🔊 生成音频": ("BOOLEAN", {"default": True}),
                 "🎲 随机种": (
@@ -520,7 +536,11 @@ class DapaoSeedance20AllroundVideoNode:
                         "tooltip": "仅控制 ComfyUI 缓存，不发送给接口。",
                     },
                 ),
-            },
+        }
+        if not cls.HAS_FACE_MODE:
+            required.pop("👤 真人模式")
+        return {
+            "required": required,
             "optional": optional,
         }
 
@@ -530,10 +550,11 @@ class DapaoSeedance20AllroundVideoNode:
     CATEGORY = NODE_CATEGORY
     DESCRIPTION = "Seedance2.0 文生视频、多图参考、首尾参考、多模态参考；本地素材自动复用 asset://，并使用持久队列"
 
-    @staticmethod
-    def _collect_image_parts(kwargs, limit=MAX_IMAGE_REFERENCES):
+    @classmethod
+    def _collect_image_parts(cls, kwargs, limit=None):
+        limit = cls.MAX_IMAGE_REFERENCES if limit is None else limit
         image_parts = []
-        for index in range(1, MAX_IMAGE_REFERENCES + 1):
+        for index in range(1, cls.MAX_IMAGE_REFERENCES + 1):
             image = kwargs.get(f"🖼️ 参考图{index}")
             if image is None:
                 continue
@@ -543,10 +564,10 @@ class DapaoSeedance20AllroundVideoNode:
                 image_parts.append((content, f"seedance_reference_{index}_{len(image_parts) + 1}.png", "image/png"))
         return image_parts
 
-    @staticmethod
-    def _collect_video_parts(kwargs):
+    @classmethod
+    def _collect_video_parts(cls, kwargs):
         parts = []
-        for index in range(1, MAX_VIDEO_REFERENCES + 1):
+        for index in range(1, cls.MAX_VIDEO_REFERENCES + 1):
             video = kwargs.get(f"🎞️ 参考视频{index}")
             if video is not None:
                 content = _video_to_bytes(video)
@@ -555,10 +576,10 @@ class DapaoSeedance20AllroundVideoNode:
                 parts.append((content, f"seedance_reference_video_{index}.mp4", "video/mp4"))
         return parts
 
-    @staticmethod
-    def _collect_audio_parts(kwargs):
+    @classmethod
+    def _collect_audio_parts(cls, kwargs):
         parts = []
-        for index in range(1, MAX_AUDIO_REFERENCES + 1):
+        for index in range(1, cls.MAX_AUDIO_REFERENCES + 1):
             audio = kwargs.get(f"🎵 参考音频{index}")
             if audio is not None:
                 content = _audio_to_wav_bytes(audio)
@@ -567,8 +588,8 @@ class DapaoSeedance20AllroundVideoNode:
                 parts.append((content, f"seedance_reference_audio_{index}.wav", "audio/wav"))
         return parts
 
-    @staticmethod
-    def _frame_parts(kwargs):
+    @classmethod
+    def _frame_parts(cls, kwargs):
         first = kwargs.get("🎬 首帧图")
         last = kwargs.get("🏁 尾帧图")
         result = []
@@ -576,10 +597,10 @@ class DapaoSeedance20AllroundVideoNode:
             result.extend((content, "seedance_first_frame.png", "image/png") for content in _tensor_to_png_bytes(first))
         if last is not None:
             result.extend((content, "seedance_last_frame.png", "image/png") for content in _tensor_to_png_bytes(last))
-        return result[:MAX_IMAGE_REFERENCES]
+        return result[:cls.MAX_IMAGE_REFERENCES]
 
-    @staticmethod
-    def _public_url_overrides(value):
+    @classmethod
+    def _public_url_overrides(cls, value):
         data = _parse_extra_json(value)
         result = {}
         for key in ("images", "videos", "audios"):
@@ -588,16 +609,16 @@ class DapaoSeedance20AllroundVideoNode:
                 raw = [raw] if raw.strip() else []
             if not isinstance(raw, list):
                 raise ValueError(f"公网素材URL JSON 的 {key} 必须是 URL 数组。")
-            limit = {"images": MAX_IMAGE_REFERENCES, "videos": MAX_VIDEO_REFERENCES, "audios": MAX_AUDIO_REFERENCES}[key]
+            limit = {"images": cls.MAX_IMAGE_REFERENCES, "videos": cls.MAX_VIDEO_REFERENCES, "audios": cls.MAX_AUDIO_REFERENCES}[key]
             if len(raw) > limit:
                 raise ValueError(f"公网素材URL.{key}最多 {limit} 个。")
             result[key] = [_validate_public_url(item, f"公网素材URL.{key}") for item in raw]
         return result
 
-    @staticmethod
-    def _select_request_model(model_id):
+    @classmethod
+    def _select_request_model(cls, model_id):
         """Return the exact dapaoAI mapping selected by the user."""
-        if model_id not in MODEL_OPTIONS:
+        if model_id not in cls.MODEL_OPTIONS:
             raise ValueError(f"未知界面模型：{model_id}")
         return model_id
 
@@ -622,7 +643,7 @@ class DapaoSeedance20AllroundVideoNode:
         # Older saved workflows can deserialize a newly added combo widget as
         # an empty string. Resolve that state locally before validation.
         if not model_id:
-            model_id = MODEL_ID if face_mode else STANDARD_UPSTREAM_MODEL
+            model_id = self.MODEL_ID if face_mode else self.STANDARD_UPSTREAM_MODEL
         duration = int(kwargs.get("⏱️ 时长(秒)", 5))
         aspect_ratio = kwargs.get("📐 视频比例", "16:9")
         timeout = int(kwargs.get("⌛ 请求超时", 120))
@@ -637,7 +658,7 @@ class DapaoSeedance20AllroundVideoNode:
         try:
             if not api_key:
                 raise ValueError("请填写 dapaoAI API 密钥。")
-            if model_id not in MODEL_OPTIONS:
+            if model_id not in self.MODEL_OPTIONS:
                 raise ValueError(f"未知界面模型：{model_id}")
             if mode not in MODE_OPTIONS:
                 raise ValueError(f"不支持的生成模式：{mode}")
@@ -647,10 +668,10 @@ class DapaoSeedance20AllroundVideoNode:
                 raise ValueError("当前分辨率仅支持 720P。")
             # The model selector is authoritative; face mode is a convenience
             # control and status indicator for the dedicated face mapping.
-            face_mode = model_id == MODEL_ID
+            face_mode = self.HAS_FACE_MODE and model_id == self.MODEL_ID
             request_model = self._select_request_model(model_id)
-            if duration not in range(4, 16):
-                raise ValueError("时长仅支持 4–15 秒。")
+            if str(duration) not in self.DURATION_OPTIONS:
+                raise ValueError(f"时长仅支持 {self.DURATION_OPTIONS[0]}–{self.DURATION_OPTIONS[-1]} 秒。")
             if aspect_ratio not in ASPECT_RATIO_OPTIONS:
                 raise ValueError("视频比例仅支持 16:9 或 9:16。")
             overrides = self._public_url_overrides(kwargs.get("🌐 公网素材URL(JSON)", "{}"))
@@ -701,17 +722,17 @@ class DapaoSeedance20AllroundVideoNode:
             payload = {
                 # Submit one of the two real upstream model IDs. Resolution
                 # remains a separate request parameter. dapaoAI's per-second
-                # billing layer reads ``seconds`` while the Tudou upstream
-                # protocol reads integer ``duration``, so provide both with
-                # the same bounded value.
+                # Seedance 2.0's billing adapter additionally reads ``seconds``;
+                # per-request models such as SD2.5 only receive ``duration``.
                 "model": request_model,
                 "prompt": prompt,
                 "duration": duration,
-                "seconds": str(duration),
                 "aspect_ratio": aspect_ratio,
                 "resolution": resolution_label.lower(),
                 "generate_audio": bool(kwargs.get("🔊 生成音频", True)),
             }
+            if self.INCLUDE_BILLING_SECONDS:
+                payload["seconds"] = str(duration)
             if image_uris:
                 payload["images"] = image_uris
             if video_uris:
@@ -728,10 +749,10 @@ class DapaoSeedance20AllroundVideoNode:
                 raise ValueError(f"额外参数JSON不能覆盖节点核心参数：{', '.join(conflicts)}")
             payload.update(extra)
 
-            _log_info(
+            self._log_info(
                 f"提交任务：relay={API_BASE_URL}，model={model_id}，实际model={request_model}，"
                 f"mode={mode}，真人模式={face_mode}，duration={duration}，aspect_ratio={aspect_ratio}，"
-                f"resolution={resolution_label.lower()}，billing_seconds={payload['seconds']}，"
+                f"resolution={resolution_label.lower()}，billing_seconds={payload.get('seconds', '按次计费不发送')}，"
                 f"audio={payload['generate_audio']}，图={len(image_uris)}，视频={len(video_uris)}，音频={len(audio_uris)}"
             )
             started = time.time()
@@ -755,7 +776,7 @@ class DapaoSeedance20AllroundVideoNode:
             else:
                 parameter_profile = f"{request_model}（720P）"
             info = (
-                "✅ Seedance2.0 全能视频任务完成\n"
+                f"✅ {self.VERSION_LABEL} 全能视频任务完成\n"
                 f"🌐 中转站：{API_BASE_URL}\n"
                 f"🤖 模型ID：{model_id}\n"
                 f"🔎 实际请求模型：{request_model}\n"
@@ -778,11 +799,11 @@ class DapaoSeedance20AllroundVideoNode:
             width, height = self._expected_dimensions(resolution_label, aspect_ratio)
             return DapaoVideoAdapter(video_url, width, height), task_identifier, info, video_url
         except Exception as error:
-            message = f"❌ Seedance2.0 全能视频生成失败：{error}"
+            message = f"❌ {self.VERSION_LABEL} 全能视频生成失败：{error}"
             if request_model:
                 message += f"\n（节点实际发送 model={request_model}）"
-            _log_error(message)
-            _log_error(traceback.format_exc())
+            self._log_error(message)
+            self._log_error(traceback.format_exc())
             details = json.dumps(
                 {
                     "request_model": request_model,
