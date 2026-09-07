@@ -274,13 +274,15 @@ def _response_layers(result):
 
 
 def _task_id(result):
-    queue_id = queue_job_metadata(result).get("job_id")
-    if queue_id:
-        return str(queue_id)
+    # The persistent queue job only represents delivery of the paid POST.
+    # Prefer the upstream video task id returned by that POST for status polling.
     for layer in _response_layers(result):
         value = layer.get("task_id") or layer.get("id")
         if isinstance(value, (str, int)) and str(value):
             return str(value)
+    queue_id = queue_job_metadata(result).get("job_id")
+    if queue_id:
+        return str(queue_id)
     return ""
 
 
@@ -762,11 +764,10 @@ class DapaoSeedance20AllroundVideoNode:
             submitted_video_url = _extract_video_url(submitted)
             if not task_identifier and not submitted_video_url:
                 raise RuntimeError(f"提交成功但没有返回任务ID：{json.dumps(_sanitized_result(submitted), ensure_ascii=False)[:1200]}")
-            final = (
-                submitted
-                if queue_job_metadata(submitted).get("status") == "succeeded" or submitted_video_url
-                else client.poll(task_identifier, max_seconds, interval)
-            )
+            # A succeeded _dapao_queue means the POST was delivered and its
+            # upstream response was captured. It does not mean video rendering
+            # has finished. Continue polling whenever that response has no URL.
+            final = submitted if submitted_video_url else client.poll(task_identifier, max_seconds, interval)
             task_identifier = task_identifier or "同步返回"
             video_url = _extract_video_url(final)
             if not video_url:

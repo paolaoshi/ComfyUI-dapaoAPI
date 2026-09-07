@@ -147,6 +147,9 @@ class RuntimeStore:
                     ON jobs(scope, endpoint, request_hash, updated_at);
                 """
             )
+            columns = {str(row[1]) for row in connection.execute("PRAGMA table_info(jobs)").fetchall()}
+            if "result_json" not in columns:
+                connection.execute("ALTER TABLE jobs ADD COLUMN result_json TEXT NOT NULL DEFAULT ''")
 
     def asset(self, scope: str, sha256: str, now: int | None = None) -> AssetRecord | None:
         now = int(now or time.time())
@@ -177,17 +180,24 @@ class RuntimeStore:
                  record.byte_count, record.mime_type, time.time()),
             )
 
-    def claim_job(self, scope: str, endpoint: str, request_hash: str) -> sqlite3.Row:
+    def claim_job(
+        self, scope: str, endpoint: str, request_hash: str, *, reuse_succeeded: bool = False
+    ) -> sqlite3.Row:
         cutoff = time.time() - _JOB_RECOVERY_SECONDS
+        recoverable = "('submitting','queued','running','indeterminate')"
+        if reuse_succeeded:
+            recoverable = "('submitting','queued','running','indeterminate','succeeded')"
         with _STORE_LOCK, closing(self._connect()) as connection, connection:
             rows = connection.execute(
-                """SELECT * FROM jobs
+                f"""SELECT * FROM jobs
                    WHERE scope=? AND endpoint=? AND request_hash=? AND updated_at>?
-                     AND status IN ('submitting','queued','running','indeterminate')
+                     AND status IN {recoverable}
                    ORDER BY updated_at DESC""",
                 (scope, endpoint, request_hash, cutoff),
             ).fetchall()
             for row in rows:
+                if row["status"] == "succeeded" and not str(row["result_json"] or "").strip():
+                    continue
                 with _ACTIVE_JOB_LOCK:
                     if row["idempotency_key"] in _ACTIVE_JOB_KEYS:
                         continue
@@ -205,17 +215,31 @@ class RuntimeStore:
                 _ACTIVE_JOB_KEYS.add(key)
             return connection.execute("SELECT * FROM jobs WHERE idempotency_key=?", (key,)).fetchone()
 
-    def update_job(self, key: str, *, status: str, job_id: str | None = None, error: str = "") -> None:
+    def update_job(
+        self, key: str, *, status: str, job_id: str | None = None,
+        error: str = "", result: dict | None = None,
+    ) -> None:
+        result_json = None if result is None else json.dumps(result, ensure_ascii=False, separators=(",", ":"))
         with _STORE_LOCK, closing(self._connect()) as connection, connection:
-            if job_id is None:
+            if job_id is None and result_json is None:
                 connection.execute(
                     "UPDATE jobs SET status=?, updated_at=?, error=? WHERE idempotency_key=?",
                     (status, time.time(), error[:1000], key),
                 )
-            else:
+            elif result_json is None:
                 connection.execute(
                     "UPDATE jobs SET status=?, job_id=?, updated_at=?, error=? WHERE idempotency_key=?",
                     (status, job_id, time.time(), error[:1000], key),
+                )
+            elif job_id is None:
+                connection.execute(
+                    "UPDATE jobs SET status=?, result_json=?, updated_at=?, error=? WHERE idempotency_key=?",
+                    (status, result_json, time.time(), error[:1000], key),
+                )
+            else:
+                connection.execute(
+                    "UPDATE jobs SET status=?, job_id=?, result_json=?, updated_at=?, error=? WHERE idempotency_key=?",
+                    (status, job_id, result_json, time.time(), error[:1000], key),
                 )
 
     @staticmethod
@@ -618,6 +642,8 @@ def submit_json_task(
     interrupt_callback: Callable[[], None] | None = None,
     status_callback: Callable[[str, dict], None] | None = None,
     max_poll_seconds: int | None = None,
+    recovery_salt: str | int | None = None,
+    reuse_succeeded: bool = False,
 ) -> dict:
     """Submit one paid JSON request through DreamBrush's persistent queue.
 
@@ -632,9 +658,14 @@ def submit_json_task(
     # final model response to the persistent queue.
     transformed.pop("async", None)
     scope = account_scope(base_url, api_key)
-    request_hash = _canonical_hash(transformed)
+    hash_payload: dict = transformed
+    if recovery_salt is not None:
+        # Distinguish explicit generations (for example a ComfyUI seed)
+        # without adding an unsupported field to the upstream request.
+        hash_payload = {"payload": transformed, "recovery_salt": str(recovery_salt)}
+    request_hash = _canonical_hash(hash_payload)
     store = runtime_store()
-    row = store.claim_job(scope, endpoint, request_hash)
+    row = store.claim_job(scope, endpoint, request_hash, reuse_succeeded=reuse_succeeded)
     key = str(row["idempotency_key"])
     job_id = str(row["job_id"] or "")
     existing_status = str(row["status"])
@@ -660,6 +691,18 @@ def submit_json_task(
             raise DreamBrushIndeterminateError(
                 "该逻辑任务此前进入 indeterminate 状态，禁止自动重新提交，以免重复生成或重复扣费。"
             )
+        if existing_status == "succeeded" and reuse_succeeded:
+            try:
+                recovered = json.loads(str(row["result_json"] or ""))
+            except Exception as error:
+                raise DreamBrushIndeterminateError(
+                    "已提交任务的本地恢复记录损坏，已停止自动重提以免重复扣费。"
+                ) from error
+            if not isinstance(recovered, dict):
+                raise DreamBrushIndeterminateError(
+                    "已提交任务的本地恢复记录无效，已停止自动重提以免重复扣费。"
+                )
+            return recovered
         if not job_id:
             try:
                 response = _request_with_retry(
@@ -678,8 +721,8 @@ def submit_json_task(
                 raise_http(response)
             submitted = _json_response(response, "任务提交")
             if response.status_code != 202:
-                store.update_job(key, status="succeeded")
                 submitted.setdefault("_dapao_queue", {"mode": "synchronous"})
+                store.update_job(key, status="succeeded", result=submitted if reuse_succeeded else None)
                 return submitted
             layer = _job_layer(submitted)
             job_id = str(layer.get("id") or layer.get("job_id") or "").strip()
@@ -743,7 +786,10 @@ def submit_json_task(
                     raise_http(result_response)
                 result = _json_response(result_response, "队列任务结果")
                 result.setdefault("_dapao_queue", {"mode": "persistent", "job_id": job_id, "status": state})
-                store.update_job(key, status="succeeded", job_id=job_id)
+                store.update_job(
+                    key, status="succeeded", job_id=job_id,
+                    result=result if reuse_succeeded else None,
+                )
                 return result
             if state in {"failed", "canceled", "expired", "indeterminate"}:
                 message = str(layer.get("error") or layer.get("message") or json.dumps(layer, ensure_ascii=False)[:1000])

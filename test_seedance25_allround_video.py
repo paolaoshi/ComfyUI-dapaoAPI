@@ -69,6 +69,10 @@ class Seedance25AllroundVideoTests(unittest.TestCase):
         self.assertEqual(len([key for key in optional if key.startswith("🎞️ 参考视频")]), 3)
         self.assertEqual(len([key for key in optional if key.startswith("🎵 参考音频")]), 3)
         self.assertTrue(base_module.DapaoSeedance20AllroundVideoNode.INCLUDE_BILLING_SECONDS)
+        self.assertEqual(base_module._task_id({
+            "id": "task-upstream", "status": "queued",
+            "_dapao_queue": {"job_id": "job-delivery", "status": "succeeded"},
+        }), "task-upstream")
 
     def test_registration_model_and_expanded_inputs(self):
         node_class = node_module.DapaoSeedance25AllroundVideoNode

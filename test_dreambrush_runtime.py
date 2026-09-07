@@ -298,6 +298,37 @@ class DreamBrushRuntimeTests(unittest.TestCase):
         self.assertEqual(len(keys), 2)
         self.assertEqual(len(set(keys)), 1)
 
+    def test_succeeded_delivery_can_be_reused_without_a_second_paid_post(self):
+        post_count = 0
+
+        def request(method, url, **kwargs):
+            nonlocal post_count
+            if method == "POST":
+                post_count += 1
+                return FakeResponse(202, {"id": "queue-delivery", "status": "queued"})
+            if url.endswith("/v1/queue/jobs/queue-delivery/result"):
+                return FakeResponse(200, {"id": "upstream-video-task", "status": "queued"})
+            if url.endswith("/v1/queue/jobs/queue-delivery"):
+                return FakeResponse(200, {"id": "queue-delivery", "status": "succeeded"})
+            raise AssertionError(url)
+
+        kwargs = dict(
+            api_key="key-reuse", endpoint="/v1/video/generations",
+            payload={"model": "wan3.0", "prompt": "same"}, timeout=30,
+            recovery_salt=123, reuse_succeeded=True,
+        )
+        with mock.patch.object(runtime.requests, "request", side_effect=request):
+            first = runtime.submit_json_task(**kwargs)
+            second = runtime.submit_json_task(**kwargs)
+
+        self.assertEqual(post_count, 1, "同一随机种恢复上游任务时不得再次付费提交")
+        self.assertEqual(first["id"], "upstream-video-task")
+        self.assertEqual(second, first)
+
+        with mock.patch.object(runtime.requests, "request", side_effect=request):
+            runtime.submit_json_task(**{**kwargs, "recovery_salt": 124})
+        self.assertEqual(post_count, 2, "随机种改变后才应创建一次新的生成任务")
+
     def test_terminal_queue_states_are_not_resubmitted(self):
         for state in ("failed", "canceled", "expired", "indeterminate"):
             with self.subTest(state=state):
@@ -481,7 +512,7 @@ class DreamBrushRuntimeTests(unittest.TestCase):
                     network_count += 1
                 else:
                     local_count += 1
-        self.assertEqual(network_count, 13)
+        self.assertEqual(network_count, 15)
         self.assertEqual(local_count, 5)
 
 
