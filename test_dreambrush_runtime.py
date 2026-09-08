@@ -493,6 +493,12 @@ class DreamBrushRuntimeTests(unittest.TestCase):
 
         expected = (
             "gpt-6-astra",
+            "gemini-3.5-flash-lite",
+            "gemini-3.5-flash",
+            "gemini-3.8-flash",
+            "gemini-3.7-flash",
+            "gemini-3.1-pro-preview",
+            "gemini-3.6-flash",
             "deepseek-v4-flash-vision-exp",
             "deepseek-v4-pro",
             "deepseek-v4-flash",
