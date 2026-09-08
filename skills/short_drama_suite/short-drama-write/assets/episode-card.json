@@ -1,0 +1,55 @@
+{
+  "episode_id": "EP001",
+  "sources": {
+    "episode-map": {
+      "owner": "short-drama-develop",
+      "artifact": "项目开发/episode-map.jsonl"
+    }
+  },
+  "contract_authority": {
+    "mode": "development_projection",
+    "source_ref": {
+      "src": "episode-map",
+      "record_id": "EP001"
+    },
+    "projected_fields": [
+      "/incoming_state",
+      "/hook",
+      "/objective",
+      "/opposition",
+      "/turn",
+      "/local_dramatic_result",
+      "/information_release",
+      "/premise_device_disclosure",
+      "/outgoing_pressure",
+      "/handoff_state",
+      "/setup_ids",
+      "/payoff_ids"
+    ]
+  },
+  "execution_plan": {
+    "viewpoint_and_audience_alignment": "__FILL__",
+    "opening_action_carrier": "__FILL__",
+    "turn_carrier": "__FILL__",
+    "payoff_carrier": "__FILL__",
+    "outgoing_pressure_carrier": "__FILL__",
+    "scene_jobs": [
+      {
+        "scene_id": "SC001",
+        "agenda_collision": "__FILL__",
+        "dramatic_result": "__FILL__",
+        "external_pressure": "__LOW_MEDIUM_HIGH_WITH_REASON__",
+        "emotional_load": "__LOW_MEDIUM_HIGH_WITH_REASON__",
+        "visible_change": "__FILL__",
+        "source_contract_fields": [
+          "/objective",
+          "/opposition"
+        ]
+      }
+    ],
+    "production_requirements": []
+  },
+  "source_refs": [],
+  "open_questions": [],
+  "creator_status": "draft"
+}

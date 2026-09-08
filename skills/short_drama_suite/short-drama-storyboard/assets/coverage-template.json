@@ -1,0 +1,49 @@
+{
+  "sources": {
+    "shots": {
+      "owner": "short-drama-storyboard",
+      "artifact": "剧集/EP001/storyboard/shots.jsonl"
+    },
+    "screenplay-index": {
+      "owner": "short-drama-write",
+      "artifact": "剧集/EP001/screenplay-index.jsonl"
+    },
+    "short-drama": {
+      "owner": "short-drama",
+      "artifact": "short-drama.json"
+    }
+  },
+  "episode_id": "EP001",
+  "dispositions": [
+    {
+      "block_id": "BLK-EXAMPLE",
+      "status": "covered",
+      "reason": "Primary action and reaction remain continuous.",
+      "shot_refs": [
+        {
+          "src": "shots",
+          "record_id": "SHOT-EXAMPLE",
+          "authority": "candidate"
+        }
+      ]
+    }
+  ],
+  "episode_duration": {
+    "shot_seconds_total": null,
+    "counted_shot_ids": [
+      "SHOT-EXAMPLE"
+    ],
+    "unresolved_durations": [],
+    "target_ref": {
+      "src": "short-drama",
+      "field": "/format/target_seconds_per_episode"
+    },
+    "target_seconds": null,
+    "delta_seconds": null,
+    "disposition": "no_target_declared | within_creator_tolerance | creator_accepted_overrun | to_revise"
+  },
+  "screenplay_ref": {
+    "src": "screenplay-index"
+  },
+  "status": "candidate"
+}

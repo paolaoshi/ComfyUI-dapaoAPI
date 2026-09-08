@@ -1,0 +1,1079 @@
+{
+  "last_node_id": 7,
+  "last_link_id": 6,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "DapaoDramaProject",
+      "title": "🐠01漫剧项目与流程@炮老师的小课堂",
+      "pos": [
+        80,
+        100
+      ],
+      "size": [
+        450,
+        650
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "📛 项目名称",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "📛 项目名称"
+          }
+        },
+        {
+          "name": "📝 创作简报",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "📝 创作简报"
+          }
+        },
+        {
+          "name": "🎞️ 当前集号",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "🎞️ 当前集号"
+          }
+        },
+        {
+          "name": "📚 计划集数",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "📚 计划集数"
+          }
+        },
+        {
+          "name": "⏱️ 单集目标秒数",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "⏱️ 单集目标秒数"
+          }
+        },
+        {
+          "name": "🎨 制作形态",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "🎨 制作形态"
+          }
+        },
+        {
+          "name": "🖌️ 视觉风格",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "🖌️ 视觉风格"
+          }
+        },
+        {
+          "name": "📐 画幅比例",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "📐 画幅比例"
+          }
+        },
+        {
+          "name": "🌐 提示词语言",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "🌐 提示词语言"
+          }
+        },
+        {
+          "name": "🎬 视频提示词方言",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "🎬 视频提示词方言"
+          }
+        },
+        {
+          "name": "🖼️ 参考方式",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "🖼️ 参考方式"
+          }
+        },
+        {
+          "name": "⏳ 单镜最短秒数",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "⏳ 单镜最短秒数"
+          }
+        },
+        {
+          "name": "⌛ 单镜最长秒数",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "⌛ 单镜最长秒数"
+          }
+        },
+        {
+          "name": "📂 已有文档类型",
+          "type": "COMBO",
+          "link": null,
+          "shape": 7,
+          "widget": {
+            "name": "📂 已有文档类型"
+          }
+        },
+        {
+          "name": "📄 已有文档",
+          "type": "STRING",
+          "link": null,
+          "shape": 7,
+          "widget": {
+            "name": "📄 已有文档"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "📦 漫剧资料包",
+          "type": "DAPAO_DRAMA_BUNDLE",
+          "links": [
+            1
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "🧭 流程说明",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "DapaoDramaProject"
+      },
+      "widgets_values": [
+        "便利店的空座位",
+        "原创都市温情漫剧：夜班便利店店员发现每天买同一份便当的老人，其实在为失联的女儿保留一个座位。以可见行动和克制对白推进，本集完整收束。",
+        1,
+        1,
+        60,
+        "二维动态漫剧",
+        "遵循创作要求",
+        "9:16",
+        "简体中文",
+        "通用",
+        "挂图计划（自行出图）",
+        0,
+        0,
+        "剧本.md",
+        ""
+      ]
+    },
+    {
+      "id": 2,
+      "type": "DapaoDramaWrite",
+      "title": "✍️04漫剧剧本创作@炮老师的小课堂",
+      "pos": [
+        590,
+        100
+      ],
+      "size": [
+        450,
+        800
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🔑 API密钥",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "🔑 API密钥"
+          }
+        },
+        {
+          "name": "🤖 LLM模型",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "🤖 LLM模型"
+          }
+        },
+        {
+          "name": "📝 本阶段要求",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "📝 本阶段要求"
+          }
+        },
+        {
+          "name": "📚 专项参考",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "📚 专项参考"
+          }
+        },
+        {
+          "name": "🌡️ 温度",
+          "type": "FLOAT",
+          "link": null,
+          "widget": {
+            "name": "🌡️ 温度"
+          }
+        },
+        {
+          "name": "📝 最大输出令牌",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "📝 最大输出令牌"
+          }
+        },
+        {
+          "name": "🎲 随机种",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "🎲 随机种"
+          }
+        },
+        {
+          "name": "⌛ 请求超时",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "⌛ 请求超时"
+          }
+        },
+        {
+          "name": "📦 上游资料",
+          "type": "DAPAO_DRAMA_BUNDLE",
+          "link": 1,
+          "shape": 7
+        },
+        {
+          "name": "📄 原文或现有稿",
+          "type": "STRING",
+          "link": null,
+          "shape": 7,
+          "widget": {
+            "name": "📄 原文或现有稿"
+          }
+        },
+        {
+          "name": "📄 系列开发.md",
+          "type": "STRING",
+          "link": null,
+          "shape": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "📦 漫剧资料包",
+          "type": "DAPAO_DRAMA_BUNDLE",
+          "links": [
+            2
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "📄 阶段文档",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 1
+        },
+        {
+          "name": "🧩 提示词列表",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 2
+        },
+        {
+          "name": "ℹ️ 处理信息",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "DapaoDramaWrite"
+      },
+      "widgets_values": [
+        "",
+        "gemini-3.7-flash",
+        "处理当前集的完整范围，保留上游事实。",
+        "自动精选",
+        0.6,
+        16384,
+        0,
+        "fixed",
+        600,
+        ""
+      ]
+    },
+    {
+      "id": 3,
+      "type": "DapaoDramaAssets",
+      "title": "🎭05漫剧视觉资产@炮老师的小课堂",
+      "pos": [
+        1100,
+        100
+      ],
+      "size": [
+        450,
+        800
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🔑 API密钥",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "🔑 API密钥"
+          }
+        },
+        {
+          "name": "🤖 LLM模型",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "🤖 LLM模型"
+          }
+        },
+        {
+          "name": "📝 本阶段要求",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "📝 本阶段要求"
+          }
+        },
+        {
+          "name": "📚 专项参考",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "📚 专项参考"
+          }
+        },
+        {
+          "name": "🌡️ 温度",
+          "type": "FLOAT",
+          "link": null,
+          "widget": {
+            "name": "🌡️ 温度"
+          }
+        },
+        {
+          "name": "📝 最大输出令牌",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "📝 最大输出令牌"
+          }
+        },
+        {
+          "name": "🎲 随机种",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "🎲 随机种"
+          }
+        },
+        {
+          "name": "⌛ 请求超时",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "⌛ 请求超时"
+          }
+        },
+        {
+          "name": "📦 上游资料",
+          "type": "DAPAO_DRAMA_BUNDLE",
+          "link": 2,
+          "shape": 7
+        },
+        {
+          "name": "📄 原文或现有稿",
+          "type": "STRING",
+          "link": null,
+          "shape": 7,
+          "widget": {
+            "name": "📄 原文或现有稿"
+          }
+        },
+        {
+          "name": "📄 剧本.md",
+          "type": "STRING",
+          "link": null,
+          "shape": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "📦 漫剧资料包",
+          "type": "DAPAO_DRAMA_BUNDLE",
+          "links": [
+            3
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "📄 阶段文档",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 1
+        },
+        {
+          "name": "🧩 提示词列表",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 2
+        },
+        {
+          "name": "ℹ️ 处理信息",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "DapaoDramaAssets"
+      },
+      "widgets_values": [
+        "",
+        "gemini-3.7-flash",
+        "处理当前集的完整范围，保留上游事实。",
+        "自动精选",
+        0.6,
+        16384,
+        0,
+        "fixed",
+        600,
+        ""
+      ]
+    },
+    {
+      "id": 4,
+      "type": "DapaoDramaImage",
+      "title": "🖼️06漫剧资产图片提示词@炮老师的小课堂",
+      "pos": [
+        1610,
+        100
+      ],
+      "size": [
+        450,
+        800
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🔑 API密钥",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "🔑 API密钥"
+          }
+        },
+        {
+          "name": "🤖 LLM模型",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "🤖 LLM模型"
+          }
+        },
+        {
+          "name": "📝 本阶段要求",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "📝 本阶段要求"
+          }
+        },
+        {
+          "name": "📚 专项参考",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "📚 专项参考"
+          }
+        },
+        {
+          "name": "🌡️ 温度",
+          "type": "FLOAT",
+          "link": null,
+          "widget": {
+            "name": "🌡️ 温度"
+          }
+        },
+        {
+          "name": "📝 最大输出令牌",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "📝 最大输出令牌"
+          }
+        },
+        {
+          "name": "🎲 随机种",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "🎲 随机种"
+          }
+        },
+        {
+          "name": "⌛ 请求超时",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "⌛ 请求超时"
+          }
+        },
+        {
+          "name": "📦 上游资料",
+          "type": "DAPAO_DRAMA_BUNDLE",
+          "link": 3,
+          "shape": 7
+        },
+        {
+          "name": "📄 原文或现有稿",
+          "type": "STRING",
+          "link": null,
+          "shape": 7,
+          "widget": {
+            "name": "📄 原文或现有稿"
+          }
+        },
+        {
+          "name": "📄 视觉设定.md",
+          "type": "STRING",
+          "link": null,
+          "shape": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "📦 漫剧资料包",
+          "type": "DAPAO_DRAMA_BUNDLE",
+          "links": [
+            4
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "📄 图片提示词文档",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 1
+        },
+        {
+          "name": "🧩 资产图片提示词列表",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 2
+        },
+        {
+          "name": "ℹ️ 处理信息",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "DapaoDramaImage"
+      },
+      "widgets_values": [
+        "",
+        "gemini-3.7-flash",
+        "处理当前集的完整范围，保留上游事实。",
+        "自动精选",
+        0.6,
+        16384,
+        0,
+        "fixed",
+        600,
+        ""
+      ]
+    },
+    {
+      "id": 5,
+      "type": "DapaoDramaStoryboard",
+      "title": "🎬07漫剧分镜与关键帧@炮老师的小课堂",
+      "pos": [
+        2120,
+        100
+      ],
+      "size": [
+        450,
+        800
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🔑 API密钥",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "🔑 API密钥"
+          }
+        },
+        {
+          "name": "🤖 LLM模型",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "🤖 LLM模型"
+          }
+        },
+        {
+          "name": "📝 本阶段要求",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "📝 本阶段要求"
+          }
+        },
+        {
+          "name": "📚 专项参考",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "📚 专项参考"
+          }
+        },
+        {
+          "name": "🌡️ 温度",
+          "type": "FLOAT",
+          "link": null,
+          "widget": {
+            "name": "🌡️ 温度"
+          }
+        },
+        {
+          "name": "📝 最大输出令牌",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "📝 最大输出令牌"
+          }
+        },
+        {
+          "name": "🎲 随机种",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "🎲 随机种"
+          }
+        },
+        {
+          "name": "⌛ 请求超时",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "⌛ 请求超时"
+          }
+        },
+        {
+          "name": "📦 上游资料",
+          "type": "DAPAO_DRAMA_BUNDLE",
+          "link": 4,
+          "shape": 7
+        },
+        {
+          "name": "📄 原文或现有稿",
+          "type": "STRING",
+          "link": null,
+          "shape": 7,
+          "widget": {
+            "name": "📄 原文或现有稿"
+          }
+        },
+        {
+          "name": "📄 剧本.md",
+          "type": "STRING",
+          "link": null,
+          "shape": 7
+        },
+        {
+          "name": "📄 视觉设定.md",
+          "type": "STRING",
+          "link": null,
+          "shape": 7
+        },
+        {
+          "name": "📄 图片提示词.md",
+          "type": "STRING",
+          "link": null,
+          "shape": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "📦 漫剧资料包",
+          "type": "DAPAO_DRAMA_BUNDLE",
+          "links": [
+            5
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "📄 分镜文档",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 1
+        },
+        {
+          "name": "🧩 关键帧图片提示词列表",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 2
+        },
+        {
+          "name": "ℹ️ 处理信息",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "DapaoDramaStoryboard"
+      },
+      "widgets_values": [
+        "",
+        "gemini-3.7-flash",
+        "处理当前集的完整范围，保留上游事实。",
+        "自动精选",
+        0.6,
+        16384,
+        0,
+        "fixed",
+        600,
+        ""
+      ]
+    },
+    {
+      "id": 6,
+      "type": "DapaoDramaVideo",
+      "title": "🎞️08漫剧视频提示词@炮老师的小课堂",
+      "pos": [
+        2630,
+        100
+      ],
+      "size": [
+        450,
+        800
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🔑 API密钥",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "🔑 API密钥"
+          }
+        },
+        {
+          "name": "🤖 LLM模型",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "🤖 LLM模型"
+          }
+        },
+        {
+          "name": "📝 本阶段要求",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "📝 本阶段要求"
+          }
+        },
+        {
+          "name": "📚 专项参考",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "📚 专项参考"
+          }
+        },
+        {
+          "name": "🌡️ 温度",
+          "type": "FLOAT",
+          "link": null,
+          "widget": {
+            "name": "🌡️ 温度"
+          }
+        },
+        {
+          "name": "📝 最大输出令牌",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "📝 最大输出令牌"
+          }
+        },
+        {
+          "name": "🎲 随机种",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "🎲 随机种"
+          }
+        },
+        {
+          "name": "⌛ 请求超时",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "⌛ 请求超时"
+          }
+        },
+        {
+          "name": "📦 上游资料",
+          "type": "DAPAO_DRAMA_BUNDLE",
+          "link": 5,
+          "shape": 7
+        },
+        {
+          "name": "📄 原文或现有稿",
+          "type": "STRING",
+          "link": null,
+          "shape": 7,
+          "widget": {
+            "name": "📄 原文或现有稿"
+          }
+        },
+        {
+          "name": "📄 剧本.md",
+          "type": "STRING",
+          "link": null,
+          "shape": 7
+        },
+        {
+          "name": "📄 视觉设定.md",
+          "type": "STRING",
+          "link": null,
+          "shape": 7
+        },
+        {
+          "name": "📄 分镜.md",
+          "type": "STRING",
+          "link": null,
+          "shape": 7
+        },
+        {
+          "name": "📄 图片提示词.md",
+          "type": "STRING",
+          "link": null,
+          "shape": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "📦 漫剧资料包",
+          "type": "DAPAO_DRAMA_BUNDLE",
+          "links": [
+            6
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "📄 视频提示词文档",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 1
+        },
+        {
+          "name": "🧩 视频提示词列表",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 2
+        },
+        {
+          "name": "ℹ️ 处理信息",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "DapaoDramaVideo"
+      },
+      "widgets_values": [
+        "",
+        "gemini-3.7-flash",
+        "处理当前集的完整范围，保留上游事实。",
+        "自动精选",
+        0.6,
+        16384,
+        0,
+        "fixed",
+        600,
+        ""
+      ]
+    },
+    {
+      "id": 7,
+      "type": "DapaoDramaDeliver",
+      "title": "📦10漫剧提示词交付@炮老师的小课堂",
+      "pos": [
+        3140,
+        100
+      ],
+      "size": [
+        450,
+        250
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "📦 上游资料",
+          "type": "DAPAO_DRAMA_BUNDLE",
+          "link": 6
+        },
+        {
+          "name": "📦 交付范围",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "📦 交付范围"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "🧩 资产图片提示词列表",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 0
+        },
+        {
+          "name": "🧩 关键帧图片提示词列表",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 1
+        },
+        {
+          "name": "🧩 视频提示词列表",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 2
+        },
+        {
+          "name": "📋 提示词清单JSON",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 3
+        },
+        {
+          "name": "📚 五文档合订文本",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 4
+        },
+        {
+          "name": "✅ 交付检查",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 5
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "DapaoDramaDeliver"
+      },
+      "widgets_values": [
+        "全部现有提示词"
+      ]
+    }
+  ],
+  "links": [
+    [
+      1,
+      1,
+      0,
+      2,
+      8,
+      "DAPAO_DRAMA_BUNDLE"
+    ],
+    [
+      2,
+      2,
+      0,
+      3,
+      8,
+      "DAPAO_DRAMA_BUNDLE"
+    ],
+    [
+      3,
+      3,
+      0,
+      4,
+      8,
+      "DAPAO_DRAMA_BUNDLE"
+    ],
+    [
+      4,
+      4,
+      0,
+      5,
+      8,
+      "DAPAO_DRAMA_BUNDLE"
+    ],
+    [
+      5,
+      5,
+      0,
+      6,
+      8,
+      "DAPAO_DRAMA_BUNDLE"
+    ],
+    [
+      6,
+      6,
+      0,
+      7,
+      0,
+      "DAPAO_DRAMA_BUNDLE"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.5,
+      "offset": [
+        0,
+        0
+      ]
+    }
+  },
+  "version": 0.4
+}

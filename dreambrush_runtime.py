@@ -24,6 +24,7 @@ from contextlib import closing
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Iterable
+from urllib.parse import urlsplit
 
 import requests
 
@@ -305,6 +306,15 @@ def _retry_delay(response: requests.Response | None, attempt: int) -> float:
     return min(10.0, (2 ** attempt) + random.uniform(0.1, 0.8))
 
 
+def _transport_options(url: str) -> dict:
+    # The default domestic gateway does not need the desktop's localhost proxy.
+    # Keep explicit opt-in and all third-party endpoints on their original route.
+    if (urlsplit(url).hostname == "api.dapaoai.com"
+            and os.environ.get("DAPAO_DREAMBRUSH_USE_SYSTEM_PROXY", "").lower() not in {"1", "true", "yes"}):
+        return {"proxies": {"http": "", "https": "", "all": ""}}
+    return {}
+
+
 def _request_with_retry(
     method: str,
     url: str,
@@ -313,6 +323,7 @@ def _request_with_retry(
     gate: threading.BoundedSemaphore | None = None,
     **kwargs,
 ) -> requests.Response:
+    kwargs = {**_transport_options(url), **kwargs}
     last_error: BaseException | None = None
     for attempt in range(attempts):
         response = None
@@ -741,6 +752,7 @@ def submit_json_task(
                             status_response = requests.get(
                                 f"{base_url}/v1/queue/jobs/{job_id}", headers={"Authorization": f"Bearer {api_key}"},
                                 timeout=min(timeout, 30),
+                                **_transport_options(base_url),
                             )
                         status_payload = status_response.json() if status_response.status_code < 400 else {}
                         state = str(_job_layer(status_payload).get("status") or "").lower()
@@ -748,6 +760,7 @@ def submit_json_task(
                             requests.delete(
                                 f"{base_url}/v1/queue/jobs/{job_id}", headers={"Authorization": f"Bearer {api_key}"},
                                 timeout=min(timeout, 30),
+                                **_transport_options(base_url),
                             )
                             store.update_job(key, status="canceled", job_id=job_id)
                     finally:
@@ -826,6 +839,19 @@ def submit_json_task(
             raise DreamBrushRuntimeError(f"任务 {job_id} 返回未知状态：{state or '空'}")
         store.update_job(key, status="running", job_id=job_id, error="local poll timeout")
         raise DreamBrushRuntimeError(f"任务 {job_id} 超过本地等待时间；Job ID 已保存，下次执行将恢复查询。")
+    except (requests.ConnectionError, requests.Timeout) as error:
+        if not job_id:
+            raise
+        # The paid submission already has a Job ID. A lost GET response says
+        # nothing about upstream completion; keep the same task recoverable.
+        store.update_job(key, status="running", job_id=job_id, error="queue read connection interrupted")
+        raise DreamBrushRuntimeError(
+            f"任务 {job_id} 已提交，但查询状态或读取结果时网络连接中断（可能为远端断开/超时）。"
+            "\nJob ID已保存；这不代表生成失败，当前无法据此确认完成或扣费情况。"
+            "\n请保持API账号、模型、输入内容和随机种不变，在48小时恢复窗口内再次执行，"
+            "将继续查询同一任务，不重新提交该任务的生成请求。"
+            "\n不要改随机种或清理恢复记录来重试，以免创建新任务。"
+        ) from None
     finally:
         store.release_job(key)
 

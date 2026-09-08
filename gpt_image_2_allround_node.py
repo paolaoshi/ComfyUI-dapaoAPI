@@ -147,6 +147,17 @@ def _response_error(response):
     return str(data.get("message") or data.get("msg") or error or text)
 
 
+def _generation_error_message(error):
+    text = str(error)
+    if "content safety policy" in text.lower() or "content_policy_violation" in text.lower():
+        return (
+            "上游内容审核未通过，本条图片任务未完成。请检查本条提示词和参考图，"
+            "修改实际不符合要求的内容后再提交；上游未提供具体触发原因，不能据此定位某个词。"
+            "这不是提示词列表为空或API密钥错误；不会自动重试。\n上游信息：" + text
+        )
+    return text
+
+
 class DapaoImage2APIError(RuntimeError):
     def __init__(self, status_code, message):
         self.status_code = int(status_code)
@@ -596,7 +607,7 @@ class DapaoGPTImage2AllroundNode:
             )
             return images, "\n".join(urls), info
         except Exception as error:
-            message = f"❌ GPT-image-2 全能图像生成失败：{error}"
+            message = f"❌ GPT-image-2 全能图像生成失败：{_generation_error_message(error)}"
             _log_error(message)
             _log_error(traceback.format_exc())
             details = json.dumps({"submit": submitted, "final": final}, ensure_ascii=False, indent=2)

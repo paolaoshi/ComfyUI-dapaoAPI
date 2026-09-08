@@ -1,0 +1,875 @@
+{
+  "last_node_id": 3,
+  "last_link_id": 2,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "DapaoDramaPrepare",
+      "title": "🐠01漫剧剧本准备@炮老师的小课堂",
+      "pos": [
+        80,
+        100
+      ],
+      "size": [
+        540,
+        950
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "🔑 API密钥",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "🔑 API密钥"
+          }
+        },
+        {
+          "name": "🤖 LLM模型",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "🤖 LLM模型"
+          }
+        },
+        {
+          "name": "📥 内容来源",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "📥 内容来源"
+          }
+        },
+        {
+          "name": "📄 剧本或故事内容",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "📄 剧本或故事内容"
+          }
+        },
+        {
+          "name": "📛 项目名称",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "📛 项目名称"
+          }
+        },
+        {
+          "name": "⏱️ 单集目标秒数",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "⏱️ 单集目标秒数"
+          }
+        },
+        {
+          "name": "🎨 制作形态",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "🎨 制作形态"
+          }
+        },
+        {
+          "name": "🖌️ 视觉风格",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "🖌️ 视觉风格"
+          }
+        },
+        {
+          "name": "📐 画幅比例",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "📐 画幅比例"
+          }
+        },
+        {
+          "name": "🎬 视频提示词方言",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "🎬 视频提示词方言"
+          }
+        },
+        {
+          "name": "🖼️ 参考方式",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "🖼️ 参考方式"
+          }
+        },
+        {
+          "name": "📚 系列规划",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "📚 系列规划"
+          }
+        },
+        {
+          "name": "📝 本阶段要求",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "📝 本阶段要求"
+          }
+        },
+        {
+          "name": "🎲 随机种",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "🎲 随机种"
+          }
+        },
+        {
+          "name": "📝 最大输出令牌",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "📝 最大输出令牌"
+          }
+        },
+        {
+          "name": "⌛ 请求超时",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "⌛ 请求超时"
+          }
+        },
+        {
+          "name": "🎞️ 当前集号",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "🎞️ 当前集号"
+          }
+        },
+        {
+          "name": "📚 计划集数",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "📚 计划集数"
+          }
+        },
+        {
+          "name": "🌐 提示词语言",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "🌐 提示词语言"
+          }
+        },
+        {
+          "name": "⏳ 单镜最短秒数",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "⏳ 单镜最短秒数"
+          }
+        },
+        {
+          "name": "⌛ 单镜最长秒数",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "⌛ 单镜最长秒数"
+          }
+        },
+        {
+          "name": "🧮 最大分析段数",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "🧮 最大分析段数"
+          }
+        },
+        {
+          "name": "🔍 分析方式",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "🔍 分析方式"
+          }
+        },
+        {
+          "name": "🗂️ 原著分段依据",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "🗂️ 原著分段依据"
+          }
+        },
+        {
+          "name": "📏 每段字符数",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "📏 每段字符数"
+          }
+        },
+        {
+          "name": "🎛️ 准备任务",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "🎛️ 准备任务"
+          }
+        },
+        {
+          "name": "📦 上游资料",
+          "type": "DAPAO_DRAMA_BUNDLE",
+          "link": null
+        },
+        {
+          "name": "📂 导入文档类型",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "📂 导入文档类型"
+          }
+        },
+        {
+          "name": "📄 导入文档",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "📄 导入文档"
+          }
+        },
+        {
+          "name": "📚 原著分析.md专项参考",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "📚 原著分析.md专项参考"
+          }
+        },
+        {
+          "name": "📄 原著分析.md修订稿",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "📄 原著分析.md修订稿"
+          }
+        },
+        {
+          "name": "📚 系列开发.md专项参考",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "📚 系列开发.md专项参考"
+          }
+        },
+        {
+          "name": "📄 系列开发.md修订稿",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "📄 系列开发.md修订稿"
+          }
+        },
+        {
+          "name": "📚 剧本.md专项参考",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "📚 剧本.md专项参考"
+          }
+        },
+        {
+          "name": "📄 剧本.md修订稿",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "📄 剧本.md修订稿"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "📦 漫剧资料包",
+          "type": "DAPAO_DRAMA_BUNDLE",
+          "links": [
+            1
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "📄 阶段文档",
+          "type": "STRING",
+          "links": [],
+          "slot_index": 1
+        },
+        {
+          "name": "ℹ️ 处理信息",
+          "type": "STRING",
+          "links": [],
+          "slot_index": 2
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "DapaoDramaPrepare"
+      },
+      "widgets_values": [
+        "",
+        "gemini-3.7-flash",
+        "已有剧本",
+        "第一场：夜，老楼走廊。年轻女快递员林夏站在门前，手里拿着一个旧包裹。\n林夏：有人吗？您的快递。\n门内传来与她一模一样的声音：别开门。\n林夏低头，看见收件人写着自己的名字，寄件日期是十年前。",
+        "我的漫剧",
+        60,
+        "二维动态漫剧",
+        "遵循创作要求",
+        "9:16",
+        "通用",
+        "挂图计划（自行出图）",
+        "不需要（直接做本集）",
+        "",
+        0,
+        "fixed",
+        16384,
+        600,
+        1,
+        1,
+        "简体中文",
+        0,
+        0,
+        16,
+        "全文分段分析",
+        "自动识别章节（无标题按字符）",
+        12000,
+        "自动完成剧本",
+        "原著分析.md",
+        "",
+        "自动精选",
+        "",
+        "自动精选",
+        "",
+        "自动精选",
+        ""
+      ]
+    },
+    {
+      "id": 2,
+      "type": "DapaoDramaVisual",
+      "title": "🎭02漫剧人物与画面@炮老师的小课堂",
+      "pos": [
+        680,
+        100
+      ],
+      "size": [
+        540,
+        540
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "📦 上游资料",
+          "type": "DAPAO_DRAMA_BUNDLE",
+          "link": 1
+        },
+        {
+          "name": "🎨 处理内容",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "🎨 处理内容"
+          }
+        },
+        {
+          "name": "🔑 API密钥",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "🔑 API密钥"
+          }
+        },
+        {
+          "name": "🤖 LLM模型",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "🤖 LLM模型"
+          }
+        },
+        {
+          "name": "📝 本阶段要求",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "📝 本阶段要求"
+          }
+        },
+        {
+          "name": "🎲 随机种",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "🎲 随机种"
+          }
+        },
+        {
+          "name": "📝 最大输出令牌",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "📝 最大输出令牌"
+          }
+        },
+        {
+          "name": "⌛ 请求超时",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "⌛ 请求超时"
+          }
+        },
+        {
+          "name": "👤 资产规划",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "👤 资产规划"
+          }
+        },
+        {
+          "name": "🖌️ 图片用途",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "🖌️ 图片用途"
+          }
+        },
+        {
+          "name": "🔢 提示词选择",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "🔢 提示词选择"
+          }
+        },
+        {
+          "name": "📂 导入文档类型",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "📂 导入文档类型"
+          }
+        },
+        {
+          "name": "📄 导入文档",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "📄 导入文档"
+          }
+        },
+        {
+          "name": "📚 视觉设定.md专项参考",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "📚 视觉设定.md专项参考"
+          }
+        },
+        {
+          "name": "📄 视觉设定.md修订稿",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "📄 视觉设定.md修订稿"
+          }
+        },
+        {
+          "name": "📚 图片提示词.md专项参考",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "📚 图片提示词.md专项参考"
+          }
+        },
+        {
+          "name": "📄 图片提示词.md修订稿",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "📄 图片提示词.md修订稿"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "📦 漫剧资料包",
+          "type": "DAPAO_DRAMA_BUNDLE",
+          "links": [
+            2
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "📄 阶段文档",
+          "type": "STRING",
+          "links": [],
+          "slot_index": 1
+        },
+        {
+          "name": "ℹ️ 处理信息",
+          "type": "STRING",
+          "links": [],
+          "slot_index": 2
+        },
+        {
+          "name": "🧩 所选资产批量提示词",
+          "type": "STRING",
+          "links": [],
+          "slot_index": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "DapaoDramaVisual"
+      },
+      "widgets_values": [
+        "人物场景分析＋资产图片提示词",
+        "",
+        "gemini-3.7-flash",
+        "",
+        0,
+        "fixed",
+        16384,
+        600,
+        "人物优先（角色设定＋必要场景）",
+        "自动规划",
+        "",
+        "原著分析.md",
+        "",
+        "自动精选",
+        "",
+        "自动精选",
+        ""
+      ]
+    },
+    {
+      "id": 3,
+      "type": "DapaoDramaFinish",
+      "title": "🎬03漫剧分镜与交付@炮老师的小课堂",
+      "pos": [
+        1280,
+        100
+      ],
+      "size": [
+        540,
+        540
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "📦 上游资料",
+          "type": "DAPAO_DRAMA_BUNDLE",
+          "link": 2
+        },
+        {
+          "name": "🎬 交付模式",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "🎬 交付模式"
+          }
+        },
+        {
+          "name": "🔍 文本审查",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "🔍 文本审查"
+          }
+        },
+        {
+          "name": "🔑 API密钥",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "🔑 API密钥"
+          }
+        },
+        {
+          "name": "🤖 LLM模型",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "🤖 LLM模型"
+          }
+        },
+        {
+          "name": "📝 本阶段要求",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "📝 本阶段要求"
+          }
+        },
+        {
+          "name": "🎲 随机种",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "🎲 随机种"
+          }
+        },
+        {
+          "name": "📝 最大输出令牌",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "📝 最大输出令牌"
+          }
+        },
+        {
+          "name": "⌛ 请求超时",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "⌛ 请求超时"
+          }
+        },
+        {
+          "name": "🧩 批量输出内容",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "🧩 批量输出内容"
+          }
+        },
+        {
+          "name": "🔢 提示词选择",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "🔢 提示词选择"
+          }
+        },
+        {
+          "name": "🔎 审查范围",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "🔎 审查范围"
+          }
+        },
+        {
+          "name": "🎵 时间线音乐要求",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "🎵 时间线音乐要求"
+          }
+        },
+        {
+          "name": "📂 导入文档类型",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "📂 导入文档类型"
+          }
+        },
+        {
+          "name": "📄 导入文档",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "📄 导入文档"
+          }
+        },
+        {
+          "name": "📚 分镜.md专项参考",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "📚 分镜.md专项参考"
+          }
+        },
+        {
+          "name": "📄 分镜.md修订稿",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "📄 分镜.md修订稿"
+          }
+        },
+        {
+          "name": "📚 视频提示词.md专项参考",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "📚 视频提示词.md专项参考"
+          }
+        },
+        {
+          "name": "📄 视频提示词.md修订稿",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "📄 视频提示词.md修订稿"
+          }
+        },
+        {
+          "name": "📚 审查.md专项参考",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "📚 审查.md专项参考"
+          }
+        },
+        {
+          "name": "📄 审查.md修订稿",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "📄 审查.md修订稿"
+          }
+        },
+        {
+          "name": "⏱️ 时长规划",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "⏱️ 时长规划"
+          }
+        },
+        {
+          "name": "📝 逐段时长（秒）",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "📝 逐段时长（秒）"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "📦 漫剧资料包",
+          "type": "DAPAO_DRAMA_BUNDLE",
+          "links": [],
+          "slot_index": 0
+        },
+        {
+          "name": "🧩 资产图片提示词列表",
+          "type": "STRING",
+          "links": [],
+          "slot_index": 1
+        },
+        {
+          "name": "🧩 关键帧图片提示词列表",
+          "type": "STRING",
+          "links": [],
+          "slot_index": 2
+        },
+        {
+          "name": "🧩 视频提示词列表",
+          "type": "STRING",
+          "links": [],
+          "slot_index": 3
+        },
+        {
+          "name": "📋 提示词清单JSON",
+          "type": "STRING",
+          "links": [],
+          "slot_index": 4
+        },
+        {
+          "name": "📚 五文档合订文本",
+          "type": "STRING",
+          "links": [],
+          "slot_index": 5
+        },
+        {
+          "name": "✅ 交付检查",
+          "type": "STRING",
+          "links": [],
+          "slot_index": 6
+        },
+        {
+          "name": "🧩 所选批量提示词",
+          "type": "STRING",
+          "links": [],
+          "slot_index": 7
+        },
+        {
+          "name": "⏱️ 全部视频时长列表",
+          "type": "FLOAT",
+          "links": [],
+          "slot_index": 8
+        },
+        {
+          "name": "⏱️ 所选批量时长列表",
+          "type": "FLOAT",
+          "links": [],
+          "slot_index": 9
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "DapaoDramaFinish"
+      },
+      "widgets_values": [
+        "自动（按制作形态）",
+        "关闭",
+        "",
+        "gemini-3.7-flash",
+        "",
+        0,
+        "fixed",
+        16384,
+        600,
+        "资产图片",
+        "",
+        "全部现有文档",
+        "",
+        "原著分析.md",
+        "",
+        "自动精选",
+        "",
+        "自动精选",
+        "",
+        "自动精选",
+        "",
+        "自动分镜",
+        ""
+      ]
+    }
+  ],
+  "links": [
+    [
+      1,
+      1,
+      0,
+      2,
+      0,
+      "DAPAO_DRAMA_BUNDLE"
+    ],
+    [
+      2,
+      2,
+      0,
+      3,
+      0,
+      "DAPAO_DRAMA_BUNDLE"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {},
+  "version": 0.4
+}

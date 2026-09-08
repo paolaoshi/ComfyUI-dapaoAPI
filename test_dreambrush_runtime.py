@@ -25,6 +25,47 @@ class FakeResponse:
 
 
 class DreamBrushRuntimeTests(unittest.TestCase):
+    def test_default_gateway_bypasses_system_proxy_without_retrying_post(self):
+        with mock.patch.dict(os.environ, {"DAPAO_DREAMBRUSH_USE_SYSTEM_PROXY": ""}), mock.patch.object(runtime.requests, "request", return_value=FakeResponse()) as request:
+            runtime._request_with_retry("POST", "https://api.dapaoai.com/v1/chat/completions", attempts=1)
+            self.assertEqual(request.call_args.kwargs["proxies"], {"http": "", "https": "", "all": ""})
+            self.assertEqual(runtime._transport_options("https://other.example/v1"), {})
+            self.assertEqual(runtime._transport_options("https://api.dapaoai.com.other.example/v1"), {})
+        with mock.patch.dict(os.environ, {"DAPAO_DREAMBRUSH_USE_SYSTEM_PROXY": "1"}):
+            self.assertEqual(runtime._transport_options("https://api.dapaoai.com/v1"), {})
+
+    def test_interrupted_queue_reads_resume_same_job_without_paid_resubmission(self):
+        for phase in ("status", "result"):
+            with self.subTest(phase=phase):
+                calls = []
+                broken = True
+                job_id = "job-recovery-" + phase
+
+                def request(method, url, **kwargs):
+                    calls.append((method, url))
+                    if method == "POST":
+                        return FakeResponse(202, {"id": job_id, "status": "running"})
+                    if broken and (phase == "status" or url.endswith("/result")):
+                        raise runtime.requests.ConnectionError("10054 secret-key-must-not-leak")
+                    if url.endswith("/result"):
+                        return FakeResponse(200, {"choices": [{"message": {"content": "剧本正文"}}]})
+                    return FakeResponse(200, {"id": job_id, "status": "succeeded"})
+
+                args = dict(api_key="secret-key-must-not-leak", endpoint="/v1/chat/completions",
+                            payload={"model": "mock", "messages": []}, timeout=30,
+                            recovery_salt=phase, reuse_succeeded=True)
+                with mock.patch.object(runtime.requests, "request", side_effect=request), mock.patch.object(runtime.time, "sleep"):
+                    with self.assertRaises(runtime.DreamBrushRuntimeError) as caught:
+                        runtime.submit_json_task(**args)
+                    self.assertIn(job_id, str(caught.exception))
+                    self.assertIn("继续查询同一任务", str(caught.exception))
+                    self.assertNotIn("secret-key-must-not-leak", str(caught.exception))
+                    broken = False
+                    result = runtime.submit_json_task(**args)
+                self.assertEqual(sum(method == "POST" for method, _ in calls), 1)
+                self.assertEqual(result["choices"][0]["message"]["content"], "剧本正文")
+                self.assertTrue(all(job_id in url for method, url in calls if method == "GET"))
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.db_path = str(Path(self.temporary.name) / "runtime.sqlite3")
