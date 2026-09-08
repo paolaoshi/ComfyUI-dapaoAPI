@@ -100,6 +100,8 @@ class DramaTests(unittest.TestCase):
         self.assertEqual(first, original)
         self.assertEqual(second['config']['episode'], 'EP002')
         self.assertEqual(second['config']['episodes'], 2)
+        via_json = self.compact(m.DapaoDramaPrepare, json.dumps(first), **{'🎛️ 准备任务':'续写下一集（继承前集）', '📄 剧本或故事内容':'追问门内声音', '🎞️ 当前集号':1})['result'][0]
+        self.assertEqual(via_json, second)
         self.assertEqual(second['series_baseline']['assets'], ASSETS)
         self.assertNotIn('timing_plan', second)
         self.assertNotIn('image', second['docs'])
@@ -115,6 +117,11 @@ class DramaTests(unittest.TestCase):
         self.assertEqual(restored['result'][0]['config']['episode'], 'EP003')
 
     def test_sequel_requires_valid_previous_and_filters_reused_assets(self):
+        self.assertEqual(m.DapaoDramaPrepare.INPUT_TYPES()['optional']['📦 上游资料'][0], 'DAPAO_DRAMA_BUNDLE,STRING')
+        for invalid in ('not json', '[]', '{"prompt":"not a bundle"}'):
+            with self.assertRaisesRegex(RuntimeError, '完整资料包'):
+                self.compact(m.DapaoDramaPrepare, invalid, **{'🎛️ 准备任务':'续写下一集（继承前集）'})
+        self.assertEqual(self.submit.call_count, 0)
         with self.assertRaisesRegex(RuntimeError, '前集'):
             self.compact(m.DapaoDramaPrepare, None, **{'🎛️ 准备任务':'续写下一集（继承前集）'})
         first = self.base(); s.put_doc(first, 'image', IMAGE, ['assets'])

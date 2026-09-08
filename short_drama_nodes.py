@@ -519,7 +519,15 @@ class DramaCompact:
 
     @staticmethod
     def input_bundle(kw):
-        bundle = clone_bundle(kw.get("📦 上游资料"))
+        upstream = kw.get("📦 上游资料")
+        if isinstance(upstream, str):
+            try:
+                upstream = json.loads(upstream)
+            except (ValueError, TypeError):
+                raise ValueError("上游资料不是有效的完整资料包JSON，请连接‘完整资料包JSON（续集用）’，不要连接提示词清单或剧本文本。") from None
+            if not isinstance(upstream, dict) or upstream.get("schema") != "dapao.drama/1":
+                raise ValueError("上游文本不是漫剧完整资料包，请连接‘完整资料包JSON（续集用）’输出。")
+        bundle = clone_bundle(upstream)
         imported = str(kw.get("📄 导入文档", "")).strip()
         if imported:
             if kw.get("📂 导入文档类型") == "完整资料包JSON":
@@ -563,7 +571,7 @@ class DapaoDramaPrepare(DramaCompact):
             optional[name] = novel[name]
         optional["🔍 分析方式"] = (novel["🔍 分析方式"][0], {"default": "全文分段分析"})
         optional["🎛️ 准备任务"] = (["自动完成剧本", "仅原著分析", "仅系列开发", "仅剧本创作或修订", "仅导入已有文档（不调用LLM）", "续写下一集（继承前集）"], {"tooltip": "续集自动按前集集号+1；继承前集项目与视觉风格，使用这里的单集目标秒数。内容框填写新一集方向，无须再粘贴旧剧本。"})
-        optional["📦 上游资料"] = (BUNDLE_TYPE,)
+        optional["📦 上游资料"] = (f"{BUNDLE_TYPE},STRING", {"tooltip": "接受漫剧资料包或完整资料包JSON（续集用），JSON会自动解析，无需复制到导入框。"})
         optional.update(cls.advanced_inputs(("novel", "develop", "write")))
         return {"required": required, "optional": optional}
 

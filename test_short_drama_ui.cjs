@@ -205,3 +205,8 @@ restoredShow.onExecuted({text:[]});
 assert.equal(restoredShow.widgets.length,0);
 assert.deepEqual(Array.from(restoredShow.properties.dapaoDramaPreviewText),[]);
 console.log('Prompt display survives saved workflow reload and textless callbacks.');
+const oldPreparePort=new Deliver();oldPreparePort.type='DapaoDramaPrepare';
+oldPreparePort.inputs=[{name:'📦 上游资料',type:'DAPAO_DRAMA_BUNDLE',link:42}];
+extension.loadedGraphNode(oldPreparePort);
+assert.equal(oldPreparePort.inputs[0].type,'DAPAO_DRAMA_BUNDLE,STRING');
+assert.equal(oldPreparePort.inputs[0].link,42);

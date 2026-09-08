@@ -492,6 +492,7 @@ class DreamBrushRuntimeTests(unittest.TestCase):
         from llm_model_options import DEFAULT_LLM_MODEL, LLM_MODEL_OPTIONS
 
         expected = (
+            "gpt-6-astra",
             "deepseek-v4-flash-vision-exp",
             "deepseek-v4-pro",
             "deepseek-v4-flash",
@@ -510,6 +511,8 @@ class DreamBrushRuntimeTests(unittest.TestCase):
             "detail_flow_prompt_node.py",
             "music3_caption_prompt_node.py",
             "api_multi_turn_chat_node.py",
+            "portrait_photography_prompt_node.py",
+            "short_drama_nodes.py",
         )
         for filename in llm_nodes:
             source = (root / filename).read_text(encoding="utf-8")

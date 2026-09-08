@@ -155,6 +155,10 @@ function timingControls(node) {
 
 function setup(node) {
     if (!TYPES.has(typeOf(node)) || !node.addCustomWidget) return;
+    if (typeOf(node) === "DapaoDramaPrepare") {
+        const upstream = node.inputs?.find(input => input.name === "📦 上游资料");
+        if (upstream) upstream.type = "DAPAO_DRAMA_BUNDLE,STRING";
+    }
     if (["DapaoDramaPrepare", "DapaoDramaVisual", "DapaoDramaFinish"].includes(typeOf(node))) {
         const name = "💾 完整资料包JSON（续集用）";
         // Existing workflows restore their old output array during configure.
