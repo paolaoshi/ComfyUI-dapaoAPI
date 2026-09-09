@@ -407,6 +407,22 @@ def _image_item_to_pil(client, kind, value):
 
 
 class DapaoGPTImage2AllroundNode:
+    MAX_REFERENCE_IMAGES = MAX_REFERENCE_IMAGES
+    MODEL_OPTIONS = MODEL_OPTIONS
+    DEFAULT_MODEL = MODEL_LABEL
+    MODEL_ID_BY_LABEL = MODEL_ID_BY_LABEL
+    QUALITY_API_VALUES = QUALITY_API_VALUES
+    DEFAULT_QUALITY = "标准画质"
+    TASK_LABEL = "GPT-image-2"
+    UNAVAILABLE_MODELS = ()
+
+    def _create_client(self, api_key, timeout, max_poll_seconds):
+        return DapaoImage2RelayClient(api_key, timeout, max_poll_seconds)
+
+    def _price_info(self, model_label, resolution_label, count):
+        unit_price = PRICE_BY_MODEL.get(model_label, PRICE_BY_RESOLUTION[resolution_label])
+        return f"💰 单价：¥{unit_price:.2f}/张，预计价格：¥{unit_price * count:.2f}\n"
+
     @classmethod
     def INPUT_TYPES(cls):
         optional = {
@@ -414,10 +430,10 @@ class DapaoGPTImage2AllroundNode:
             "⏱️ 轮询间隔": ("INT", {"default": 5, "min": 3, "max": 30, "step": 1}),
             "⌛ 请求超时": ("INT", {"default": 900, "min": 30, "max": 1800, "step": 10}),
         }
-        for index in range(1, MAX_REFERENCE_IMAGES + 1):
+        for index in range(1, cls.MAX_REFERENCE_IMAGES + 1):
             optional[f"🖼️ 图像{index}"] = (
                 "IMAGE",
-                {"tooltip": f"接入任意参考图后自动切换为图生图，最多{MAX_REFERENCE_IMAGES}张。"},
+                {"tooltip": f"接入任意参考图后自动切换为图生图，所有接口和批次合计最多{cls.MAX_REFERENCE_IMAGES}张。"},
             )
         return {
             "required": {
@@ -429,7 +445,7 @@ class DapaoGPTImage2AllroundNode:
                         "tooltip": "密钥只用于请求 https://api.dapaoai.com，不会写入配置文件。",
                     },
                 ),
-                "🤖 模型": (MODEL_OPTIONS, {"default": MODEL_LABEL}),
+                "🤖 模型": (cls.MODEL_OPTIONS, {"default": cls.DEFAULT_MODEL}),
                 "📝 提示词": (
                     "STRING",
                     {
@@ -439,7 +455,7 @@ class DapaoGPTImage2AllroundNode:
                 ),
                 "📐 图片尺寸/比例": (SIZE_OPTIONS, {"default": "模型默认"}),
                 "🧩 清晰度": (list(MODEL_BY_RESOLUTION), {"default": "1K"}),
-                "🎨 画质": (list(QUALITY_API_VALUES), {"default": "标准画质"}),
+                "🎨 画质": (list(cls.QUALITY_API_VALUES), {"default": cls.DEFAULT_QUALITY}),
                 "🖼️ 出图数量": ("INT", {"default": 1, "min": 1, "max": 10, "step": 1}),
                 "⚡ 异步模式": (
                     "BOOLEAN",
@@ -465,18 +481,18 @@ class DapaoGPTImage2AllroundNode:
     CATEGORY = NODE_CATEGORY
     DESCRIPTION = "GPT-image-2 文生图/多图编辑；接收提示词列表时由ComfyUI并发执行各条任务 @炮老师的小课堂"
 
-    @staticmethod
-    def _collect_reference_images(kwargs):
+    @classmethod
+    def _collect_reference_images(cls, kwargs):
         contents = []
-        for input_index in range(1, MAX_REFERENCE_IMAGES + 1):
+        for input_index in range(1, cls.MAX_REFERENCE_IMAGES + 1):
             image_tensor = kwargs.get(f"🖼️ 图像{input_index}")
             if image_tensor is None:
                 continue
             for content in _tensor_to_png_bytes(image_tensor):
                 contents.append(content)
-        if len(contents) > MAX_REFERENCE_IMAGES:
+        if len(contents) > cls.MAX_REFERENCE_IMAGES:
             raise ValueError(
-                f"image-2图生图最多接收{MAX_REFERENCE_IMAGES}张参考图，"
+                f"{cls.TASK_LABEL}图生图最多接收{cls.MAX_REFERENCE_IMAGES}张参考图，"
                 f"当前输入接口及图像批次合计{len(contents)}张。"
             )
         return contents
@@ -489,11 +505,11 @@ class DapaoGPTImage2AllroundNode:
 
     def _generate_sync(self, **kwargs):
         api_key = (kwargs.get("🔑 API密钥") or "").strip()
-        model_label = kwargs.get("🤖 模型", MODEL_LABEL)
+        model_label = kwargs.get("🤖 模型", self.DEFAULT_MODEL)
         prompt = (kwargs.get("📝 提示词") or "").strip()
         size = kwargs.get("📐 图片尺寸/比例", "模型默认")
         resolution_label = kwargs.get("🧩 清晰度", "1K")
-        quality_label = kwargs.get("🎨 画质", "标准画质")
+        quality_label = kwargs.get("🎨 画质", self.DEFAULT_QUALITY)
         count = min(max(int(kwargs.get("🖼️ 出图数量", 1)), 1), 10)
         async_mode = bool(kwargs.get("⚡ 异步模式", False))
         timeout = int(kwargs.get("⌛ 请求超时", 900))
@@ -506,18 +522,20 @@ class DapaoGPTImage2AllroundNode:
         try:
             if not api_key:
                 raise ValueError("请填写 dapaoAI API 密钥。")
-            if model_label not in MODEL_OPTIONS:
+            if model_label in self.UNAVAILABLE_MODELS:
+                raise ValueError("该模型暂不可用，请在模型下拉框中选择 gpt-image-2.5-flare。")
+            if model_label not in self.MODEL_OPTIONS:
                 raise ValueError(f"未知界面模型：{model_label}")
             if not prompt:
                 raise ValueError("提示词不能为空。")
             if resolution_label not in MODEL_BY_RESOLUTION:
                 raise ValueError(f"不支持的清晰度：{resolution_label}")
-            if quality_label not in QUALITY_API_VALUES:
+            if quality_label not in self.QUALITY_API_VALUES:
                 raise ValueError(f"不支持的画质：{quality_label}")
 
-            model_id = MODEL_ID_BY_LABEL.get(model_label, MODEL_BY_RESOLUTION[resolution_label])
+            model_id = self.MODEL_ID_BY_LABEL.get(model_label, MODEL_BY_RESOLUTION[resolution_label])
             resolution = RESOLUTION_API_VALUES[resolution_label]
-            quality = QUALITY_API_VALUES[quality_label]
+            quality = self.QUALITY_API_VALUES[quality_label]
             # 后端以实际收到的 IMAGE 输入为准，避免前端连线状态与工作流参数不同步。
             reference_images = self._collect_reference_images(kwargs)
             mode = "图生图" if reference_images else "文生图"
@@ -550,7 +568,7 @@ class DapaoGPTImage2AllroundNode:
             if async_mode:
                 core_payload["async"] = True
 
-            client = DapaoImage2RelayClient(api_key, timeout, max_poll_seconds)
+            client = self._create_client(api_key, timeout, max_poll_seconds)
 
             _log_info(
                 f"提交任务：relay={API_BASE_URL}，model={model_id}，mode={mode}，"
@@ -560,7 +578,7 @@ class DapaoGPTImage2AllroundNode:
             if mode == "文生图":
                 submitted = client.generate(core_payload)
             else:
-                # 图生图必须走 edits multipart；重复的 image 文件字段对应多张参考图。
+                # 复用妙笔工坊素材上传及 image_urls 队列协议，由网关适配上游编辑接口。
                 submitted = client.edit(core_payload, reference_images)
 
             final = submitted
@@ -586,10 +604,8 @@ class DapaoGPTImage2AllroundNode:
             images = tensors[0] if len(tensors) == 1 else torch.cat(tensors, dim=0)
             urls = [value for kind, value in image_items if kind == "url" and value.startswith(("http://", "https://"))]
             elapsed = time.time() - started
-            unit_price = PRICE_BY_MODEL.get(model_label, PRICE_BY_RESOLUTION[resolution_label])
-            estimated_price = unit_price * count
             info = (
-                "✅ GPT-image-2 全能图像任务完成\n"
+                f"✅ {self.TASK_LABEL} 全能图像任务完成\n"
                 f"🌐 中转站：{API_BASE_URL}\n"
                 f"🤖 界面模型：{model_label}\n"
                 f"📤 实际模型ID：{model_id}\n"
@@ -600,14 +616,14 @@ class DapaoGPTImage2AllroundNode:
                 f"🎨 画质：{quality_label} ({quality})\n"
                 f"🖼️ 参考图：{len(reference_images)} 张\n"
                 f"🖼️ 请求数量：{count} 张，实际返回：{len(tensors)} 张\n"
-                f"💰 单价：¥{unit_price:.2f}/张，预计价格：¥{estimated_price:.2f}\n"
+                f"{self._price_info(model_label, resolution_label, count)}"
                 f"🆔 任务ID：{task_identifier or '同步返回'}\n"
                 f"⏱️ 耗时：{elapsed:.2f} 秒\n\n"
                 + json.dumps({"submit": submitted, "final": final}, ensure_ascii=False, indent=2)
             )
             return images, "\n".join(urls), info
         except Exception as error:
-            message = f"❌ GPT-image-2 全能图像生成失败：{_generation_error_message(error)}"
+            message = f"❌ {self.TASK_LABEL} 全能图像生成失败：{_generation_error_message(error)}"
             _log_error(message)
             _log_error(traceback.format_exc())
             details = json.dumps({"submit": submitted, "final": final}, ensure_ascii=False, indent=2)

@@ -1,7 +1,7 @@
 import { app } from "../../../scripts/app.js";
 import { api } from "../../../scripts/api.js";
 
-const NODE_TYPE = "DapaoGPTImage2AllroundNode";
+const NODE_TYPES = ["DapaoGPTImage2AllroundNode", "DapaoGPTImage25AllroundNode"];
 const REGISTER_URL = "https://api.dapaoai.com/sign-up?aff=vcOZ";
 const REGISTER_WIDGET_NAME = "👉点此注册API密钥👈";
 
@@ -85,7 +85,7 @@ function ensureRegisterButton(node) {
 }
 
 function refreshNode(node) {
-    if (nodeType(node) !== NODE_TYPE) return;
+    if (!NODE_TYPES.includes(nodeType(node))) return;
     const asyncMode = Boolean(value(node, "⚡ 异步模式", false));
 
     // 新版本已移除“模式”控件，模式只由实际图像连线自动决定。
@@ -117,14 +117,14 @@ function wrapCallback(node, target) {
 }
 
 function setup(node) {
-    if (!node?.widgets || nodeType(node) !== NODE_TYPE) return;
+    if (!node?.widgets || !NODE_TYPES.includes(nodeType(node))) return;
     ensureRegisterButton(node);
     node.widgets.forEach((target) => wrapCallback(node, target));
     refreshNode(node);
 }
 
 function refreshAllNodes() {
-    app.graph?.findNodesByType(NODE_TYPE)?.forEach((node) => setup(node));
+    NODE_TYPES.forEach((type) => app.graph?.findNodesByType(type)?.forEach((node) => setup(node)));
 }
 
 app.registerExtension({
@@ -135,13 +135,13 @@ app.registerExtension({
         });
     },
     nodeCreated(node) {
-        if (nodeType(node) === NODE_TYPE) setTimeout(() => setup(node), 20);
+        if (NODE_TYPES.includes(nodeType(node))) setTimeout(() => setup(node), 20);
     },
     loadedGraphNode(node) {
-        if (nodeType(node) === NODE_TYPE) setTimeout(() => setup(node), 50);
+        if (NODE_TYPES.includes(nodeType(node))) setTimeout(() => setup(node), 50);
     },
     async beforeRegisterNodeDef(nodeTypeClass, nodeData) {
-        if (nodeData.name !== NODE_TYPE) return;
+        if (!NODE_TYPES.includes(nodeData.name)) return;
 
         const onNodeCreated = nodeTypeClass.prototype.onNodeCreated;
         nodeTypeClass.prototype.onNodeCreated = function () {
