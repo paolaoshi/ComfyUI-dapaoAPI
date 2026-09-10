@@ -502,6 +502,7 @@ class DreamBrushRuntimeTests(unittest.TestCase):
             "deepseek-v4-flash-vision-exp",
             "deepseek-v4-pro",
             "deepseek-v4-flash",
+            "deepseek-flash",
         )
         self.assertEqual(DEFAULT_LLM_MODEL, "gemini-3.7-flash")
         for model in expected:

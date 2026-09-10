@@ -17,6 +17,7 @@ LLM_MODEL_OPTIONS = (
     "deepseek-v4-flash-vision-exp",
     "deepseek-v4-pro",
     "deepseek-v4-flash",
+    "deepseek-flash",
     "gemini-3.5-flash",
     "gemini-3.5-flash-lite",
     "gemini-3.7-flash",
