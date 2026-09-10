@@ -5,6 +5,11 @@ RH 全能图片节点
 作者：@炮老师的小课堂
 """
 
+import asyncio
+import sys
+from pathlib import Path
+from .image_input_utils import tensor_to_png_bytes, IMAGE_429_HINT
+
 import base64
 import io
 import json
@@ -35,6 +40,7 @@ API_BASE_URLS = {
     "国外版": "https://www.runninghub.ai/openapi/v2",
 }
 MODEL_CHOICES = ["全能图片G-2", "全能图片V2", "全能图片PRO"]
+IMAGE25_MODEL_CHOICES = ["gpt-image-2.5-flare", "gpt-image-2.5-sunburst"]
 CHANNEL_CHOICES = ["官方稳定版", "低价渠道版"]
 MODE_CHOICES = ["文生图", "图生图"]
 
@@ -153,6 +159,10 @@ ENDPOINT_CONFIGS = {
     },
 }
 
+# Snapshot of the user-specified RH OpenAPI registry; no runtime plugin dependency.
+with Path(__file__).with_name("rh_image25_configs.json").open(encoding="utf-8") as _file:
+    ENDPOINT_CONFIGS.update({tuple(key.split("|")): value for key, value in json.load(_file).items()})
+
 ALL_RATIOS = [
     "模型默认",
     "empty",
@@ -178,12 +188,20 @@ ALL_RATIOS = [
 ]
 
 
+def _safe_print(message):
+    try:
+        print(message)
+    except UnicodeEncodeError:
+        encoding = getattr(sys.stdout, "encoding", None) or "utf-8"
+        print(message.encode(encoding, errors="replace").decode(encoding))
+
+
 def _log_info(message):
-    print(f"[dapaoAPI-RH全能图片] 信息：{message}")
+    _safe_print(f"[dapaoAPI-RH全能图片] 信息：{message}")
 
 
 def _log_error(message):
-    print(f"[dapaoAPI-RH全能图片] 错误：{message}")
+    _safe_print(f"[dapaoAPI-RH全能图片] 错误：{message}")
 
 
 def pil2tensor(image):
@@ -212,9 +230,9 @@ class DapaoRHAllImageNode:
                     "placeholder": "填入 RunningHub API Key",
                     "tooltip": "RunningHub API Key，仅用于本次请求，不会写入文件。国内版和国外版密钥不通用。"
                 }),
-                "🤖 模型": (MODEL_CHOICES, {
+                "🤖 模型": (MODEL_CHOICES + IMAGE25_MODEL_CHOICES, {
                     "default": "全能图片G-2",
-                    "tooltip": "只保留 G-2、V2、PRO 三个模型，具体端点由渠道和模式共同决定。"
+                    "tooltip": "支持 G-2、V2、PRO 和 GPT-image-2.5 Flare/Sunburst，端点由渠道和模式共同决定。"
                 }),
                 "🏷️ 渠道": (CHANNEL_CHOICES, {
                     "default": "低价渠道版",
@@ -237,9 +255,9 @@ class DapaoRHAllImageNode:
                     "default": "模型默认",
                     "tooltip": "选择模型默认时自动使用当前端点默认分辨率。"
                 }),
-                "🎨 画质": (["模型默认", "low", "medium", "high"], {
+                "🎨 画质": (["模型默认", "auto", "low", "medium", "high", "xhigh", "max"], {
                     "default": "模型默认",
-                    "tooltip": "当前只在 G-2 官方稳定版端点中生效；其他端点会自动忽略。"
+                    "tooltip": "按模型和渠道提供可用画质；GPT-image-2.5低价渠道不发送画质参数。"
                 }),
                 "🎲 随机种": ("INT", {
                     "default": 0,
@@ -260,6 +278,7 @@ class DapaoRHAllImageNode:
                 "🖼️ 图像8": ("IMAGE", {"tooltip": "可选参考图。"}),
                 "🖼️ 图像9": ("IMAGE", {"tooltip": "可选参考图。"}),
                 "🖼️ 图像10": ("IMAGE", {"tooltip": "可选参考图。"}),
+                **{f"🖼️ 图像{i}": ("IMAGE", {"tooltip": "按所选接口的参考图上限使用。"}) for i in range(11, 17)},
                 "📋 额外参数JSON": ("STRING", {
                     "multiline": True,
                     "default": "{}",
@@ -380,7 +399,8 @@ class DapaoRHAllImageNode:
             message = self._error_message(response)
             if self._is_authentication_error(response.status_code, message):
                 raise self._authentication_error(api_channel, response.status_code, message)
-            raise RuntimeError(f"RunningHub 请求失败 {response.status_code}：{message}")
+            hint = {429: IMAGE_429_HINT, 500: "服务内部异常，请稍后再试。", 502: "上游连接失败，请稍后再试。", 503: "模型通道繁忙或维护中，请稍后再试。"}.get(response.status_code, "")
+            raise RuntimeError(f"RunningHub 请求失败 {response.status_code}：{hint} {message}")
         try:
             data = response.json()
         except Exception as e:
@@ -490,14 +510,7 @@ class DapaoRHAllImageNode:
 
     @staticmethod
     def _tensor_batch_to_png_bytes(image_tensor):
-        image_bytes = []
-        for index in range(image_tensor.shape[0]):
-            image_np = np.clip(image_tensor[index].cpu().numpy() * 255.0, 0, 255).astype(np.uint8)
-            image = Image.fromarray(image_np).convert("RGB")
-            buffer = io.BytesIO()
-            image.save(buffer, format="PNG")
-            image_bytes.append(buffer.getvalue())
-        return image_bytes
+        return tensor_to_png_bytes(image_tensor)
 
     def _upload_image_bytes(
         self,
@@ -533,7 +546,7 @@ class DapaoRHAllImageNode:
             message = self._error_message(response)
             if self._is_authentication_error(response.status_code, message):
                 raise self._authentication_error(api_channel, response.status_code, message)
-            raise RuntimeError(f"图片上传失败 {response.status_code}：{message}")
+            raise RuntimeError(f"图片上传失败 {response.status_code}：{IMAGE_429_HINT if response.status_code == 429 else message}")
         data = response.json()
         if data.get("code") == 0:
             download_url = data.get("data", {}).get("download_url")
@@ -579,8 +592,11 @@ class DapaoRHAllImageNode:
     ):
         api_channel = api_channel or self._current_api_channel()
         upload_url = upload_url or self._current_api_urls()["upload"]
+        total = sum(int(kwargs[f"🖼️ 图像{i}"].shape[0]) for i in range(1, 17) if kwargs.get(f"🖼️ 图像{i}") is not None)
+        if total > max_images:
+            raise ValueError(f"当前接口最多接收{max_images}张参考图，所有接口及批次合计{total}张。")
         image_urls = []
-        for input_index in range(1, 11):
+        for input_index in range(1, 17):
             image_tensor = kwargs.get(f"🖼️ 图像{input_index}")
             if image_tensor is None:
                 continue
@@ -633,7 +649,11 @@ class DapaoRHAllImageNode:
         payload.update(extra_params)
         return payload, final_ratio, final_resolution, final_quality
 
-    def generate(self, **kwargs):
+    async def generate(self, **kwargs):
+        # Separate per-call state keeps domestic/overseas list tasks isolated.
+        return await asyncio.to_thread(type(self)()._generate_sync, **kwargs)
+
+    def _generate_sync(self, **kwargs):
         api_channel = kwargs.get("🌐 API渠道", "国内版")
         api_key = kwargs.get("🔑 API密钥", "").strip()
         model = kwargs.get("🤖 模型", "全能图片G-2")
@@ -704,7 +724,7 @@ class DapaoRHAllImageNode:
                 payload,
                 timeout,
                 api_channel,
-                connection_retries=2,
+                connection_retries=0,
             )
             task_id = self._extract_task_id(submit_response)
             if not task_id:
