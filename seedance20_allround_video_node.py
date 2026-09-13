@@ -8,6 +8,10 @@ import asyncio
 import io
 import json
 import os
+import re
+import hashlib
+import threading
+from urllib.parse import quote
 import sys
 import tempfile
 import time
@@ -37,21 +41,22 @@ API_BASE_URL = "https://api.dapaoai.com"
 NODE_NAME = "DapaoSeedance20AllroundVideoNode"
 NODE_CATEGORY = "🤖dapaoAPI/🍬大炮AI主力维护🍬"
 DISPLAY_NAME = "🐠Seedance2.0全能视频@炮老师的小课堂"
-MODEL_ID = "SD2-face"
-STANDARD_UPSTREAM_MODEL = "SD2.0-mini"
-FAST_UPSTREAM_MODEL = "SD2-fast"
-MODEL_OPTIONS = [MODEL_ID, STANDARD_UPSTREAM_MODEL, FAST_UPSTREAM_MODEL]
-UPSTREAM_REFERENCE_MODEL = "seedance-2.0-face"
-MODE_OPTIONS = ["文生视频", "图生视频", "首尾帧生视频", "多模态参考"]
+MODEL_ID = "doubao-seedance-2.0"
+STANDARD_UPSTREAM_MODEL = "seedance-2.0"
+FAST_UPSTREAM_MODEL = STANDARD_UPSTREAM_MODEL
+MODEL_OPTIONS = [MODEL_ID, STANDARD_UPSTREAM_MODEL]
+UPSTREAM_REFERENCE_MODEL = MODEL_ID
+MODE_OPTIONS = ["自动识别", "文生视频", "图生视频", "首尾帧生视频", "多模态参考"]
 DURATION_OPTIONS = [str(value) for value in range(4, 16)]
-ASPECT_RATIO_OPTIONS = ["16:9", "9:16"]
-RESOLUTION_OPTIONS = ["720P"]
+ASPECT_RATIO_OPTIONS = ["16:9", "9:16", "4:3", "3:4", "1:1", "21:9", "adaptive"]
+RESOLUTION_OPTIONS = ["720P", "480P", "1080P"]
 MAX_IMAGE_REFERENCES = 9
 MAX_VIDEO_REFERENCES = 3
 MAX_AUDIO_REFERENCES = 3
 MAX_IMAGE_BYTES = 10 * 1024 * 1024
-MAX_VIDEO_BYTES = 60 * 1024 * 1024
-MAX_AUDIO_BYTES = 50 * 1024 * 1024
+MAX_VIDEO_BYTES = 20 * 1024 * 1024
+MAX_AUDIO_BYTES = 15 * 1024 * 1024
+_REGISTRATION_LOCKS = [threading.Lock() for _ in range(32)]
 
 
 def _safe_print(message):
@@ -128,6 +133,23 @@ def _response_error(response):
     return message or text
 
 
+class DapaoSeedanceTaskError(RuntimeError):
+    """Keep the failed read-only query available to the outer error report."""
+
+    def __init__(self, task_id, result, message):
+        self.result = result
+        normalized = str(message).lower()
+        hint = ""
+        if "asset" in normalized and ("not found" in normalized or "does not exist" in normalized):
+            hint = (
+                "生成服务找不到引用的上游素材。请让妙笔维护者核对该任务的素材登记是否仍有效、"
+                "素材登记与生成使用的渠道/上游凭据是否一致，以及file ID到上游asset ID的映射。"
+                "这条错误不能说明是不支持真人，也不能靠切换真人模式解决。"
+                "节点不会自动重新上传或重新提交视频。\n"
+            )
+        super().__init__(f"视频任务失败（任务ID：{task_id}）：{hint}{message}")
+
+
 class DapaoSeedanceAPIError(RuntimeError):
     def __init__(self, status_code, message):
         self.status_code = int(status_code)
@@ -139,14 +161,19 @@ class DapaoSeedanceAPIError(RuntimeError):
             403: "没有模型或接口权限",
             404: "接口或任务不存在",
             429: IMAGE_429_HINT,
+            409: "素材尚未就绪或登记状态待核对，请保留原ID查询",
+            410: "素材已过期，请重新准备源素材",
+            500: "服务内部错误，请保留任务ID稍后查询",
+            502: "上游响应异常，请保留任务ID稍后查询",
+            503: "服务繁忙或队列不可用，请稍后查询原任务",
         }
         normalized = self.api_message.lower()
         if "insufficient_user_quota" in normalized or "insufficient quota" in normalized or "预扣费额度" in self.api_message:
             label = "上游余额不足"
-            hint = "（土豆上游预扣费失败；请充值上游账户，或降低时长/切换可用渠道后重试）"
+            hint = "（请联系妙笔维护者核对渠道额度）"
         elif "did not provide a seconds billing multiplier" in normalized:
             label = "中转站按秒计费适配器配置错误"
-            hint = "（服务端任务适配器未返回 seconds 计费倍率；节点已提交 duration 和 seconds，需修复中转站适配器或计费配置）"
+            hint = "（服务端任务适配器未返回 seconds 计费倍率；节点已提交 seconds，需修复中转站适配器或计费配置）"
         elif "model name not specified" in self.api_message.lower() or "model name cannot be empty" in self.api_message.lower():
             label = "中转站模型映射为空"
             hint = "（节点已发送模型字段；请在 dapaoAI 的视频路由中检查该模型ID的目标模型是否为空或未绑定可用渠道）"
@@ -309,7 +336,7 @@ def _task_state(result):
                     if nested:
                         message = str(nested)
                         break
-    if any(status in {"failed", "failure", "error", "cancelled", "canceled", "rejected"} for status in statuses):
+    if any(status in {"failed", "failure", "error", "cancelled", "canceled", "rejected", "expired"} for status in statuses):
         return "failed", progress, message
     if any(status in {"completed", "complete", "succeeded", "success", "done"} for status in statuses):
         return "completed", progress, message
@@ -357,10 +384,12 @@ def _sanitized_result(value):
 class DapaoVideoAdapter:
     """A lightweight VIDEO output accepted by common ComfyUI save nodes."""
 
-    def __init__(self, video_url="", width=1280, height=720):
+    def __init__(self, video_url="", width=1280, height=720, *, api_key="", task_id=""):
         self.video_url = video_url or ""
         self.width = max(1, int(width))
         self.height = max(1, int(height))
+        self._api_key = api_key
+        self._task_id = task_id
 
     def get_dimensions(self):
         return self.width, self.height
@@ -370,9 +399,20 @@ class DapaoVideoAdapter:
         # 远端视频已经编码完成，这些参数只需兼容接收，不应改变下载内容。
         if not self.video_url:
             return False
-        response = requests.get(self.video_url, stream=True, timeout=300, allow_redirects=True)
+        if self._task_id:
+            url = API_BASE_URL + "/v1/videos/" + quote(self._task_id, safe="") + "/content"
+            response = requests.get(url, headers={"Authorization": "Bearer " + self._api_key}, stream=True, timeout=300, allow_redirects=False)
+            if response.is_redirect:
+                location = response.headers.get("Location", "")
+                response.close()
+                if not location.startswith("https://"):
+                    raise RuntimeError("妙笔视频下载返回无效重定向，请查询原任务。")
+                # Follow the signed download URL without the gateway key.
+                response = requests.get(location, stream=True, timeout=300, allow_redirects=True)
+        else:
+            response = requests.get(self.video_url, stream=True, timeout=300, allow_redirects=True)
         response.raise_for_status()
-        with open(output_path, "wb") as handle:
+        with response, open(output_path, "wb") as handle:
             for chunk in response.iter_content(chunk_size=1024 * 1024):
                 if chunk:
                     handle.write(chunk)
@@ -396,12 +436,16 @@ class DapaoSeedanceRelayClient:
     def _request_json(self, method, path, **kwargs):
         url = f"{self.base_url}/{path.lstrip('/')}"
         try:
-            response = requests.request(method, url, headers=self._headers(), timeout=self.timeout, **kwargs)
+            response = requests.request(method, url, headers=self._headers(), timeout=self.timeout, allow_redirects=False, **kwargs)
         except (requests.ConnectionError, requests.Timeout) as error:
             if method.upper() == "POST":
                 raise RuntimeError(f"{friendly_network_error(error, '提交视频任务')} 视频提交不会自动重试，以免重复扣费。") from error
             raise RuntimeError(friendly_network_error(error, '查询视频任务')) from error
-        if response.status_code >= 400:
+        try:
+            self.retry_after = max(10, min(600, int(response.headers.get("Retry-After", "10"))))
+        except (TypeError, ValueError):
+            self.retry_after = 10
+        if response.status_code >= 300:
             if response.status_code == 443:
                 raise RuntimeError(friendly_443_status())
             raise DapaoSeedanceAPIError(response.status_code, _response_error(response))
@@ -426,6 +470,35 @@ class DapaoSeedanceRelayClient:
             base_url=self.base_url, timeout=self.timeout,
         )[0]
 
+    def prepare_asset(self, reference, model_name):
+        if not re.fullmatch(r"asset://file-[A-Za-z0-9_-]{1,59}", reference):
+            raise ValueError("妙笔上传未返回有效的asset://file-...引用。")
+        identifier = reference.removeprefix("asset://")
+        digest = hashlib.sha256((self.base_url + self.api_key + model_name + identifier).encode()).digest()
+        with _REGISTRATION_LOCKS[int.from_bytes(digest[:2], "big") % len(_REGISTRATION_LOCKS)]:
+            try:
+                state = self._request_json("POST", "/v1/seedance/assets", json={"model": model_name, "file_id": identifier})
+            except Exception as error:
+                raise RuntimeError(f"素材{identifier}登记未完成：{error}。请保留ID查询，不自动重复创建。") from error
+            registration = state.get("registration_id")
+            if state.get("status") != "ready" and not registration:
+                raise RuntimeError(f"素材登记未返回登记ID，请保留素材{identifier}交妙笔核对，不自动重建。")
+            deadline = time.monotonic() + 600
+            while state.get("status") != "ready":
+                if state.get("status") not in {"creating", "processing"}:
+                    raise RuntimeError(f"素材{identifier}登记状态：{state.get('status')}，请查询原记录，不自动重建。")
+                if time.monotonic() >= deadline:
+                    raise RuntimeError(f"素材{identifier}登记等待超时，登记ID：{registration}，请继续查询原记录。")
+                for _ in range(min(getattr(self, "retry_after", 10), max(1, int(deadline - time.monotonic())))):
+                    if comfy is not None:
+                        comfy.model_management.throw_exception_if_processing_interrupted()
+                    time.sleep(1)
+                try:
+                    state = self._request_json("GET", f"/v1/seedance/assets/{identifier}?registration_id={quote(str(registration), safe='')}")
+                except Exception as error:
+                    raise RuntimeError(f"素材查询中断，素材ID：{identifier}，登记ID：{registration}。{error}") from error
+            return {**state, "registration_id": registration or state.get("registration_id")}
+
     def submit(self, payload):
         return submit_json_task(
             api_key=self.api_key, base_url=self.base_url, endpoint="/v1/video/generations",
@@ -433,6 +506,7 @@ class DapaoSeedanceRelayClient:
             error_factory=DapaoSeedanceAPIError,
             interrupt_callback=(comfy.model_management.throw_exception_if_processing_interrupted if comfy is not None else None),
             max_poll_seconds=self.max_poll_seconds,
+            recovery_salt=getattr(self, "recovery_salt", 0), reuse_succeeded=True,
         )
 
     def poll(self, task_id, max_seconds, interval):
@@ -448,13 +522,13 @@ class DapaoSeedanceRelayClient:
                     progress_bar.update_absolute(100)
                 return result
             if status == "failed":
-                raise RuntimeError(f"视频任务失败：{message or json.dumps(_sanitized_result(result), ensure_ascii=False)[:1000]}")
+                raise DapaoSeedanceTaskError(task_id, result, message or "生成服务返回失败状态")
             if progress_bar:
                 elapsed = time.monotonic() - started
                 current = min(95, int(progress)) if progress is not None else min(95, int(elapsed / max_seconds * 95))
                 progress_bar.update_absolute(current)
             time.sleep(interval)
-        raise RuntimeError(f"视频任务超过 {max_seconds} 秒仍未完成。")
+        raise RuntimeError(f"视频任务 {task_id} 超过 {max_seconds} 秒仍未完成，请保留任务ID继续查询，不要重复提交。")
 
 
 class DapaoSeedance20AllroundVideoNode:
@@ -466,7 +540,7 @@ class DapaoSeedance20AllroundVideoNode:
     MAX_AUDIO_REFERENCES = MAX_AUDIO_REFERENCES
     DURATION_OPTIONS = DURATION_OPTIONS
     VERSION_LABEL = "Seedance2.0"
-    HAS_FACE_MODE = True
+    HAS_FACE_MODE = False
     INCLUDE_BILLING_SECONDS = True
 
     def _log_info(self, message):
@@ -478,17 +552,8 @@ class DapaoSeedance20AllroundVideoNode:
     @classmethod
     def INPUT_TYPES(cls):
         optional = {
-            "🎬 首帧图": ("IMAGE", {"tooltip": "首尾帧模式的首图，将作为 images[0] 提交。"}),
-            "🏁 尾帧图": ("IMAGE", {"tooltip": "首尾帧模式的尾图，将排在首图之后作为多图参考提交。"}),
-            "🌐 公网素材URL(JSON)": (
-                "STRING",
-                {
-                    "multiline": True,
-                    "default": "{}",
-                    "tooltip": "可选：填写公网素材地址，格式 {\"images\":[],\"videos\":[],\"audios\":[]}。上游只接受 http(s)，不能填本地路径或 data URI。",
-                },
-            ),
-            "📋 额外参数JSON": ("STRING", {"multiline": True, "default": "{}"}),
+            "🎬 首帧图": ("IMAGE", {"tooltip": "首尾帧模式的首图，将自动登记并作为first_frame提交。"}),
+            "🏁 尾帧图": ("IMAGE", {"tooltip": "首尾帧模式的尾图，将自动登记并作为last_frame提交。"}),
             "🔁 最大轮询秒数": ("INT", {"default": 1800, "min": 60, "max": 7200, "step": 10}),
             "⏱️ 轮询间隔": ("INT", {"default": 5, "min": 2, "max": 30, "step": 1}),
             "⌛ 请求超时": ("INT", {"default": 120, "min": 30, "max": 600, "step": 10}),
@@ -499,6 +564,7 @@ class DapaoSeedance20AllroundVideoNode:
             optional[f"🎞️ 参考视频{index}"] = (IO.VIDEO, {"tooltip": "多模态参考视频。"})
         for index in range(1, cls.MAX_AUDIO_REFERENCES + 1):
             optional[f"🎵 参考音频{index}"] = ("AUDIO", {"tooltip": "多模态参考音频，不能单独使用。"})
+        optional["🎞️ 保留参考视频音轨"] = ("BOOLEAN", {"default": False})
         required = {
                 "🔑 API密钥": (
                     "STRING",
@@ -509,7 +575,7 @@ class DapaoSeedance20AllroundVideoNode:
                     },
                 ),
                 "🤖 模型": (cls.MODEL_OPTIONS, {"default": cls.MODEL_ID}),
-                "🎛️ 生成模式": (MODE_OPTIONS, {"default": "文生视频"}),
+                "🎛️ 生成模式": (MODE_OPTIONS, {"default": "自动识别"}),
                 "📝 提示词": (
                     "STRING",
                     {
@@ -519,11 +585,7 @@ class DapaoSeedance20AllroundVideoNode:
                 ),
                 "🧩 分辨率": (
                     RESOLUTION_OPTIONS,
-                    {"default": "720P", "tooltip": "当前暂时只开放 720P。"},
-                ),
-                "👤 真人模式": (
-                    "BOOLEAN",
-                    {"default": True, "tooltip": "开启时切换到 SD2-face；关闭时默认切换到 SD2.0-mini。直接选择 SD2.0-mini 或 SD2-fast 时会自动关闭。"},
+                    {"default": "720P", "tooltip": "标准版支持480P/720P/1080P；SP仅720P。"},
                 ),
                 "⏱️ 时长(秒)": (cls.DURATION_OPTIONS, {"default": "5"}),
                 "📐 视频比例": (ASPECT_RATIO_OPTIONS, {"default": "16:9"}),
@@ -539,8 +601,6 @@ class DapaoSeedance20AllroundVideoNode:
                     },
                 ),
         }
-        if not cls.HAS_FACE_MODE:
-            required.pop("👤 真人模式")
         return {
             "required": required,
             "optional": optional,
@@ -562,7 +622,7 @@ class DapaoSeedance20AllroundVideoNode:
                 continue
             for content in _tensor_to_png_bytes(image):
                 if len(image_parts) >= limit:
-                    return image_parts
+                    raise ValueError(f"参考图片超过{limit}张，请减少输入。")
                 image_parts.append((content, f"seedance_reference_{index}_{len(image_parts) + 1}.png", "image/png"))
         return image_parts
 
@@ -599,7 +659,7 @@ class DapaoSeedance20AllroundVideoNode:
             result.extend((content, "seedance_first_frame.png", "image/png") for content in _tensor_to_png_bytes(first))
         if last is not None:
             result.extend((content, "seedance_last_frame.png", "image/png") for content in _tensor_to_png_bytes(last))
-        return result[:cls.MAX_IMAGE_REFERENCES]
+        return result
 
     @classmethod
     def _public_url_overrides(cls, value):
@@ -627,10 +687,13 @@ class DapaoSeedance20AllroundVideoNode:
     @staticmethod
     def _expected_dimensions(resolution_label, aspect_ratio):
         """Return the expected encoded dimensions for downstream VIDEO nodes."""
-        long_side = 1280
-        if aspect_ratio == "9:16":
-            return round(long_side * 9 / 16), long_side
-        return long_side, round(long_side * 9 / 16)
+        sizes = {
+            "480P": [(864, 496), (496, 864), (752, 560), (560, 752), (640, 640), (992, 432)],
+            "720P": [(1280, 720), (720, 1280), (1112, 834), (834, 1112), (960, 960), (1470, 630)],
+            "1080P": [(1920, 1080), (1080, 1920), (1664, 1248), (1248, 1664), (1440, 1440), (2206, 946)],
+        }
+        index = ASPECT_RATIO_OPTIONS.index(aspect_ratio) if aspect_ratio != "adaptive" else 0
+        return sizes[resolution_label][index]
 
     async def generate(self, **kwargs):
         return await asyncio.to_thread(self._generate_sync, **kwargs)
@@ -638,14 +701,13 @@ class DapaoSeedance20AllroundVideoNode:
     def _generate_sync(self, **kwargs):
         api_key = (kwargs.get("🔑 API密钥") or "").strip()
         model_id = str(kwargs.get("🤖 模型") or "").strip()
-        mode = kwargs.get("🎛️ 生成模式", "文生视频")
+        mode = kwargs.get("🎛️ 生成模式", "自动识别")
         prompt = (kwargs.get("📝 提示词") or "").strip()
         resolution_label = kwargs.get("🧩 分辨率", "720P")
-        face_mode = bool(kwargs.get("👤 真人模式", True))
         # Older saved workflows can deserialize a newly added combo widget as
         # an empty string. Resolve that state locally before validation.
         if not model_id:
-            model_id = self.MODEL_ID if face_mode else self.STANDARD_UPSTREAM_MODEL
+            model_id = self.MODEL_ID
         duration = int(kwargs.get("⏱️ 时长(秒)", 5))
         aspect_ratio = kwargs.get("📐 视频比例", "16:9")
         timeout = int(kwargs.get("⌛ 请求超时", 120))
@@ -656,6 +718,7 @@ class DapaoSeedance20AllroundVideoNode:
         request_model = ""
         payload = {}
         stage = "validate"
+        asset_records = []
 
         try:
             if not api_key:
@@ -666,116 +729,85 @@ class DapaoSeedance20AllroundVideoNode:
                 raise ValueError(f"不支持的生成模式：{mode}")
             if not prompt:
                 raise ValueError("提示词不能为空。")
-            if resolution_label not in RESOLUTION_OPTIONS:
-                raise ValueError("当前分辨率仅支持 720P。")
-            # The model selector is authoritative; face mode is a convenience
-            # control and status indicator for the dedicated face mapping.
-            face_mode = self.HAS_FACE_MODE and model_id == self.MODEL_ID
+            allowed_resolutions = ["720P"] if model_id == "seedance-2.0" else RESOLUTION_OPTIONS
+            if resolution_label not in allowed_resolutions:
+                raise ValueError(f"{model_id}支持的分辨率：{'/'.join(allowed_resolutions)}。")
             request_model = self._select_request_model(model_id)
             if str(duration) not in self.DURATION_OPTIONS:
                 raise ValueError(f"时长仅支持 {self.DURATION_OPTIONS[0]}–{self.DURATION_OPTIONS[-1]} 秒。")
             if aspect_ratio not in ASPECT_RATIO_OPTIONS:
-                raise ValueError("视频比例仅支持 16:9 或 9:16。")
+                raise ValueError("视频比例无效，请从候选列表选择。")
             overrides = self._public_url_overrides(kwargs.get("🌐 公网素材URL(JSON)", "{}"))
 
-            image_parts = []
-            video_parts = []
-            audio_parts = []
-            if mode == "图生视频":
-                image_parts = self._collect_image_parts(kwargs)
-                if not image_parts and not overrides["images"]:
-                    raise ValueError("图生视频至少需要接入一张参考图。")
-            elif mode == "首尾帧生视频":
-                image_parts = self._frame_parts(kwargs)
-                if not image_parts and not overrides["images"]:
-                    raise ValueError("首尾帧生视频至少需要接入首帧图。")
-            elif mode == "多模态参考":
-                image_parts = self._collect_image_parts(kwargs)
-                video_parts = self._collect_video_parts(kwargs)
-                audio_parts = self._collect_audio_parts(kwargs)
-                if not image_parts and not video_parts and not overrides["images"] and not overrides["videos"]:
-                    raise ValueError("多模态参考至少需要一张参考图或一个参考视频。")
-                if audio_parts and not image_parts and not video_parts and not overrides["images"] and not overrides["videos"]:
-                    raise ValueError("参考音频不能单独使用，需同时接入参考图或参考视频。")
-
-            client = DapaoSeedanceRelayClient(api_key, timeout, max_seconds)
-            stage = "media_upload"
-            # Explicit public URLs are useful when a deployment does not expose
-            # /v1/assets/uploads, and always take precedence over local tensors.
-            image_uris = list(overrides["images"])
-            video_uris = list(overrides["videos"])
-            audio_uris = list(overrides["audios"])
-            if not image_uris and image_parts:
-                image_uris = [client.upload_file(content, filename, mime_type, request_model) for content, filename, mime_type in image_parts]
-            if not video_uris and video_parts:
-                video_uris = [client.upload_file(content, filename, mime_type, request_model) for content, filename, mime_type in video_parts]
-            if not audio_uris and audio_parts:
-                audio_uris = [client.upload_file(content, filename, mime_type, request_model) for content, filename, mime_type in audio_parts]
-            if mode == "图生视频" and not image_uris:
-                raise ValueError("图生视频至少需要一张公网参考图。")
-            if mode == "首尾帧生视频" and not image_uris:
-                raise ValueError("首尾帧生视频至少需要一张公网首帧图。")
-            if mode == "多模态参考" and not image_uris and not video_uris:
-                raise ValueError("多模态参考至少需要一张公网参考图或一个公网参考视频。")
-            for ref_key, refs in (("images", image_uris), ("videos", video_uris), ("audios", audio_uris)):
-                for ref in refs:
-                    _validate_public_url(ref, f"{ref_key} 参考素材")
-
-            payload = {
-                # Submit one of the two real upstream model IDs. Resolution
-                # remains a separate request parameter. dapaoAI's per-second
-                # Seedance 2.0's billing adapter additionally reads ``seconds``;
-                # per-request models such as SD2.5 only receive ``duration``.
-                "model": request_model,
-                "prompt": prompt,
-                "duration": duration,
-                "aspect_ratio": aspect_ratio,
-                "resolution": resolution_label.lower(),
-                "generate_audio": bool(kwargs.get("🔊 生成音频", True)),
-            }
-            if self.INCLUDE_BILLING_SECONDS:
-                payload["seconds"] = str(duration)
-            if image_uris:
-                payload["images"] = image_uris
-            if video_uris:
-                payload["videos"] = video_uris
-            if audio_uris:
-                payload["audios"] = audio_uris
+            from .seedance_relay_media import prepare_inputs
+            stage = "media_prepare"
+            mode, media = prepare_inputs(self, kwargs, mode, overrides)
+            metadata = {"resolution": resolution_label.lower(), "ratio": aspect_ratio}
+            if model_id != "seedance-2.0":
+                metadata["generate_audio"] = bool(kwargs.get("🔊 生成音频", True))
+            if model_id == "doubao-seedance-2-5":
+                bitrate = kwargs.get("🎚️ 码率模式", "standard")
+                container = kwargs.get("📦 输出格式", "mp4")
+                task_type = kwargs.get("🎞️ 参考任务", "auto")
+                if bitrate not in {"standard", "high"} or container not in {"mp4", "mov"}:
+                    raise ValueError("2.5码率或输出格式无效。")
+                metadata.update(bitrate_mode=bitrate, output_format=container)
+                if mode == "多模态参考":
+                    if task_type not in {"auto", "reference", "edit", "extend"}:
+                        raise ValueError("2.5参考任务类型无效。")
+                    if task_type in {"edit", "extend"} and not any(m[0] == "video" for m in media):
+                        raise ValueError("编辑/延长任务需要参考视频。")
+                    metadata["omni_reference_task_type"] = task_type
             extra = _parse_extra_json(kwargs.get("📋 额外参数JSON", "{}"))
-            protected = {
-                "model", "prompt", "duration", "seconds", "aspect_ratio", "resolution",
-                "images", "videos", "audios", "generate_audio",
-            }
-            conflicts = sorted(set(extra).intersection(protected))
-            if conflicts:
-                raise ValueError(f"额外参数JSON不能覆盖节点核心参数：{', '.join(conflicts)}")
-            payload.update(extra)
+            if extra:
+                raise ValueError("新妙笔协议请使用节点参数控件，额外参数JSON暂仅接受{}，避免旧协议字段误传。")
+            client = DapaoSeedanceRelayClient(api_key, timeout, max_seconds)
+            client.recovery_salt = kwargs.get("🎲 随机种", 0)
+            stage = "media_upload"
+            image_uris, video_uris, audio_uris = [], [], []
+            content = []
+            for kind, source, role in media:
+                if comfy is not None:
+                    comfy.model_management.throw_exception_if_processing_interrupted()
+                stage = "media_upload"
+                reference = source if isinstance(source, str) else client.upload_file(*source, request_model)
+                stage = "asset_registration"
+                record = {"reference": reference, "model": request_model, "kind": kind, "role": role}
+                asset_records.append(record)
+                registered = client.prepare_asset(reference, request_model)
+                record.update({key: registered.get(key) for key in ("registration_id", "status", "expires_at")})
+                if registered.get("kind") and registered["kind"] != kind:
+                    raise ValueError(f"素材{reference}实际类型与{kind}输入不匹配，请检查连接。")
+                {"image": image_uris, "video": video_uris, "audio": audio_uris}[kind].append(reference)
+                content.append({"type": kind + "_url", kind + "_url": {"url": reference}, "role": role})
+            if content:
+                metadata.update(content=content, seedance_asset_library=True)
+            payload = {"model": request_model, "prompt": prompt, "seconds": str(duration), "metadata": metadata}
 
             self._log_info(
                 f"提交任务：relay={API_BASE_URL}，model={model_id}，实际model={request_model}，"
-                f"mode={mode}，真人模式={face_mode}，duration={duration}，aspect_ratio={aspect_ratio}，"
+                f"mode={mode}，duration={duration}，aspect_ratio={aspect_ratio}，"
                 f"resolution={resolution_label.lower()}，billing_seconds={payload.get('seconds', '按次计费不发送')}，"
-                f"audio={payload['generate_audio']}，图={len(image_uris)}，视频={len(video_uris)}，音频={len(audio_uris)}"
+                f"audio={metadata.get('generate_audio', '由SP模型决定')}，图={len(image_uris)}，视频={len(video_uris)}，音频={len(audio_uris)}"
             )
             started = time.time()
             stage = "video_submit"
             submitted = client.submit(payload)
             task_identifier = _task_id(submitted)
-            submitted_video_url = _extract_video_url(submitted)
-            if not task_identifier and not submitted_video_url:
-                raise RuntimeError(f"提交成功但没有返回任务ID：{json.dumps(_sanitized_result(submitted), ensure_ascii=False)[:1200]}")
+            if not task_identifier or not re.fullmatch(r"[A-Za-z0-9_-]{1,128}", task_identifier) or submitted.get("object") == "relay.job":
+                raise RuntimeError("未取得有效视频任务ID，请保留妙笔队列记录查询，不要重复提交。")
             # A succeeded _dapao_queue means the POST was delivered and its
             # upstream response was captured. It does not mean video rendering
-            # has finished. Continue polling whenever that response has no URL.
-            final = submitted if submitted_video_url else client.poll(task_identifier, max_seconds, interval)
-            task_identifier = task_identifier or "同步返回"
+            # has finished. Only a completed video task may skip polling.
+            submitted_status, _, _ = _task_state(submitted)
+            if submitted_status == "failed":
+                raise DapaoSeedanceTaskError(task_identifier, submitted, _task_state(submitted)[2])
+            stage = "video_poll"
+            final = submitted if submitted_status == "completed" else client.poll(task_identifier, max_seconds, interval)
             video_url = _extract_video_url(final)
             if not video_url:
-                raise RuntimeError(f"任务完成但没有找到视频URL：{json.dumps(_sanitized_result(final), ensure_ascii=False)[:1600]}")
-            if face_mode:
-                parameter_profile = "SD2-face（720P真人版）"
-            else:
-                parameter_profile = f"{request_model}（720P）"
+                video_url = API_BASE_URL + "/v1/videos/" + quote(task_identifier, safe="") + "/content"
+            parameter_profile = f"{request_model}（{resolution_label}）"
             info = (
                 f"✅ {self.VERSION_LABEL} 全能视频任务完成\n"
                 f"🌐 中转站：{API_BASE_URL}\n"
@@ -786,9 +818,8 @@ class DapaoSeedance20AllroundVideoNode:
                 f"⏱️ 时长：{duration} 秒\n"
                 f"📐 比例：{aspect_ratio}\n"
                 f"🧩 分辨率：{resolution_label}\n"
-                f"👤 真人模式：{face_mode}\n"
-                f"🔊 生成音频：{payload['generate_audio']}\n"
-                f"💰 预计价格：¥{duration * 0.48:.2f}\n"
+                f"🔊 生成音频：{metadata.get('generate_audio', '由SP模型决定')}\n"
+                f"💰 价格：按妙笔实际结算（SP按秒；标准版按计费用量）\n"
                 f"🖼️ 参考图：{len(image_uris)} 张\n"
                 f"🎞️ 参考视频：{len(video_uris)} 个\n"
                 f"🎵 参考音频：{len(audio_uris)} 个\n"
@@ -798,8 +829,10 @@ class DapaoSeedance20AllroundVideoNode:
                 + json.dumps({"submit": _sanitized_result(submitted), "final": _sanitized_result(final)}, ensure_ascii=False, indent=2)
             )
             width, height = self._expected_dimensions(resolution_label, aspect_ratio)
-            return DapaoVideoAdapter(video_url, width, height), task_identifier, info, video_url
+            return DapaoVideoAdapter(video_url, width, height, api_key=api_key, task_id=task_identifier), task_identifier, info, video_url
         except Exception as error:
+            if isinstance(error, DapaoSeedanceTaskError):
+                final = error.result
             message = f"❌ {self.VERSION_LABEL} 全能视频生成失败：{error}"
             if request_model:
                 message += f"\n（节点实际发送 model={request_model}）"
@@ -810,6 +843,7 @@ class DapaoSeedance20AllroundVideoNode:
                     "request_model": request_model,
                     "payload_model": payload.get("model") if isinstance(payload, dict) else "",
                     "stage": stage,
+                    "assets": asset_records,
                     "submit": _sanitized_result(submitted),
                     "final": _sanitized_result(final),
                 },

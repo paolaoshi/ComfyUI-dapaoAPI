@@ -4,13 +4,13 @@ import { api } from "../../../scripts/api.js";
 const NODE_CONFIGS = {
     DapaoSeedance20AllroundVideoNode: {
         imageCount: 9, videoCount: 3, audioCount: 3,
-        faceModel: "SD2-face", defaultModel: "SD2.0-mini",
-        supportedModels: new Set(["SD2-face", "SD2.0-mini", "SD2-fast"]),
-        faceMode: true,
+        defaultModel: "doubao-seedance-2.0",
+        supportedModels: new Set(["doubao-seedance-2.0", "seedance-2.0"]),
+        faceMode: false,
     },
     DapaoSeedance25AllroundVideoNode: {
-        imageCount: 30, videoCount: 10, audioCount: 10,
-        defaultModel: "SD2.5", supportedModels: new Set(["SD2.5"]),
+        imageCount: 9, videoCount: 3, audioCount: 3,
+        defaultModel: "doubao-seedance-2-5", supportedModels: new Set(["doubao-seedance-2-5"]),
         faceMode: false,
     },
 };
@@ -109,37 +109,13 @@ function syncModelControls(node, sourceName = "") {
         const modelWidget = widget(node, "🤖 模型");
         if (!config || !resolutionWidget || !modelWidget) return;
 
-        resolutionWidget.value = "720P";
-        if (!config.faceMode) {
-            modelWidget.value = config.defaultModel;
-            return;
-        }
-
-        const faceModel = config.faceModel;
-        const defaultModel = config.defaultModel;
-        const supportedModels = config.supportedModels;
-        let model = String(modelWidget.value || faceModel);
-        const faceMode = Boolean(faceModeWidget.value);
-
-        if (sourceName === "🤖 模型") {
-            if (!supportedModels.has(model)) {
-                model = faceMode ? faceModel : defaultModel;
-                modelWidget.value = model;
-            }
-            faceModeWidget.value = model === faceModel;
-        } else if (sourceName === "👤 真人模式") {
-            if (faceMode) {
-                modelWidget.value = faceModel;
-            } else if (model === faceModel || !supportedModels.has(model)) {
-                modelWidget.value = defaultModel;
-            }
-        } else {
-            if (!supportedModels.has(model)) {
-                model = faceMode ? faceModel : defaultModel;
-                modelWidget.value = model;
-            }
-            faceModeWidget.value = model === faceModel;
-        }
+        if (!config.supportedModels.has(modelWidget.value)) modelWidget.value = config.defaultModel;
+        const sp = modelWidget.value === "seedance-2.0";
+        const resolutions = sp ? ["720P"] : ["720P", "480P", "1080P"];
+        resolutionWidget.options = { ...resolutionWidget.options, values: resolutions };
+        if (!resolutions.includes(resolutionWidget.value)) resolutionWidget.value = "720P";
+        const audio = widget(node, "🔊 生成音频");
+        if (audio) audio.disabled = sp;
     } finally {
         node.__dapaoSeedance20Syncing = false;
     }
@@ -150,9 +126,9 @@ function refreshNode(node, sourceName = "") {
     if (!config) return;
     syncModelControls(node, sourceName);
     const mode = String(value(node, "🎛️ 生成模式", "文生视频"));
-    const imageMode = mode === "图生视频" || mode === "多模态参考";
-    const frameMode = mode === "首尾帧生视频";
-    const multimodalMode = mode === "多模态参考";
+    const imageMode = mode === "自动识别" || mode === "图生视频" || mode === "多模态参考";
+    const frameMode = mode === "自动识别" || mode === "首尾帧生视频" || mode === "图生视频";
+    const multimodalMode = mode === "自动识别" || mode === "多模态参考";
     setInputHidden(node, "🎬 首帧图", !frameMode);
     setInputHidden(node, "🏁 尾帧图", !frameMode);
     for (let index = 1; index <= config.imageCount; index++) {
@@ -165,6 +141,15 @@ function refreshNode(node, sourceName = "") {
         setInputHidden(node, `🎵 参考音频${index}`, !multimodalMode);
     }
     ensureRegisterButton(node);
+    if (!node.__dapaoSeedancePrice && node.addWidget) {
+        const badge = node.addWidget("text", "💰 计费说明", "", () => {}, { serialize: false });
+        badge.serialize = false;
+        badge.disabled = true;
+        node.__dapaoSeedancePrice = badge;
+    }
+    if (node.__dapaoSeedancePrice) node.__dapaoSeedancePrice.value = value(node, "🤖 模型") === "seedance-2.0"
+        ? "SP按秒计费，以妙笔实际结算为准"
+        : "标准版按计费用量结算，以妙笔账单为准";
     if (node.computeSize) {
         const computed = node.computeSize();
         const currentWidth = Number(node.size?.[0]) || computed[0];
@@ -223,6 +208,27 @@ app.registerExtension({
         nodeTypeClass.prototype.onAdded = function () {
             onAdded?.apply(this, arguments);
             setTimeout(() => setup(this), 20);
+        };
+        // Migrate widget positions from the retired face-mode layout before
+        // LiteGraph applies saved values to the current widget list.
+        const configure = nodeTypeClass.prototype.configure;
+        nodeTypeClass.prototype.configure = function (info) {
+            if (Array.isArray(info?.widgets_values)) {
+                const saved = [...info.widgets_values];
+                if (["SD2-face", "SD2.0-mini", "SD2-fast"].includes(saved[1])) {
+                    saved[1] = "doubao-seedance-2.0";
+                    saved.splice(5, 1);
+                    saved.push(false);
+                } else if (saved[1] === "SD2.5") {
+                    saved[1] = "doubao-seedance-2-5";
+                    saved.push(false, "standard", "mp4", "auto");
+                }
+                // Retired URL/extra-JSON widgets occupied positions 10 and 11.
+                // Numeric polling controls distinguish the current layout.
+                if (typeof saved[10] === "string" && typeof saved[11] === "string") saved.splice(10, 2);
+                info = { ...info, widgets_values: saved };
+            }
+            return configure?.call(this, info);
         };
         const onConfigure = nodeTypeClass.prototype.onConfigure;
         nodeTypeClass.prototype.onConfigure = function () {

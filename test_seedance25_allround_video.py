@@ -1,185 +1,222 @@
-"""Paid-API-free checks for the Seedance 2.5 node registration and payload."""
-
-from __future__ import annotations
-
+"""Offline regression checks for the two existing Miaobi Seedance nodes."""
 import asyncio
 import importlib
 import inspect
+import io
 import json
 import sys
+import threading
 import types
 import unittest
 from pathlib import Path
+from unittest.mock import Mock, patch
 
+import numpy as np
+from PIL import Image
 
-ROOT = Path(__file__).resolve().parent
-PACKAGE = "dapao_seedance25_testpkg"
-if PACKAGE not in sys.modules:
-    package = types.ModuleType(PACKAGE)
-    package.__path__ = [str(ROOT)]
-    sys.modules[PACKAGE] = package
+PACKAGE = "dapao_seedance_miaobi_tests"
+pkg = types.ModuleType(PACKAGE)
+pkg.__path__ = [str(Path(__file__).resolve().parent)]
+sys.modules[PACKAGE] = pkg
+runtime = types.ModuleType(PACKAGE + ".dreambrush_runtime")
+runtime.ensure_asset_references = Mock()
+runtime.submit_json_task = Mock()
+runtime.queue_job_metadata = lambda result: result.get("_dapao_queue", {})
+sys.modules[runtime.__name__] = runtime
+base = importlib.import_module(PACKAGE + ".seedance20_allround_video_node")
+v25 = importlib.import_module(PACKAGE + ".seedance25_allround_video_node")
+media = importlib.import_module(PACKAGE + ".seedance_relay_media")
 
-network_utils = types.ModuleType(f"{PACKAGE}.network_error_utils")
-network_utils.friendly_443_status = lambda: "443错误"
-network_utils.friendly_network_error = lambda error, action: f"{action}失败：{error}"
-sys.modules[f"{PACKAGE}.network_error_utils"] = network_utils
+class Tensor:
+    def __init__(self, array): self.array = array; self.shape = array.shape
+    def __getitem__(self, index): return Tensor(self.array[index])
+    def detach(self): return self
+    def cpu(self): return self
+    def numpy(self): return self.array
 
-image_utils = types.ModuleType(f"{PACKAGE}.image_input_utils")
-image_utils.IMAGE_429_HINT = "模拟图片提示"
-image_utils.tensor_to_png_bytes = lambda value: list(value)
-sys.modules[f"{PACKAGE}.image_input_utils"] = image_utils
+class Tests(unittest.TestCase):
+    def setUp(self):
+        self.counter = 0
+        self.uploads = []
+        self.requests = []
+        runtime.ensure_asset_references.reset_mock(side_effect=True)
+        runtime.submit_json_task.reset_mock(side_effect=True)
+        runtime.ensure_asset_references.side_effect = self.upload
+        runtime.submit_json_task.side_effect = lambda **kw: {"id": "task-test", "status": "completed", "metadata": {"url": "https://example.com/video.mp4"}}
+        self.network = patch.object(base.requests, "request", side_effect=self.request)
+        self.network.start()
+        self.no_get = patch.object(base.requests, "get", side_effect=AssertionError("unexpected external GET"))
+        self.no_get.start()
+        self.addCleanup(self.network.stop)
+        self.addCleanup(self.no_get.stop)
+        self.addCleanup(patch.stopall)
+        patch.object(base, "_safe_print", lambda *_: None).start()
 
-runtime = types.ModuleType(f"{PACKAGE}.dreambrush_runtime")
-runtime.ensure_asset_references = lambda **_kwargs: {}
-runtime.queue_job_metadata = lambda result: {"status": result.get("status", "")}
-runtime.submit_json_task = lambda **_kwargs: {}
-sys.modules[f"{PACKAGE}.dreambrush_runtime"] = runtime
+    def upload(self, key, blobs, **kw):
+        refs = []
+        for blob in blobs:
+            self.uploads.append(blob)
+            self.counter += 1
+            refs.append(f"asset://file-{self.counter}")
+        return refs
 
-base_module = importlib.import_module(f"{PACKAGE}.seedance20_allround_video_node")
-node_module = importlib.import_module(f"{PACKAGE}.seedance25_allround_video_node")
+    def request(self, method, url, **kw):
+        self.requests.append((method, url, kw))
+        self.assertTrue(url.startswith("https://api.dapaoai.com/v1/seedance/assets"))
+        data = {"id": kw.get("json", {}).get("file_id", "file-1"), "status": "ready", "registration_id": "sa-test"}
+        response = Mock(status_code=200, headers={})
+        response.json.return_value = data
+        return response
 
+    def args(self, model="doubao-seedance-2.0", **extra):
+        return {"🔑 API密钥": "offline-key", "🤖 模型": model, "📝 提示词": "测试", "🎛️ 生成模式": "自动识别", **extra}
 
-class _FakeClient:
-    last_payload = None
+    def run_node(self, model="doubao-seedance-2.0", **extra):
+        cls = v25.DapaoSeedance25AllroundVideoNode if model == "doubao-seedance-2-5" else base.DapaoSeedance20AllroundVideoNode
+        result = asyncio.run(cls().generate(**self.args(model, **extra)))
+        self.assertEqual(len(result), 4)
+        self.assertEqual(result[1], "task-test")
+        return runtime.submit_json_task.call_args.kwargs["payload"]
 
-    def __init__(self, *_args, **_kwargs):
-        pass
+    def test_models_and_existing_node_names(self):
+        for cls, models in [(base.DapaoSeedance20AllroundVideoNode, ["doubao-seedance-2.0", "seedance-2.0"]), (v25.DapaoSeedance25AllroundVideoNode, ["doubao-seedance-2-5"])]:
+            inputs = cls.INPUT_TYPES()
+            self.assertEqual(inputs["required"]["🤖 模型"][0], models)
+            self.assertNotIn("👤 真人模式", inputs["required"])
+            self.assertTrue(inspect.iscoroutinefunction(getattr(cls, cls.FUNCTION)))
+            self.assertFalse(getattr(cls, "INPUT_IS_LIST", False))
+            self.assertEqual(len([k for k in inputs["optional"] if k.startswith("🖼️ 参考图")]), 9)
 
-    def submit(self, payload):
-        type(self).last_payload = dict(payload)
-        return {
-            "id": "seedance25-test-task",
-            "status": "succeeded",
-            "video_url": "https://example.com/result.mp4",
-        }
+    def test_text_payloads_all_models(self):
+        for model in ["doubao-seedance-2.0", "seedance-2.0", "doubao-seedance-2-5"]:
+            payload = self.run_node(model, **{"🔊 生成音频": False})
+            self.assertEqual(set(payload), {"model", "prompt", "seconds", "metadata"})
+            self.assertEqual(payload["model"], model)
+            self.assertNotIn("content", payload["metadata"])
+            if model == "seedance-2.0": self.assertNotIn("generate_audio", payload["metadata"])
+            else: self.assertIs(payload["metadata"]["generate_audio"], False)
+            if model == "doubao-seedance-2-5": self.assertEqual(payload["metadata"]["output_format"], "mp4")
+            else: self.assertNotIn("output_format", payload["metadata"])
+        self.assertFalse(self.requests)
 
-    def poll(self, *_args, **_kwargs):
-        raise AssertionError("同步成功响应不应进入轮询")
+    def test_direct_frames_are_resized_registered_and_ordered(self):
+        frame = Tensor(np.zeros((1, 1200, 2400, 3), dtype=np.float32))
+        payload = self.run_node(**{"🎬 首帧图": frame, "🏁 尾帧图": frame})
+        self.assertEqual([c["role"] for c in payload["metadata"]["content"]], ["first_frame", "last_frame"])
+        self.assertEqual(len(self.requests), 2)
+        for data, _, mime in self.uploads:
+            with Image.open(io.BytesIO(data)) as image: self.assertEqual(image.size, (2048, 1024))
+            self.assertEqual(mime, "image/png")
+        self.assertTrue(payload["metadata"]["seedance_asset_library"])
+        self.assertTrue(all(r[2]["json"]["model"] == "doubao-seedance-2.0" for r in self.requests))
 
+    def test_sp_accepts_material_but_rejects_other_resolution(self):
+        self.run_node("seedance-2.0", **{"🌐 公网素材URL(JSON)": json.dumps({"images": ["asset://file-test"]})})
+        self.assertEqual(self.requests[0][2]["json"]["model"], "seedance-2.0")
+        runtime.submit_json_task.reset_mock()
+        with self.assertRaisesRegex(RuntimeError, "分辨率"):
+            self.run_node("seedance-2.0", **{"🧩 分辨率": "1080P"})
+        runtime.submit_json_task.assert_not_called()
 
-class Seedance25AllroundVideoTests(unittest.TestCase):
-    def test_existing_seedance20_contract_is_unchanged(self):
-        inputs = base_module.DapaoSeedance20AllroundVideoNode.INPUT_TYPES()
-        optional = inputs["optional"]
-        required_names = list(inputs["required"])
-        self.assertEqual(inputs["required"]["🤖 模型"][0], ["SD2-face", "SD2.0-mini", "SD2-fast"])
-        self.assertEqual(inputs["required"]["⏱️ 时长(秒)"][0], [str(value) for value in range(4, 16)])
-        self.assertLess(required_names.index("👤 真人模式"), required_names.index("⏱️ 时长(秒)"))
-        self.assertEqual(len([key for key in optional if key.startswith("🖼️ 参考图")]), 9)
-        self.assertEqual(len([key for key in optional if key.startswith("🎞️ 参考视频")]), 3)
-        self.assertEqual(len([key for key in optional if key.startswith("🎵 参考音频")]), 3)
-        self.assertTrue(base_module.DapaoSeedance20AllroundVideoNode.INCLUDE_BILLING_SECONDS)
-        self.assertEqual(base_module._task_id({
-            "id": "task-upstream", "status": "queued",
-            "_dapao_queue": {"job_id": "job-delivery", "status": "succeeded"},
-        }), "task-upstream")
+    def test_25_extend_and_false(self):
+        payload = self.run_node("doubao-seedance-2-5", **{"🎞️ 参考任务": "extend", "📦 输出格式": "mov", "🎚️ 码率模式": "high", "🔊 生成音频": False, "🌐 公网素材URL(JSON)": json.dumps({"videos": ["asset://file-video"]})})
+        self.assertEqual(payload["metadata"]["omni_reference_task_type"], "extend")
+        self.assertEqual(payload["metadata"]["output_format"], "mov")
+        self.assertIs(payload["metadata"]["generate_audio"], False)
 
-    def test_registration_model_and_expanded_inputs(self):
-        node_class = node_module.DapaoSeedance25AllroundVideoNode
-        inputs = node_class.INPUT_TYPES()
-        optional = inputs["optional"]
+    def test_invalid_combinations_never_submit(self):
+        frame = Tensor(np.zeros((1, 512, 512, 3)))
+        for extra in [{"🎬 首帧图": frame, "🖼️ 参考图1": frame}, {"🏁 尾帧图": frame}, {"🌐 公网素材URL(JSON)": json.dumps({"audios": ["asset://file-audio"]})}, {"⏱️ 時长(秒)": "5", "⏱️ 时长(秒)": "30"}]:
+            with self.assertRaises(RuntimeError): self.run_node(**extra)
+        runtime.submit_json_task.assert_not_called()
+        self.assertFalse(self.uploads)
 
-        self.assertEqual(node_module.DISPLAY_NAME, "🐠Seedance2.5全能视频@炮老师的小课堂")
-        self.assertEqual(inputs["required"]["🤖 模型"][0], ["SD2.5"])
-        self.assertEqual(inputs["required"]["⏱️ 时长(秒)"][0], [str(value) for value in range(4, 31)])
-        self.assertNotIn("👤 真人模式", inputs["required"])
-        self.assertEqual(len([key for key in optional if key.startswith("🖼️ 参考图")]), 30)
-        self.assertEqual(len([key for key in optional if key.startswith("🎞️ 参考视频")]), 10)
-        self.assertEqual(len([key for key in optional if key.startswith("🎵 参考音频")]), 10)
-        self.assertTrue(inspect.iscoroutinefunction(node_class.generate))
+    def test_registration_failure_does_not_generate_or_retry(self):
+        with patch.object(base.DapaoSeedanceRelayClient, "_request_json", return_value={"status": "indeterminate", "registration_id": "sa-test"}) as request:
+            with self.assertRaisesRegex(RuntimeError, "indeterminate"):
+                self.run_node(**{"🌐 公网素材URL(JSON)": json.dumps({"images": ["asset://file-test"]})})
+            self.assertEqual(request.call_count, 1)
+        runtime.submit_json_task.assert_not_called()
 
-        urls = [f"https://example.com/image-{index}.png" for index in range(30)]
-        self.assertEqual(len(node_class._public_url_overrides(json.dumps({"images": urls}))["images"]), 30)
-        with self.assertRaisesRegex(ValueError, "最多 30 个"):
-            node_class._public_url_overrides(json.dumps({"images": urls + ["https://example.com/too-many.png"]}))
+    def test_registration_poll_uses_registration_id(self):
+        client = base.DapaoSeedanceRelayClient("offline", 60)
+        with patch.object(client, "_request_json", side_effect=[{"status": "processing", "registration_id": "sa-specific"}, {"status": "ready"}]) as request, patch.object(base.time, "sleep"):
+            client.prepare_asset("asset://file-test", "doubao-seedance-2.0")
+        self.assertIn("registration_id=sa-specific", request.call_args.args[1])
 
-    def test_submit_payload_uses_sd25_without_real_request(self):
-        original_client = base_module.DapaoSeedanceRelayClient
-        base_module.DapaoSeedanceRelayClient = _FakeClient
-        try:
-            result = asyncio.run(node_module.DapaoSeedance25AllroundVideoNode().generate(
-                **{
-                    "🔑 API密钥": "test-key",
-                    "🤖 模型": "SD2.5",
-                    "🎛️ 生成模式": "文生视频",
-                    "📝 提示词": "测试镜头",
-                    "🧩 分辨率": "720P",
-                    "⏱️ 时长(秒)": "5",
-                    "📐 视频比例": "16:9",
-                    "🔊 生成音频": True,
-                    "🌐 公网素材URL(JSON)": "{}",
-                    "📋 额外参数JSON": "{}",
-                    "🔁 最大轮询秒数": 1800,
-                    "⏱️ 轮询间隔": 5,
-                    "⌛ 请求超时": 120,
-                }
-            ))
-        finally:
-            base_module.DapaoSeedanceRelayClient = original_client
+    def test_list_tasks_overlap_and_exception_propagates(self):
+        barrier = threading.Barrier(2, timeout=3)
+        def submit(**kw):
+            barrier.wait()
+            return {"id": "task-test", "status": "completed", "metadata": {"url": "https://example.com/video.mp4"}}
+        runtime.submit_json_task.side_effect = submit
+        async def run():
+            node = base.DapaoSeedance20AllroundVideoNode()
+            return await asyncio.gather(node.generate(**self.args()), node.generate(**self.args()))
+        self.assertEqual(len(asyncio.run(run())), 2)
+        runtime.submit_json_task.side_effect = RuntimeError("offline failure")
+        with self.assertRaisesRegex(RuntimeError, "offline failure"): self.run_node()
 
-        self.assertEqual(_FakeClient.last_payload["model"], "SD2.5")
-        self.assertEqual(_FakeClient.last_payload["seconds"], "5")
-        self.assertEqual(result[1], "seedance25-test-task")
-        self.assertIn("Seedance2.5", result[2])
+    def test_real_ffmpeg_preprocessing_and_duration_limits(self):
+        import tempfile
+        import shutil
+        if not shutil.which("ffmpeg") or not shutil.which("ffprobe"):
+            self.skipTest("FFmpeg unavailable")
+        with tempfile.TemporaryDirectory() as folder:
+            video = Path(folder) / "input.mp4"
+            media._tool("ffmpeg", ["-v", "error", "-y", "-f", "lavfi", "-i", "color=c=black:s=1280x720:r=30:d=2", "-c:v", "libx264", "-threads", "2", str(video)])
+            part, duration = media._av(video.read_bytes(), "video", False)
+            self.assertEqual(part[2], "video/mp4")
+            self.assertAlmostEqual(duration, 2, places=1)
+            audio = base._audio_to_wav_bytes({"waveform": np.zeros((1, 88200), dtype=np.float32), "sample_rate": 44100})
+            part, duration = media._av(audio, "audio", False)
+            import wave
+            with wave.open(io.BytesIO(part[0])) as wav:
+                self.assertEqual(wav.getframerate(), 48000)
+                self.assertEqual(wav.getnchannels(), 2)
+            self.assertAlmostEqual(duration, 2, places=1)
 
-    def test_thirty_seconds_is_accepted_and_submitted(self):
-        original_client = base_module.DapaoSeedanceRelayClient
-        base_module.DapaoSeedanceRelayClient = _FakeClient
-        try:
-            node_module.DapaoSeedance25AllroundVideoNode()._generate_sync(**{
-                "🔑 API密钥": "test-key",
-                "🤖 模型": "SD2.5",
-                "🎛️ 生成模式": "文生视频",
-                "📝 提示词": "三十秒测试镜头",
-                "🧩 分辨率": "720P",
-                "⏱️ 时长(秒)": "30",
-                "📐 视频比例": "16:9",
-                "🔊 生成音频": True,
-                "🌐 公网素材URL(JSON)": "{}",
-                "📋 额外参数JSON": "{}",
-                "🔁 最大轮询秒数": 1800,
-                "⏱️ 轮询间隔": 5,
-                "⌛ 请求超时": 120,
-            })
-        finally:
-            base_module.DapaoSeedanceRelayClient = original_client
+    def test_gateway_download_never_sends_key_to_signed_url(self):
+        redirect = Mock(is_redirect=True, headers={"Location": "https://media.example.com/video.mp4"})
+        response = Mock(is_redirect=False)
+        response.iter_content.return_value = [b"video-bytes"]
+        response.__enter__ = Mock(return_value=response)
+        response.__exit__ = Mock(return_value=False)
+        import tempfile
+        with tempfile.TemporaryDirectory() as folder, patch.object(base.requests, "get", side_effect=[redirect, response]) as get:
+            adapter = base.DapaoVideoAdapter("https://untrusted.example/video", api_key="offline", task_id="task-test")
+            adapter.save_to(str(Path(folder) / "video.mp4"))
+            self.assertTrue(get.call_args_list[0].args[0].startswith("https://api.dapaoai.com/v1/videos/"))
+            self.assertNotIn("headers", get.call_args_list[1].kwargs)
 
-        self.assertEqual(_FakeClient.last_payload["duration"], 30)
-        self.assertEqual(_FakeClient.last_payload["seconds"], "30")
+    def test_missing_upstream_asset_preserves_failure_without_resubmit(self):
+        runtime.submit_json_task.side_effect = lambda **kw: {"id": "task-test", "status": "queued"}
+        failed = {"id": "task-test", "status": "failed", "error": {"message": "The specified asset asset-test is not found."}}
+        original_request = self.request
+        def request(method, url, **kw):
+            if "/video/generations/" in url:
+                response = Mock(status_code=200, headers={})
+                response.json.return_value = failed
+                return response
+            return original_request(method, url, **kw)
+        with patch.object(base.requests, "request", side_effect=request):
+            with self.assertRaises(RuntimeError) as raised:
+                self.run_node(**{"🌐 公网素材URL(JSON)": json.dumps({"images": ["asset://file-test"]})})
+        message = str(raised.exception)
+        self.assertIn("生成服务找不到引用的上游素材", message)
+        self.assertIn('"stage": "video_poll"', message)
+        self.assertIn('"registration_id": "sa-test"', message)
+        self.assertIn('"status": "failed"', message)
+        self.assertIn("asset://file-test", message)
+        self.assertEqual(runtime.submit_json_task.call_count, 1)
+        self.assertEqual(len(self.requests), 1)
+        self.assertFalse(self.uploads)
 
-    def test_sd25_payload_matches_sd20_protocol_except_model(self):
-        original_client = base_module.DapaoSeedanceRelayClient
-        base_module.DapaoSeedanceRelayClient = _FakeClient
-        common = {
-            "🔑 API密钥": "test-key",
-            "🎛️ 生成模式": "文生视频",
-            "📝 提示词": "协议一致性测试",
-            "🧩 分辨率": "720P",
-            "⏱️ 时长(秒)": "5",
-            "📐 视频比例": "16:9",
-            "🔊 生成音频": True,
-            "🌐 公网素材URL(JSON)": "{}",
-            "📋 额外参数JSON": "{}",
-            "🔁 最大轮询秒数": 1800,
-            "⏱️ 轮询间隔": 5,
-            "⌛ 请求超时": 120,
-        }
-        try:
-            base_module.DapaoSeedance20AllroundVideoNode()._generate_sync(
-                **{**common, "🤖 模型": "SD2-face", "👤 真人模式": True}
-            )
-            sd20_payload = dict(_FakeClient.last_payload)
-            node_module.DapaoSeedance25AllroundVideoNode()._generate_sync(
-                **{**common, "🤖 模型": "SD2.5"}
-            )
-            sd25_payload = dict(_FakeClient.last_payload)
-        finally:
-            base_module.DapaoSeedanceRelayClient = original_client
+    def test_seed_is_recovery_salt_not_request_field(self):
+        self.run_node(**{"🎲 随机种": 123})
+        call = runtime.submit_json_task.call_args.kwargs
+        self.assertEqual(call["recovery_salt"], 123)
+        self.assertNotIn("seed", call["payload"])
+        self.assertTrue(call["reuse_succeeded"])
 
-        self.assertEqual(sd20_payload.pop("model"), "SD2-face")
-        self.assertEqual(sd25_payload.pop("model"), "SD2.5")
-        self.assertEqual(sd25_payload, sd20_payload)
-
-
-if __name__ == "__main__":
-    unittest.main()
+if __name__ == "__main__": unittest.main()
