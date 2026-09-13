@@ -22,6 +22,12 @@
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """
 
+try:
+    from .node_error_utils import format_node_error
+except ImportError:
+    from node_error_utils import format_node_error
+
+
 import os
 import json
 import torch
@@ -329,7 +335,7 @@ class Gemini3_Multimodal:
         # 获取API密钥
         api_key = get_api_key(mirror_site, apikey)
         if not api_key:
-            return (f"❌ 错误：未配置 {mirror_site} 镜像站的API密钥\n\n请在配置文件或节点参数中设置",)
+            return (format_node_error(f"❌ 错误：未配置 {mirror_site} 镜像站的API密钥\n\n请在配置文件或节点参数中设置", context=__name__),)
         
         # 收集所有图像
         images = [img for img in [image1, image2, image3, image4] if img is not None]
@@ -354,7 +360,7 @@ class Gemini3_Multimodal:
             )
             return (response,)
         except Exception as e:
-            error_msg = f"❌ API错误: {str(e)}"
+            error_msg = format_node_error(f"❌ API错误: {str(e)}", context=__name__)
             print(f"[dapaoAPI-Gemini3] {error_msg}")
             return (error_msg,)
 

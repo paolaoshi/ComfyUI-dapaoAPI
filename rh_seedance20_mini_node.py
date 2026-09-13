@@ -6,6 +6,12 @@ multimodal-video APIs.
 作者：@炮老师的小课堂
 """
 
+try:
+    from .node_error_utils import format_node_error
+except ImportError:
+    from node_error_utils import format_node_error
+
+
 import json
 import time
 import traceback
@@ -260,7 +266,7 @@ class DapaoRHSeedance20MiniNode(DapaoRHAllVideoSeedanceNode):
 
         config = MINI_ENDPOINT_CONFIGS.get(function)
         if not config:
-            return (RHSeedanceVideoAdapter(""), "", f"❌ 错误：当前功能没有可用接口：{function}", "", self._blank_last_frame())
+            return (RHSeedanceVideoAdapter(""), "", format_node_error(f"❌ 错误：当前功能没有可用接口：{function}", context=__name__), "", self._blank_last_frame())
 
         start_time = time.time()
         submit_response = {}
@@ -326,7 +332,7 @@ class DapaoRHSeedance20MiniNode(DapaoRHAllVideoSeedanceNode):
             raw_json = json.dumps({"payload": payload, "submit": submit_response, "final": final_response}, ensure_ascii=False, indent=2)
             return (RHSeedanceVideoAdapter(video_url), task_id, "\n".join(info_lines) + "\n\n" + raw_json, video_url, last_frame)
         except Exception as e:
-            error_msg = f"❌ 错误：RH Seedance2.0 Mini 生成失败\n\n详情：{e}"
+            error_msg = format_node_error(f"❌ 错误：RH Seedance2.0 Mini 生成失败\n\n详情：{e}", context=__name__)
             _log_error(error_msg)
             _log_error(traceback.format_exc())
             raw_json = json.dumps({"submit": submit_response, "final": final_response}, ensure_ascii=False, indent=2)

@@ -24,6 +24,12 @@
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """
 
+try:
+    from .node_error_utils import format_node_error
+except ImportError:
+    from node_error_utils import format_node_error
+
+
 import json
 import requests
 import base64
@@ -478,7 +484,7 @@ class ImageEditAPINode:
             response = requests.post(api_url, json=body_data, headers=headers, timeout=timeout)
             
             if response.status_code != 200:
-                return (self._create_placeholder_image(), f"❌ API错误 ({response.status_code}): {response.text}", "", response.text)
+                return (self._create_placeholder_image(), format_node_error(f"❌ API错误 ({response.status_code}): {response.text}", context=__name__, status_code=response.status_code), "", response.text)
                 
             response_data = response.json()
             raw_json = json.dumps(response_data, ensure_ascii=False, indent=2)
@@ -532,7 +538,7 @@ class ImageEditAPINode:
         except Exception as e:
             import traceback
             traceback.print_exc()
-            return (self._create_placeholder_image(), f"❌ 执行错误: {str(e)}", "", "{}")
+            return (self._create_placeholder_image(), format_node_error(e, context=__name__), "", "{}")
 
     def _handle_dalle_edit(self, url, key, prompt, images, model, key_loc, key_field, timeout, ex_h, ex_b):
         # 简化的 DALL-E 2 Edit 实现 (Multipart)
@@ -745,7 +751,7 @@ class ImageEditAPINode:
             print(f"[dapaoAPI] 响应长度: {len(response.text)} 字符")
             
             if response.status_code != 200:
-                return (self._create_placeholder_image(), f"❌ API错误 ({response.status_code}): {response.text}", "", response.text)
+                return (self._create_placeholder_image(), format_node_error(f"❌ API错误 ({response.status_code}): {response.text}", context=__name__, status_code=response.status_code), "", response.text)
             
             response_data = response.json()
             raw_json = json.dumps(response_data, ensure_ascii=False, indent=2)
@@ -789,11 +795,11 @@ class ImageEditAPINode:
             
             return (image_tensor, response_text, image_url, raw_json)
             
-        except requests.exceptions.Timeout:
-            return (self._create_placeholder_image(), f"⏱️ 请求超时 ({timeout}秒)", "", "")
+        except requests.exceptions.Timeout as e:
+            return (self._create_placeholder_image(), format_node_error(f"⏱️ 请求超时 ({timeout}秒)\n{type(e).__name__}: {e}", context=__name__), "", "")
         except Exception as e:
             import traceback
-            error_msg = f"❌ 请求失败: {e}\n{traceback.format_exc()}"
+            error_msg = format_node_error(f"❌ 请求失败: {e}\n{traceback.format_exc()}", context=__name__)
             print(f"[dapaoAPI] {error_msg}")
             return (self._create_placeholder_image(), error_msg, "", "")
 

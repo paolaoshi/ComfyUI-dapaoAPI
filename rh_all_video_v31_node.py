@@ -2,6 +2,12 @@
 RH all-in-one video V3.1 node.
 """
 
+try:
+    from .node_error_utils import format_node_error
+except ImportError:
+    from node_error_utils import format_node_error
+
+
 import json
 import time
 import traceback
@@ -413,7 +419,7 @@ class DapaoRHAllVideoV31Node(DapaoRHAllVideoSeedanceNode):
 
         config = ENDPOINT_CONFIGS.get((model, channel, function))
         if not config:
-            return self._error_result(f"❌ 错误：当前组合没有可用接口：{model} / {channel} / {function}")
+            return self._error_result(format_node_error(f"❌ 错误：当前组合没有可用接口：{model} / {channel} / {function}", context=__name__))
 
         start_time = time.time()
         submit_response = {}
@@ -469,7 +475,7 @@ class DapaoRHAllVideoV31Node(DapaoRHAllVideoSeedanceNode):
             raw_json = json.dumps({"payload": payload, "submit": submit_response, "final": final_response}, ensure_ascii=False, indent=2)
             return (RHSeedanceVideoAdapter(video_url), task_id, "\n".join(info_lines) + "\n\n" + raw_json, video_url)
         except Exception as e:
-            error_msg = f"❌ 错误：RH 全能视频 V3.1 生成失败\n\n详情：{e}"
+            error_msg = format_node_error(f"❌ 错误：RH 全能视频 V3.1 生成失败\n\n详情：{e}", context=__name__)
             _log_error(error_msg)
             _log_error(traceback.format_exc())
             raw_json = json.dumps({"payload": payload, "submit": submit_response, "final": final_response}, ensure_ascii=False, indent=2)

@@ -4,6 +4,12 @@ The node follows the official BytePlus Seedream 5.0 Pro image-generation
 schema while using the relay model ID and base URL configured by dapaoAI.
 """
 
+try:
+    from .node_error_utils import format_node_error
+except ImportError:
+    from node_error_utils import format_node_error
+
+
 import asyncio
 import base64
 import io
@@ -309,7 +315,7 @@ class DapaoSeedreamV5ProRelayClient:
                 raise RuntimeError(f"{friendly_network_error(error, '提交图像任务')} 付费提交不会自动重试，以免重复扣费。") from error
             if response.status_code >= 400:
                 if response.status_code == 443:
-                    raise RuntimeError(friendly_443_status())
+                    raise RuntimeError(friendly_443_status(response.text))
                 raise DapaoSeedreamV5ProAPIError(response.status_code, _response_error(response))
             try:
                 return response.json()
@@ -640,7 +646,7 @@ class DapaoSeedreamV5ProAllroundNode:
             )
             return images, masks, "\n".join(urls), info
         except Exception as error:
-            message = f"❌ Seedream-v5-pro 全能图像生成失败：{error}"
+            message = format_node_error(f"❌ Seedream-v5-pro 全能图像生成失败：{error}", context=__name__)
             _log_error(message)
             _log_error(traceback.format_exc())
             details = json.dumps(

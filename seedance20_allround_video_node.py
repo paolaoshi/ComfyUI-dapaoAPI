@@ -4,6 +4,12 @@ The node submits stable dapaoAI mapping IDs. Resolution remains a separate
 request parameter and is not encoded into the model name.
 """
 
+try:
+    from .node_error_utils import format_node_error
+except ImportError:
+    from node_error_utils import format_node_error
+
+
 import asyncio
 import io
 import json
@@ -140,7 +146,14 @@ class DapaoSeedanceTaskError(RuntimeError):
         self.result = result
         normalized = str(message).lower()
         hint = ""
-        if "asset" in normalized and ("not found" in normalized or "does not exist" in normalized):
+        if "may contain real person" in normalized:
+            hint = (
+                "上游检测到输入图片可能包含真人，拒绝了本次生成。"
+                "这不是素材登记失败；重新登记素材或增加真人模式开关不能解决该拒绝。"
+                "请让妙笔维护者确认当前模型渠道是否支持这类真人素材；"
+                "若图片并非真人，可提供任务ID请其核查误判。节点不会自动重试。\n"
+            )
+        elif "asset" in normalized and ("not found" in normalized or "does not exist" in normalized):
             hint = (
                 "生成服务找不到引用的上游素材。请让妙笔维护者核对该任务的素材登记是否仍有效、"
                 "素材登记与生成使用的渠道/上游凭据是否一致，以及file ID到上游asset ID的映射。"
@@ -317,7 +330,10 @@ def _task_state(result):
     statuses = []
     progress = None
     message = ""
-    for layer in _response_layers(result):
+    # The envelope's message may say "success" while data.status is FAILURE.
+    # Prefer the actual task's failure reason over transport-level messages.
+    layers = sorted(_response_layers(result), key=lambda layer: layer.get("status") is None)
+    for layer in layers:
         if layer.get("status") is not None:
             statuses.append(str(layer["status"]).strip().lower())
         if progress is None and layer.get("progress") is not None:
@@ -340,7 +356,7 @@ def _task_state(result):
         return "failed", progress, message
     if any(status in {"completed", "complete", "succeeded", "success", "done"} for status in statuses):
         return "completed", progress, message
-    if any(status in {"submitted", "processing", "pending", "queued", "running", "in_progress"} for status in statuses):
+    if any(status in {"not_start", "submitted", "processing", "pending", "queued", "running", "in_progress"} for status in statuses):
         return "processing", progress, message
     return (statuses[0] if statuses else ""), progress, message
 
@@ -447,7 +463,7 @@ class DapaoSeedanceRelayClient:
             self.retry_after = 10
         if response.status_code >= 300:
             if response.status_code == 443:
-                raise RuntimeError(friendly_443_status())
+                raise RuntimeError(friendly_443_status(response.text))
             raise DapaoSeedanceAPIError(response.status_code, _response_error(response))
         try:
             return response.json()
@@ -542,6 +558,7 @@ class DapaoSeedance20AllroundVideoNode:
     VERSION_LABEL = "Seedance2.0"
     HAS_FACE_MODE = False
     INCLUDE_BILLING_SECONDS = True
+    USE_ASSET_LIBRARY = True
 
     def _log_info(self, message):
         _safe_print(f"[dapaoAPI-{self.VERSION_LABEL}全能视频] 信息：{message}")
@@ -763,6 +780,7 @@ class DapaoSeedance20AllroundVideoNode:
                 raise ValueError("新妙笔协议请使用节点参数控件，额外参数JSON暂仅接受{}，避免旧协议字段误传。")
             client = DapaoSeedanceRelayClient(api_key, timeout, max_seconds)
             client.recovery_salt = kwargs.get("🎲 随机种", 0)
+            use_asset_library = self.USE_ASSET_LIBRARY and request_model != "seedance-2.0"
             stage = "media_upload"
             image_uris, video_uris, audio_uris = [], [], []
             content = []
@@ -771,17 +789,22 @@ class DapaoSeedance20AllroundVideoNode:
                     comfy.model_management.throw_exception_if_processing_interrupted()
                 stage = "media_upload"
                 reference = source if isinstance(source, str) else client.upload_file(*source, request_model)
-                stage = "asset_registration"
                 record = {"reference": reference, "model": request_model, "kind": kind, "role": role}
                 asset_records.append(record)
-                registered = client.prepare_asset(reference, request_model)
-                record.update({key: registered.get(key) for key in ("registration_id", "status", "expires_at")})
-                if registered.get("kind") and registered["kind"] != kind:
-                    raise ValueError(f"素材{reference}实际类型与{kind}输入不匹配，请检查连接。")
+                if not re.fullmatch(r"asset://file-[A-Za-z0-9_-]{1,59}", reference):
+                    raise ValueError("请使用妙笔上传返回的asset://file-...引用，不能使用供应商素材ID。")
+                if use_asset_library:
+                    stage = "asset_registration"
+                    registered = client.prepare_asset(reference, request_model)
+                    record.update({key: registered.get(key) for key in ("registration_id", "status", "expires_at")})
+                    if registered.get("kind") and registered["kind"] != kind:
+                        raise ValueError(f"素材{reference}实际类型与{kind}输入不匹配，请检查连接。")
                 {"image": image_uris, "video": video_uris, "audio": audio_uris}[kind].append(reference)
                 content.append({"type": kind + "_url", kind + "_url": {"url": reference}, "role": role})
             if content:
-                metadata.update(content=content, seedance_asset_library=True)
+                metadata["content"] = content
+                if use_asset_library:
+                    metadata["seedance_asset_library"] = True
             payload = {"model": request_model, "prompt": prompt, "seconds": str(duration), "metadata": metadata}
 
             self._log_info(
@@ -833,7 +856,7 @@ class DapaoSeedance20AllroundVideoNode:
         except Exception as error:
             if isinstance(error, DapaoSeedanceTaskError):
                 final = error.result
-            message = f"❌ {self.VERSION_LABEL} 全能视频生成失败：{error}"
+            message = format_node_error(f"❌ {self.VERSION_LABEL} 全能视频生成失败：{error}", context=__name__)
             if request_model:
                 message += f"\n（节点实际发送 model={request_model}）"
             self._log_error(message)

@@ -24,6 +24,12 @@
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """
 
+try:
+    from .node_error_utils import format_node_error
+except ImportError:
+    from node_error_utils import format_node_error
+
+
 import os
 import json
 import requests
@@ -599,7 +605,7 @@ class UniversalAPINode:
                     timeout=timeout
                 )
             else:
-                error_msg = f"❌ 错误：不支持的请求方法 {method}"
+                error_msg = format_node_error(f"❌ 错误：不支持的请求方法 {method}", context=__name__)
                 placeholder = self._create_placeholder_image()
                 return (error_msg, "{}", "{}", placeholder)
             
@@ -607,7 +613,7 @@ class UniversalAPINode:
             
             # 检查响应状态
             if response.status_code != 200:
-                error_msg = f"❌ API错误 ({response.status_code}): {response.text}"
+                error_msg = format_node_error(f"❌ API错误 ({response.status_code}): {response.text}", context=__name__)
                 print(f"[dapaoAPI-Universal] {error_msg}")
                 print(f"[dapaoAPI-Universal] 请求详情:")
                 print(f"  - URL: {api_url}")
@@ -655,20 +661,20 @@ class UniversalAPINode:
                 placeholder = self._create_placeholder_image()
                 return (response.text, response.text, response.text, placeholder)
         
-        except requests.exceptions.Timeout:
-            error_msg = f"❌ 错误：请求超时 ({timeout}秒)"
+        except requests.exceptions.Timeout as e:
+            error_msg = format_node_error(f"❌ 错误：请求超时 ({timeout}秒)\n{type(e).__name__}: {e}", context=__name__)
             print(f"[dapaoAPI-Universal] {error_msg}")
             placeholder = self._create_placeholder_image()
             return (error_msg, error_msg, "{}", placeholder)
         
         except requests.exceptions.ConnectionError as e:
-            error_msg = f"❌ 错误：连接失败\n{str(e)}"
+            error_msg = format_node_error(f"❌ 错误：连接失败\n{str(e)}", context=__name__)
             print(f"[dapaoAPI-Universal] {error_msg}")
             placeholder = self._create_placeholder_image()
             return (error_msg, error_msg, "{}", placeholder)
         
         except Exception as e:
-            error_msg = f"❌ 未知错误: {str(e)}"
+            error_msg = format_node_error(f"❌ 未知错误: {str(e)}", context=__name__)
             print(f"[dapaoAPI-Universal] {error_msg}")
             placeholder = self._create_placeholder_image()
             return (error_msg, error_msg, "{}", placeholder)

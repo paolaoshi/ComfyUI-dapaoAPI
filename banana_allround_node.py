@@ -5,6 +5,12 @@ Banana or GPT Image nodes.  The relay model IDs deliberately remain in the
 Gemini-native URL; upstream provider names are documentation references only.
 """
 
+try:
+    from .node_error_utils import format_node_error
+except ImportError:
+    from node_error_utils import format_node_error
+
+
 import base64
 import asyncio
 import io
@@ -483,7 +489,7 @@ class DapaoBananaAllroundNode:
             )
             return images, "\n".join(urls), info
         except Exception as error:
-            message = f"❌ 香蕉-banana 全能图像生成失败：{error}"
+            message = format_node_error(f"❌ 香蕉-banana 全能图像生成失败：{error}", context=__name__)
             _log_error(message)
             _log_error(traceback.format_exc())
             details = json.dumps({"responses": _sanitized_result(responses)}, ensure_ascii=False, indent=2)

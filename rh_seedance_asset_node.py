@@ -2,6 +2,12 @@
 RH Seedance2.0 asset nodes.
 """
 
+try:
+    from .node_error_utils import format_node_error
+except ImportError:
+    from node_error_utils import format_node_error
+
+
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from fractions import Fraction
 from io import BytesIO
@@ -879,7 +885,7 @@ class DapaoRHSeedanceAssetCreateNode:
             return (", ".join(asset_ids), ", ".join(statuses), _json(response))
         except Exception as e:
             if skip_error:
-                return self._error_result(str(e))
+                return self._error_result(format_node_error(str(e), context=__name__))
             raise
 
 
@@ -925,7 +931,7 @@ class DapaoRHSeedanceAssetQueryNode:
             return (info["asset_id"], info["status"], info["preview_url"], _json(info["response"]))
         except Exception as e:
             if skip_error:
-                return self._error_result(str(e))
+                return self._error_result(format_node_error(str(e), context=__name__))
             raise
 
 

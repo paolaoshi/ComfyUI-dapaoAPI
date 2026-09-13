@@ -5,6 +5,12 @@
 作者：@炮老师的小课堂
 """
 
+try:
+    from .node_error_utils import format_node_error
+except ImportError:
+    from node_error_utils import format_node_error
+
+
 import base64
 import io
 import json
@@ -177,7 +183,7 @@ class DapaoUniversalImageEditNode:
             if not isinstance(extra_body, dict):
                 raise ValueError("额外Body字段必须是 JSON 对象")
         except Exception as e:
-            error_msg = f"❌ 错误：额外Body字段不是有效 JSON 对象\n\n详情：{e}"
+            error_msg = format_node_error(f"❌ 错误：额外Body字段不是有效 JSON 对象\n\n详情：{e}", context=__name__)
             return (create_blank_tensor(), error_msg, "{}")
 
         data = {
@@ -199,7 +205,7 @@ class DapaoUniversalImageEditNode:
             for index, image in enumerate(input_images, start=1):
                 files.append(self._prepare_image_file(image, index))
         except Exception as e:
-            error_msg = f"❌ 错误：输入图像处理失败\n\n详情：{e}"
+            error_msg = format_node_error(f"❌ 错误：输入图像处理失败\n\n详情：{e}", context=__name__)
             return (create_blank_tensor(), error_msg, "{}")
 
         try:
@@ -212,7 +218,7 @@ class DapaoUniversalImageEditNode:
             self._close_files(files)
 
             if response.status_code != 200:
-                error_msg = f"❌ 错误：API 请求失败\n\n状态码：{response.status_code}\n响应：{raw_text[:500]}"
+                error_msg = format_node_error(f"❌ 错误：API 请求失败\n\n状态码：{response.status_code}\n响应：{raw_text[:500]}", context=__name__)
                 _log_error(error_msg)
                 return (create_blank_tensor(), error_msg, raw_text or "{}")
 
@@ -220,7 +226,7 @@ class DapaoUniversalImageEditNode:
                 result = response.json()
                 raw_json = json.dumps(result, ensure_ascii=False, indent=2)
             except Exception:
-                error_msg = f"❌ 错误：API 返回内容不是 JSON\n\n响应：{raw_text[:500]}"
+                error_msg = format_node_error(f"❌ 错误：API 返回内容不是 JSON\n\n响应：{raw_text[:500]}", context=__name__)
                 return (create_blank_tensor(), error_msg, raw_text or "{}")
 
             image_tensors = []
@@ -266,7 +272,7 @@ class DapaoUniversalImageEditNode:
 
         except Exception as e:
             self._close_files(files)
-            error_msg = f"❌ 错误：图像编辑失败\n\n详情：{e}"
+            error_msg = format_node_error(f"❌ 错误：图像编辑失败\n\n详情：{e}", context=__name__)
             _log_error(error_msg)
             _log_error(traceback.format_exc())
             return (create_blank_tensor(), error_msg, "{}")

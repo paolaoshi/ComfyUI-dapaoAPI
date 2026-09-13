@@ -1,5 +1,11 @@
 """Self-contained Fantasy life-force portrait prompt director (no image generation)."""
 
+try:
+    from .node_error_utils import format_node_error
+except ImportError:
+    from node_error_utils import format_node_error
+
+
 import asyncio
 import json
 import time
@@ -93,7 +99,7 @@ def _error(status, message):
               429: IMAGE_429_HINT, 500: "服务端处理异常，请稍后再试",
               502: "上游LLM暂时不可用，请稍后再试或切换模型",
               503: "LLM服务暂时繁忙，请稍后再试"}
-    label = friendly_443_status() if status == 443 else labels.get(status, "LLM请求失败")
+    label = friendly_443_status(message) if status == 443 else labels.get(status, "LLM请求失败")
     return RuntimeError(f"{label}（{status}）：{message}")
 
 
@@ -280,7 +286,7 @@ class DapaoPortraitPhotographyPromptNode:
             return (positives[selected - 1], negatives[selected - 1], positives, negatives,
                     json.dumps(plan, ensure_ascii=False, indent=2), plan["reference_analysis"], report, str(raw), info)
         except Exception as error:
-            message = f"❌ 超写实人物提示词生成失败：{error}"
+            message = format_node_error(f"❌ 超写实人物提示词生成失败：{error}", context=__name__)
             if kwargs.get("🚫 出错时跳过", False):
                 return "", "", [], [], "", "", message, "", message
             raise RuntimeError(message) from error

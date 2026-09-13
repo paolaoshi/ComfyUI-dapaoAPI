@@ -7,6 +7,12 @@ implementation is self-contained so the source project is not required at
 runtime.
 """
 
+try:
+    from .node_error_utils import format_node_error
+except ImportError:
+    from node_error_utils import format_node_error
+
+
 import asyncio
 import json
 import re
@@ -723,10 +729,10 @@ REFERENCE COUNTS: product={len(product_images)}, style={len(style_images)}
                 *page_prompts,
             )
         except Exception as error:
-            message = f"❌ 电商详情页提示词生成失败：{error}"
+            message = format_node_error(f"❌ 电商详情页提示词生成失败：{error}", context=__name__)
             _log_error(message)
             _log_error(traceback.format_exc())
-            response = json.dumps({"error": str(error), "response": _sanitized(result)}, ensure_ascii=False, indent=2)
+            response = json.dumps({"error": format_node_error(str(error), context=__name__), "response": _sanitized(result)}, ensure_ascii=False, indent=2)
             if kwargs.get("🚫 出错时跳过", False):
                 return ("", "", "", message, response, message, "", [], *([""] * MAX_SCREEN_COUNT))
             raise RuntimeError(message) from error

@@ -1,35 +1,20 @@
 """Plain-language network errors for dapaoAPI nodes."""
 
-import re
+try:
+    from .node_error_utils import format_node_error
+except ImportError:
+    from node_error_utils import format_node_error
 
 
 def friendly_network_error(error, action="请求"):
-    """Explain local HTTPS/proxy failures without blaming the relay prematurely."""
-    text = str(error or "").strip()
-    lowered = text.lower()
-    is_https_443 = bool(
-        re.search(r"(?:\b443\b|https://)", lowered)
-        or "proxyerror" in lowered
-        or "sslerror" in lowered
-        or "cannot connect to host" in lowered
-    )
-    if is_https_443:
-        return (
-            f"ComfyUI本机网络连接异常：{action}无法通过 HTTPS 443 访问 dapaoAI。"
-            "请先检查运行 ComfyUI 的电脑网络、VPN/代理、防火墙和 DNS，"
-            "并确认浏览器可以打开 https://api.dapaoai.com 后再重试。"
-        )
-    return (
-        f"ComfyUI本机网络连接或请求超时：{action}未能完成。"
-        "请先检查运行 ComfyUI 的电脑网络、VPN/代理、防火墙和 DNS，"
-        "确认网络正常后再重试。"
-    )
+    """Keep the original exception; a HTTPS URL alone proves no network cause."""
+    return format_node_error(error, context=action)
 
 
-def friendly_443_status():
+
+def friendly_443_status(original="HTTP 443"):
     """Message for non-standard 443 responses often produced by local proxies."""
-    return (
-        "ComfyUI本机网络连接异常：收到非标准 HTTPS 443 响应。"
-        "请先检查运行 ComfyUI 的电脑网络、VPN/代理、防火墙和 DNS，"
-        "并确认浏览器可以打开 https://api.dapaoai.com 后再重试。"
+    return format_node_error(
+        "收到非标准HTTP 443状态码，不能仅凭状态码判断原因。"
+        "请检查代理和API地址，并让服务商核查响应。\n" + str(original)
     )

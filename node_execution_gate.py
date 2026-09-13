@@ -11,6 +11,11 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, Optional, Tuple
 
 try:
+    from .node_error_utils import format_node_error
+except ImportError:
+    from node_error_utils import format_node_error
+
+try:
     from comfy_execution.utils import get_executing_context
 except ImportError:  # Allows isolated unit tests outside a full ComfyUI install.
     get_executing_context = None
@@ -92,6 +97,14 @@ def serialize_registered_nodes(node_class_mappings: Dict[str, type]) -> None:
             await gate.enter(group)
             try:
                 return await _run_original(__original, self, args, kwargs)
+            except Exception as error:
+                # Preserve exception type, task/status attributes and cancellation.
+                message = format_node_error(error, context=type(self).__module__)
+                if isinstance(error, OSError) and error.errno is not None:
+                    error.strerror = message
+                else:
+                    error.args = (message, *error.args[1:])
+                raise
             finally:
                 await gate.leave(group)
 

@@ -1,5 +1,11 @@
 """Independent GPT LLM chat node for the dapaoAI relay."""
 
+try:
+    from .node_error_utils import format_node_error
+except ImportError:
+    from node_error_utils import format_node_error
+
+
 import asyncio
 import base64
 import io
@@ -347,10 +353,10 @@ class DapaoGPTLLMChatNode:
             )
             return text, json.dumps(_sanitized_result(result), ensure_ascii=False, indent=2), info
         except Exception as error:
-            message = f"❌ GPT-LLM 智能对话失败：{error}"
+            message = format_node_error(f"❌ GPT-LLM 智能对话失败：{error}", context=__name__)
             _log_error(message)
             _log_error(traceback.format_exc())
-            error_json = json.dumps({"error": str(error), "response": _sanitized_result(result)}, ensure_ascii=False, indent=2)
+            error_json = json.dumps({"error": format_node_error(str(error), context=__name__), "response": _sanitized_result(result)}, ensure_ascii=False, indent=2)
             if skip_error:
                 return message, error_json, message
             raise RuntimeError(message) from error

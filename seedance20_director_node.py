@@ -5,6 +5,12 @@ same dapaoAI LLM surface and media widgets, but compiles Seedance prompts,
 reference roles, clip contracts and explicit project state for one clip.
 """
 
+try:
+    from .node_error_utils import format_node_error
+except ImportError:
+    from node_error_utils import format_node_error
+
+
 import asyncio
 import base64
 import io
@@ -537,10 +543,10 @@ class DapaoSeedance20DirectorNode:
             info = (f"✅ Seedance2全能导演编译完成\n🌐 中转站：{API_BASE_URL}\n🤖 LLM模型：{model}\n🎛️ 识别任务：{resolved_mode}\n🎨 创作类型：{style}\n⏱️ 时长：{kwargs.get('⏱️ 目标时长(秒)', 5)}秒\n📐 比例：{kwargs.get('📐 视频比例', '16:9')}\n🖼️ 图片：{len(images)}张\n🎞️ 视频：{len(videos)}个\n🎵 音频：{len(audios)}个\n📥 输入令牌：{usage.get('prompt_tokens', usage.get('input_tokens', '未知'))}\n📤 输出令牌：{usage.get('completion_tokens', usage.get('output_tokens', '未知'))}\n⏱️ 耗时：{time.time() - started:.2f}秒")
             return final_prompt, resolved_mode, analysis, json.dumps(new_state, ensure_ascii=False, indent=2), json.dumps(contract, ensure_ascii=False, indent=2), json.dumps(_sanitized(result), ensure_ascii=False, indent=2), info
         except Exception as error:
-            message = f"❌ Seedance2全能导演生成失败：{error}"
+            message = format_node_error(f"❌ Seedance2全能导演生成失败：{error}", context=__name__)
             _log_error(message)
             _log_error(traceback.format_exc())
-            response = json.dumps({"error": str(error), "response": _sanitized(result)}, ensure_ascii=False, indent=2)
+            response = json.dumps({"error": format_node_error(str(error), context=__name__), "response": _sanitized(result)}, ensure_ascii=False, indent=2)
             if kwargs.get("🚫 出错时跳过", False):
                 return message, resolved_mode or "未知", message, "{}", "{}", response, message
             raise RuntimeError(message) from error

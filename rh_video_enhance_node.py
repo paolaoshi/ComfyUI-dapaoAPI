@@ -2,6 +2,12 @@
 RH video enhancement node.
 """
 
+try:
+    from .node_error_utils import format_node_error
+except ImportError:
+    from node_error_utils import format_node_error
+
+
 import json
 import time
 import traceback
@@ -241,7 +247,7 @@ class DapaoRHVideoEnhanceNode(DapaoRHAllVideoSeedanceNode):
                 current_url,
             )
         except Exception as e:
-            error_msg = f"❌ 错误：RH 视频超清处理失败\n\n详情：{e}"
+            error_msg = format_node_error(f"❌ 错误：RH 视频超清处理失败\n\n详情：{e}", context=__name__)
             _log_error(error_msg)
             _log_error(traceback.format_exc())
             raw_json = json.dumps({"stages": stages}, ensure_ascii=False, indent=2)

@@ -5,6 +5,12 @@ RH 全能图片多并发节点
 作者：@炮老师的小课堂
 """
 
+try:
+    from .node_error_utils import format_node_error
+except ImportError:
+    from node_error_utils import format_node_error
+
+
 import json
 import re
 import time
@@ -444,7 +450,7 @@ class DapaoRHAllImageConcurrentNode(DapaoRHAllImageNode):
             "index": task_index,
             "ok": False,
             "prompt": prompt,
-            "error": str(last_error),
+            "error": format_node_error(str(last_error), context=__name__),
             "traceback": last_traceback,
         }
 
@@ -507,14 +513,14 @@ class DapaoRHAllImageConcurrentNode(DapaoRHAllImageNode):
 
         config = ENDPOINT_CONFIGS.get((model, channel, mode))
         if not config:
-            return (create_blank_tensor(), "", f"❌ 错误：当前组合没有可用端点：{model} / {channel} / {mode}")
+            return (create_blank_tensor(), "", format_node_error(f"❌ 错误：当前组合没有可用端点：{model} / {channel} / {mode}", context=__name__))
 
         try:
             extra_params = json.loads(extra_params_str or "{}")
             if not isinstance(extra_params, dict):
                 raise ValueError("额外参数JSON必须是 JSON 对象")
         except Exception as e:
-            return (create_blank_tensor(), "", f"❌ 错误：额外参数JSON无效：{e}")
+            return (create_blank_tensor(), "", format_node_error(f"❌ 错误：额外参数JSON无效：{e}", context=__name__))
 
         task_count = max(1, min(100, task_count))
         multi_line_priority = prompt_line_count > 1
@@ -588,7 +594,7 @@ class DapaoRHAllImageConcurrentNode(DapaoRHAllImageNode):
                             "index": index,
                             "ok": False,
                             "prompt": prompts[index],
-                            "error": str(e),
+                            "error": format_node_error(str(e), context=__name__),
                             "traceback": traceback.format_exc(),
                         }
                     results[index] = result
@@ -606,7 +612,7 @@ class DapaoRHAllImageConcurrentNode(DapaoRHAllImageNode):
 
             results = [result for result in results if result is not None]
             if abort_error:
-                message = f"❌ 错误：第 {abort_error['index'] + 1} 个 RH 并发任务失败，已按策略中断。\n\n详情：{abort_error.get('error')}"
+                message = format_node_error(f"❌ 错误：第 {abort_error['index'] + 1} 个 RH 并发任务失败，已按策略中断。\n\n详情：{abort_error.get('error')}", context=__name__)
                 return (create_blank_tensor(), "", message)
 
             success_count = sum(1 for result in results if result.get("ok"))
@@ -681,7 +687,7 @@ class DapaoRHAllImageConcurrentNode(DapaoRHAllImageNode):
             return (final_tensor, "\n".join(all_urls), "\n".join(info_lines) + "\n\n" + raw_json)
 
         except Exception as e:
-            error_msg = f"❌ 错误：RH 全能图片多并发生成失败\n\n详情：{e}"
+            error_msg = format_node_error(f"❌ 错误：RH 全能图片多并发生成失败\n\n详情：{e}", context=__name__)
             _log_error(error_msg)
             _log_error(traceback.format_exc())
             return (create_blank_tensor(), "", error_msg)

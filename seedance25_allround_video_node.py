@@ -21,11 +21,14 @@ class DapaoSeedance25AllroundVideoNode(DapaoSeedance20AllroundVideoNode):
     VERSION_LABEL = "Seedance2.5"
     HAS_FACE_MODE = False
     INCLUDE_BILLING_SECONDS = True
-    DESCRIPTION = "Seedance2.5 文生视频、多图参考、首尾参考、多模态参考；素材自动上传登记，支持9图、3视频、3音频"
+    USE_ASSET_LIBRARY = False
+    DESCRIPTION = "Seedance2.5：素材上传妙笔后直接引用，无需素材登记。支持9图、3视频、3音频输入；高级参数组合以实际渠道支持为准。"
 
     @classmethod
     def INPUT_TYPES(cls):
         inputs = super().INPUT_TYPES()
+        inputs["optional"]["🎬 首帧图"] = ("IMAGE", {"tooltip": "图片上传妙笔后作为first_frame提交，无需素材登记。"})
+        inputs["optional"]["🏁 尾帧图"] = ("IMAGE", {"tooltip": "图片上传妙笔后作为last_frame提交，无需素材登记。"})
         inputs["optional"].update({
             "🎚️ 码率模式": (["standard", "high"], {"default": "standard"}),
             "📦 输出格式": (["mp4", "mov"], {"default": "mp4"}),

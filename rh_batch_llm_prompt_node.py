@@ -5,6 +5,12 @@ RH 批量 LLM 提示词节点
 作者：@炮老师的小课堂
 """
 
+try:
+    from .node_error_utils import format_node_error
+except ImportError:
+    from node_error_utils import format_node_error
+
+
 import base64
 import io
 import json
@@ -785,7 +791,7 @@ class DapaoRHBatchLLMPromptNode(DapaoRHLLMChatNode):
             "attempts": retry_count + 1,
             "elapsed_seconds": round(time.time() - started_at, 3),
             "timing": {},
-            "error": str(last_error),
+            "error": format_node_error(str(last_error), context=__name__),
             "traceback": last_traceback,
         }
 
@@ -979,7 +985,7 @@ class DapaoRHBatchLLMPromptNode(DapaoRHLLMChatNode):
                             "attempts": retry_count + 1,
                             "elapsed_seconds": None,
                             "timing": {},
-                            "error": str(e),
+                            "error": format_node_error(str(e), context=__name__),
                             "traceback": traceback.format_exc(),
                         }
                     task_results[index] = result

@@ -4,6 +4,12 @@ This module is intentionally self-contained.  It does not import or inherit the
 legacy low-price image node, so that node can be removed independently.
 """
 
+try:
+    from .node_error_utils import format_node_error
+except ImportError:
+    from node_error_utils import format_node_error
+
+
 import base64
 import asyncio
 import io
@@ -324,7 +330,7 @@ class DapaoImage2RelayClient:
                 raise RuntimeError(f"{friendly_network_error(error, '提交图像任务')} 提交请求不会自动重试，以免重复扣费。") from error
             if response.status_code >= 400:
                 if response.status_code == 443:
-                    raise RuntimeError(friendly_443_status())
+                    raise RuntimeError(friendly_443_status(response.text))
                 raise DapaoImage2APIError(response.status_code, _response_error(response))
             try:
                 return response.json()
@@ -623,7 +629,7 @@ class DapaoGPTImage2AllroundNode:
             )
             return images, "\n".join(urls), info
         except Exception as error:
-            message = f"❌ {self.TASK_LABEL} 全能图像生成失败：{_generation_error_message(error)}"
+            message = format_node_error(f"❌ {self.TASK_LABEL} 全能图像生成失败：{_generation_error_message(error)}", context=__name__)
             _log_error(message)
             _log_error(traceback.format_exc())
             details = json.dumps({"submit": submitted, "final": final}, ensure_ascii=False, indent=2)

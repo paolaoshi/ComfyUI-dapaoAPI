@@ -5,6 +5,12 @@ official MiniMax-H3 h3-prompt-writing skill into a deterministic ComfyUI
 prompt-compilation surface; it does not submit video-generation jobs.
 """
 
+try:
+    from .node_error_utils import format_node_error
+except ImportError:
+    from node_error_utils import format_node_error
+
+
 import asyncio
 import base64
 import io
@@ -1616,10 +1622,10 @@ class DapaoH3VideoPromptNode:
             )
             return h3_prompt, returned_mode, analysis, json.dumps(_sanitized_result(result), ensure_ascii=False, indent=2), info
         except Exception as error:
-            message = f"❌ H3视频提示词生成失败：{error}"
+            message = format_node_error(f"❌ H3视频提示词生成失败：{error}", context=__name__)
             _log_error(message)
             _log_error(traceback.format_exc())
-            response_text = json.dumps({"error": str(error), "response": _sanitized_result(result)}, ensure_ascii=False, indent=2)
+            response_text = json.dumps({"error": format_node_error(str(error), context=__name__), "response": _sanitized_result(result)}, ensure_ascii=False, indent=2)
             if skip_error:
                 return message, resolved_mode or "未知", message, response_text, message
             raise RuntimeError(message) from error

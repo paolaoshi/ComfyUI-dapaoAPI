@@ -6,6 +6,12 @@ RH 全能视频 Seedance2.0 节点
 作者：@炮老师的小课堂
 """
 
+try:
+    from .node_error_utils import format_node_error
+except ImportError:
+    from node_error_utils import format_node_error
+
+
 import io
 import json
 import os
@@ -661,7 +667,7 @@ class DapaoRHAllVideoSeedanceNode(DapaoRHAllImageNode):
 
         config = ENDPOINT_CONFIGS.get((model, function))
         if not config:
-            return (RHSeedanceVideoAdapter(""), "", f"❌ 错误：当前组合没有可用接口：{model} / {function}", "", self._blank_last_frame())
+            return (RHSeedanceVideoAdapter(""), "", format_node_error(f"❌ 错误：当前组合没有可用接口：{model} / {function}", context=__name__), "", self._blank_last_frame())
 
         start_time = time.time()
         submit_response = {}
@@ -726,7 +732,7 @@ class DapaoRHAllVideoSeedanceNode(DapaoRHAllImageNode):
             raw_json = json.dumps({"payload": payload, "submit": submit_response, "final": final_response}, ensure_ascii=False, indent=2)
             return (RHSeedanceVideoAdapter(video_url), task_id, "\n".join(info_lines) + "\n\n" + raw_json, video_url, last_frame)
         except Exception as e:
-            error_msg = f"❌ 错误：RH 全能视频 Seedance2.0 生成失败\n\n详情：{e}"
+            error_msg = format_node_error(f"❌ 错误：RH 全能视频 Seedance2.0 生成失败\n\n详情：{e}", context=__name__)
             _log_error(error_msg)
             _log_error(traceback.format_exc())
             raw_json = json.dumps({"submit": submit_response, "final": final_response}, ensure_ascii=False, indent=2)

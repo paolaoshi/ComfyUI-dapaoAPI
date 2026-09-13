@@ -5,6 +5,12 @@ RH LLM 智能对话节点
 作者：@炮老师的小课堂
 """
 
+try:
+    from .node_error_utils import format_node_error
+except ImportError:
+    from node_error_utils import format_node_error
+
+
 import base64
 import io
 import json
@@ -683,11 +689,11 @@ class DapaoRHLLMChatNode:
             return (response_text, json.dumps(result, ensure_ascii=False, indent=2), info)
 
         except Exception as e:
-            error_msg = f"❌ RH LLM 智能对话失败：{e}"
+            error_msg = format_node_error(f"❌ RH LLM 智能对话失败：{e}", context=__name__)
             _log_error(error_msg)
             _log_error(traceback.format_exc())
             if skip_error:
-                return (error_msg, json.dumps({"error": str(e)}, ensure_ascii=False, indent=2), error_msg)
+                return (error_msg, json.dumps({"error": format_node_error(str(e), context=__name__)}, ensure_ascii=False, indent=2), error_msg)
             raise
 
 

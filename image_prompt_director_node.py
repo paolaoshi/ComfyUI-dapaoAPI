@@ -6,6 +6,12 @@ independent dapaoAI LLM node suitable for GPT Image 2 and other image models.
 Template taxonomy adapted from ConardLi/garden-skills (MIT License, 2026).
 """
 
+try:
+    from .node_error_utils import format_node_error
+except ImportError:
+    from node_error_utils import format_node_error
+
+
 import asyncio
 import base64
 import io
@@ -696,10 +702,10 @@ class DapaoAllroundImagePromptNode:
                 info,
             )
         except Exception as error:
-            message = f"❌ 全能image提示词生成失败：{error}"
+            message = format_node_error(f"❌ 全能image提示词生成失败：{error}", context=__name__)
             _log_error(message)
             _log_error(traceback.format_exc())
-            response_text = json.dumps({"error": str(error), "response": _sanitized(result)}, ensure_ascii=False, indent=2)
+            response_text = json.dumps({"error": format_node_error(str(error), context=__name__), "response": _sanitized(result)}, ensure_ascii=False, indent=2)
             if kwargs.get("🚫 出错时跳过", False):
                 return message, "未知", "未知", message, response_text, message
             raise RuntimeError(message) from error

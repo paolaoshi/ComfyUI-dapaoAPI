@@ -5,6 +5,12 @@ Loads an application's exposed parameters, uploads connected media to the
 legacy AI-app API, submits an asynchronous task, and returns image/video URLs.
 """
 
+try:
+    from .node_error_utils import format_node_error
+except ImportError:
+    from node_error_utils import format_node_error
+
+
 import io
 import json
 import mimetypes
@@ -832,7 +838,7 @@ class DapaoRHAppNode(DapaoRHAllVideoSeedanceNode):
             )
             return (images, RHSeedanceVideoAdapter(video_url), task_id, "\n".join(urls), "\n".join(info_lines) + "\n\n" + raw)
         except Exception as error:
-            message = f"❌ 错误：RH 应用运行失败\n\n详情：{error}"
+            message = format_node_error(f"❌ 错误：RH 应用运行失败\n\n详情：{error}", context=__name__)
             _log_error(message)
             _log_error(traceback.format_exc())
             if skip_error:

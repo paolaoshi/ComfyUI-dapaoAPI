@@ -28,6 +28,11 @@ from urllib.parse import urlsplit
 
 import requests
 
+try:
+    from .node_error_utils import format_node_error
+except ImportError:
+    from node_error_utils import format_node_error
+
 
 DEFAULT_BASE_URL = "https://api.dapaoai.com"
 _PROCESS_SESSION = uuid.uuid4().hex
@@ -55,7 +60,10 @@ class DreamBrushHTTPError(DreamBrushRuntimeError):
     def __init__(self, status_code: int, message: str):
         self.status_code = int(status_code)
         self.api_message = str(message)
-        super().__init__(f"DreamBrush 请求失败 {self.status_code}：{self.api_message}")
+        super().__init__(format_node_error(
+            f"DreamBrush 请求失败 {self.status_code}：{self.api_message}",
+            status_code=self.status_code,
+        ))
 
 
 class DreamBrushIndeterminateError(DreamBrushRuntimeError):

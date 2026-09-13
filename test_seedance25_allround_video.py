@@ -111,15 +111,66 @@ class Tests(unittest.TestCase):
         self.assertTrue(all(r[2]["json"]["model"] == "doubao-seedance-2.0" for r in self.requests))
 
     def test_sp_accepts_material_but_rejects_other_resolution(self):
-        self.run_node("seedance-2.0", **{"🌐 公网素材URL(JSON)": json.dumps({"images": ["asset://file-test"]})})
-        self.assertEqual(self.requests[0][2]["json"]["model"], "seedance-2.0")
+        payload = self.run_node("seedance-2.0", **{"🌐 公网素材URL(JSON)": json.dumps({"images": ["asset://file-test"]})})
+        self.assertFalse(self.requests)
+        self.assertNotIn("seedance_asset_library", payload["metadata"])
+        self.assertEqual(payload["metadata"]["content"][0]["image_url"]["url"], "asset://file-test")
         runtime.submit_json_task.reset_mock()
         with self.assertRaisesRegex(RuntimeError, "分辨率"):
             self.run_node("seedance-2.0", **{"🧩 分辨率": "1080P"})
         runtime.submit_json_task.assert_not_called()
 
+    def test_25_direct_image_upload_skips_registration(self):
+        frame = Tensor(np.zeros((1, 1200, 2400, 3), dtype=np.float32))
+        with patch.object(base.DapaoSeedanceRelayClient, "prepare_asset", side_effect=AssertionError("2.5 must not register")):
+            payload = self.run_node("doubao-seedance-2-5", **{"🖼️ 参考图1": frame, "🔊 生成音频": False})
+        self.assertFalse(self.requests)
+        self.assertEqual(len(self.uploads), 1)
+        with Image.open(io.BytesIO(self.uploads[0][0])) as image:
+            self.assertEqual(image.size, (2048, 1024))
+        self.assertNotIn("seedance_asset_library", payload["metadata"])
+        self.assertEqual(payload["metadata"]["content"][0]["image_url"]["url"], "asset://file-1")
+        self.assertEqual(payload["metadata"]["content"][0]["role"], "reference_image")
+        self.assertIs(payload["metadata"]["generate_audio"], False)
+        self.assertEqual(runtime.submit_json_task.call_count, 1)
+
+    def test_25_frames_keep_roles_without_registration(self):
+        frame = Tensor(np.zeros((1, 512, 512, 3)))
+        payload = self.run_node("doubao-seedance-2-5", **{"🎬 首帧图": frame, "🏁 尾帧图": frame})
+        self.assertEqual([c["role"] for c in payload["metadata"]["content"]], ["first_frame", "last_frame"])
+        self.assertNotIn("seedance_asset_library", payload["metadata"])
+        self.assertFalse(self.requests)
+
+    def test_wrapped_video_states_and_failure_reason(self):
+        client = base.DapaoSeedanceRelayClient("offline", 60)
+        for status in ["NOT_START", "SUBMITTED", "QUEUED", "IN_PROGRESS"]:
+            self.assertEqual(base._task_state({"code": 0, "message": "success", "data": {"status": status}})[0], "processing")
+        for status in ["SUCCESS", "FAILURE"]:
+            response = {"code": 0, "message": "success", "data": {"status": status, "fail_reason": "specific failure" if status == "FAILURE" else ""}}
+            with patch.object(client, "_request_json", return_value=response) as request:
+                if status == "SUCCESS":
+                    self.assertEqual(client.poll("task-test", 60, 5), response)
+                else:
+                    with self.assertRaisesRegex(base.DapaoSeedanceTaskError, "specific failure"):
+                        client.poll("task-test", 60, 5)
+                self.assertEqual(request.call_count, 1)
+
+    def test_real_person_rejection_keeps_details_without_retry(self):
+        client = base.DapaoSeedanceRelayClient("offline", 60)
+        message = "The request failed because the input image 'content[1]' may contain real person."
+        response = {"code": "success", "data": {"status": "FAILURE", "fail_reason": message}}
+        with patch.object(client, "_request_json", return_value=response) as request:
+            with self.assertRaises(base.DapaoSeedanceTaskError) as caught:
+                client.poll("task-test", 60, 5)
+        self.assertIn("可能包含真人", str(caught.exception))
+        self.assertIn(message, str(caught.exception))
+        self.assertIs(caught.exception.result, response)
+        self.assertEqual(request.call_count, 1)
+
     def test_25_extend_and_false(self):
         payload = self.run_node("doubao-seedance-2-5", **{"🎞️ 参考任务": "extend", "📦 输出格式": "mov", "🎚️ 码率模式": "high", "🔊 生成音频": False, "🌐 公网素材URL(JSON)": json.dumps({"videos": ["asset://file-video"]})})
+        self.assertNotIn("seedance_asset_library", payload["metadata"])
+        self.assertFalse(self.requests)
         self.assertEqual(payload["metadata"]["omni_reference_task_type"], "extend")
         self.assertEqual(payload["metadata"]["output_format"], "mov")
         self.assertIs(payload["metadata"]["generate_audio"], False)

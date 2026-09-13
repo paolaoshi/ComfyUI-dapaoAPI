@@ -1,5 +1,11 @@
 """Dedicated Seedream V5 Pro layer-decomposition node for dapaoAI."""
 
+try:
+    from .node_error_utils import format_node_error
+except ImportError:
+    from node_error_utils import format_node_error
+
+
 import asyncio
 import base64
 import io
@@ -277,7 +283,7 @@ class DapaoSeedreamLayerClient:
                 raise RuntimeError(f"{friendly_network_error(error, '提交图层拆分任务')} 付费提交不会自动重试，以免重复扣费。") from error
             if response.status_code >= 400:
                 if response.status_code == 443:
-                    raise RuntimeError(friendly_443_status())
+                    raise RuntimeError(friendly_443_status(response.text))
                 raise DapaoSeedreamLayerAPIError(response.status_code, _response_error(response))
             try:
                 return response.json()
@@ -796,7 +802,7 @@ class DapaoSeedreamV5ProLayerDecompositionNode:
             )
             return base_image, layers_tensor, masks_tensor, "\n".join(urls), info, psd_layers_tensor
         except Exception as error:
-            message = f"❌ Seedream-v5-pro 图层拆分失败：{error}"
+            message = format_node_error(f"❌ Seedream-v5-pro 图层拆分失败：{error}", context=__name__)
             _log_error(message)
             _log_error(traceback.format_exc())
             details = json.dumps(

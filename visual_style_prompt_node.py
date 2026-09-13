@@ -8,6 +8,12 @@ source prompts and images remain the property of their respective creators.
 
 from __future__ import annotations
 
+try:
+    from .node_error_utils import format_node_error
+except ImportError:
+    from node_error_utils import format_node_error
+
+
 import asyncio
 import base64
 import hashlib
@@ -1054,7 +1060,7 @@ class DapaoVisualStylePromptNode:
                 info,
             )
         except Exception as error:
-            message = f"❌ 全能视觉风格提示词生成失败：{error}"
+            message = format_node_error(f"❌ 全能视觉风格提示词生成失败：{error}", context=__name__)
             _safe_print(message)
             _safe_print(traceback.format_exc())
             details = json.dumps(

@@ -2,6 +2,12 @@
 
 from __future__ import annotations
 
+try:
+    from .node_error_utils import format_node_error
+except ImportError:
+    from node_error_utils import format_node_error
+
+
 import asyncio
 import json
 import os
@@ -262,7 +268,7 @@ class DapaoWan30AllroundVideoNode:
             return DapaoVideoAdapter(video_url, width, height), task_identifier, info, video_url
         except Exception as error:
             safe_error = self._safe_response(str(error))
-            message = f"❌ 万相3.0全能视频生成失败：{safe_error}"
+            message = format_node_error(f"❌ 万相3.0全能视频生成失败：{safe_error}", context=__name__)
             _safe_print(message)
             _safe_print(self._safe_response(traceback.format_exc()))
             if kwargs.get("🚫 出错时跳过", False):

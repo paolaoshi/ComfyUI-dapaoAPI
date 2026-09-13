@@ -5,6 +5,12 @@ uses only the small set of references relevant to the selected music brief.
 It produces a generation-ready three-part caption, not audio.
 """
 
+try:
+    from .node_error_utils import format_node_error
+except ImportError:
+    from node_error_utils import format_node_error
+
+
 import asyncio
 import json
 import re
@@ -976,10 +982,10 @@ class DapaoMusic3CaptionPromptNode:
                 info,
             )
         except Exception as error:
-            message = f"❌ Music3音乐提示词生成失败：{error}"
+            message = format_node_error(f"❌ Music3音乐提示词生成失败：{error}", context=__name__)
             _safe_print(message)
             _safe_print(traceback.format_exc())
-            response_text = json.dumps({"error": str(error), "response": _sanitized_result(result)}, ensure_ascii=False, indent=2)
+            response_text = json.dumps({"error": format_node_error(str(error), context=__name__), "response": _sanitized_result(result)}, ensure_ascii=False, indent=2)
             if kwargs.get("🚫 出错时跳过", False):
                 return message, str(kwargs.get("🔗 外部歌词") or kwargs.get("📝 歌词") or ""), message, message, message, message, response_text, message
             raise RuntimeError(message) from error
