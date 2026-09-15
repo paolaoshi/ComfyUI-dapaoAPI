@@ -2,6 +2,12 @@ import { app } from "../../../scripts/app.js";
 import { api } from "../../../scripts/api.js";
 
 const NODE_CONFIGS = {
+    DapaoSeedance25GlobalSPVideoNode: {
+        imageCount: 9, videoCount: 0, audioCount: 0,
+        defaultModel: "seedance-2.5-sp", supportedModels: new Set(["seedance-2.5-sp"]),
+        resolutions: ["720P", "480P", "1080P", "2K", "4K"],
+        faceMode: false, globalSP: true,
+    },
     DapaoSeedance20AllroundVideoNode: {
         imageCount: 9, videoCount: 3, audioCount: 3,
         defaultModel: "doubao-seedance-2.0",
@@ -111,7 +117,7 @@ function syncModelControls(node, sourceName = "") {
 
         if (!config.supportedModels.has(modelWidget.value)) modelWidget.value = config.defaultModel;
         const sp = modelWidget.value === "seedance-2.0";
-        const resolutions = sp ? ["720P"] : ["720P", "480P", "1080P"];
+        const resolutions = config.resolutions || (sp ? ["720P"] : ["720P", "480P", "1080P"]);
         resolutionWidget.options = { ...resolutionWidget.options, values: resolutions };
         if (!resolutions.includes(resolutionWidget.value)) resolutionWidget.value = "720P";
         const audio = widget(node, "🔊 生成音频");
@@ -147,7 +153,7 @@ function refreshNode(node, sourceName = "") {
         badge.disabled = true;
         node.__dapaoSeedancePrice = badge;
     }
-    if (node.__dapaoSeedancePrice) node.__dapaoSeedancePrice.value = value(node, "🤖 模型") === "seedance-2.0"
+    if (node.__dapaoSeedancePrice) node.__dapaoSeedancePrice.value = config.globalSP ? "固定30秒，按妙笔当前模型及用户分组实际结算" : value(node, "🤖 模型") === "seedance-2.0"
         ? "SP按秒计费，以妙笔实际结算为准"
         : "标准版按计费用量结算，以妙笔账单为准";
     if (node.computeSize) {
@@ -213,7 +219,7 @@ app.registerExtension({
         // LiteGraph applies saved values to the current widget list.
         const configure = nodeTypeClass.prototype.configure;
         nodeTypeClass.prototype.configure = function (info) {
-            if (Array.isArray(info?.widgets_values)) {
+            if (!NODE_CONFIGS[nodeData.name].globalSP && Array.isArray(info?.widgets_values)) {
                 const saved = [...info.widgets_values];
                 if (["SD2-face", "SD2.0-mini", "SD2-fast"].includes(saved[1])) {
                     saved[1] = "doubao-seedance-2.0";

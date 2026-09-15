@@ -51,3 +51,15 @@ assert.equal(previous.saved[12], 120);
 const current = new OldNode();
 current.configure({ widgets_values: previous.saved });
 assert.deepEqual(current.saved, previous.saved);
+
+const globalSP = node('DapaoSeedance25GlobalSPVideoNode', 'seedance-2.5-global-sp', '4K');
+context.sync(globalSP);
+assert.equal(globalSP.widgets[0].value, 'seedance-2.5-sp');
+assert.deepEqual(Array.from(globalSP.widgets[1].options.values), ['720P','480P','1080P','2K','4K']);
+assert.equal(globalSP.widgets[1].value, '4K');
+class SPNode { configure(info) { this.saved = info.widgets_values; } }
+extension.beforeRegisterNodeDef(SPNode, { name: 'DapaoSeedance25GlobalSPVideoNode' });
+const spSaved = new SPNode();
+const values = ['key','seedance-2.5-global-sp','自动识别','prompt','4K','30','16:9',42,'randomize',1800,10,120];
+spSaved.configure({ widgets_values: values });
+assert.deepEqual(spSaved.saved, values);
