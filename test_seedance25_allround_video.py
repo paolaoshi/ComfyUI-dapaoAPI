@@ -99,16 +99,31 @@ class Tests(unittest.TestCase):
             else: self.assertNotIn("output_format", payload["metadata"])
         self.assertFalse(self.requests)
 
-    def test_direct_frames_are_resized_registered_and_ordered(self):
+    def test_direct_frames_are_resized_without_registration_and_ordered(self):
         frame = Tensor(np.zeros((1, 1200, 2400, 3), dtype=np.float32))
-        payload = self.run_node(**{"🎬 首帧图": frame, "🏁 尾帧图": frame})
+        with patch.object(base.DapaoSeedanceRelayClient, "prepare_asset", side_effect=AssertionError("2.0 must not register")):
+            payload = self.run_node(**{"🎬 首帧图": frame, "🏁 尾帧图": frame})
         self.assertEqual([c["role"] for c in payload["metadata"]["content"]], ["first_frame", "last_frame"])
-        self.assertEqual(len(self.requests), 2)
+        self.assertFalse(self.requests)
+        self.assertEqual(len(self.uploads), 2)
         for data, _, mime in self.uploads:
             with Image.open(io.BytesIO(data)) as image: self.assertEqual(image.size, (2048, 1024))
             self.assertEqual(mime, "image/png")
-        self.assertTrue(payload["metadata"]["seedance_asset_library"])
-        self.assertTrue(all(r[2]["json"]["model"] == "doubao-seedance-2.0" for r in self.requests))
+        self.assertNotIn("seedance_asset_library", payload["metadata"])
+        self.assertEqual([c["image_url"]["url"] for c in payload["metadata"]["content"]], ["asset://file-1", "asset://file-2"])
+
+    def test_20_multimodal_references_skip_registration(self):
+        refs = {"images": ["asset://file-image"], "videos": ["asset://file-video"], "audios": ["asset://file-audio"]}
+        with patch.object(base.DapaoSeedanceRelayClient, "prepare_asset", side_effect=AssertionError("2.0 must not register")):
+            payload = self.run_node(**{"🌐 公网素材URL(JSON)": json.dumps(refs), "🔊 生成音频": False})
+        self.assertFalse(self.requests)
+        self.assertFalse(self.uploads)
+        self.assertNotIn("seedance_asset_library", payload["metadata"])
+        self.assertEqual([c["role"] for c in payload["metadata"]["content"]], ["reference_image", "reference_video", "reference_audio"])
+        self.assertIs(payload["metadata"]["generate_audio"], False)
+        self.assertEqual(payload["model"], "doubao-seedance-2.0")
+        self.assertEqual(runtime.submit_json_task.call_args.kwargs["endpoint"], "/v1/video/generations")
+        self.assertEqual(runtime.submit_json_task.call_count, 1)
 
     def test_sp_accepts_material_but_rejects_other_resolution(self):
         payload = self.run_node("seedance-2.0", **{"🌐 公网素材URL(JSON)": json.dumps({"images": ["asset://file-test"]})})
@@ -182,10 +197,10 @@ class Tests(unittest.TestCase):
         runtime.submit_json_task.assert_not_called()
         self.assertFalse(self.uploads)
 
-    def test_registration_failure_does_not_generate_or_retry(self):
+    def test_legacy_registration_failure_does_not_retry(self):
         with patch.object(base.DapaoSeedanceRelayClient, "_request_json", return_value={"status": "indeterminate", "registration_id": "sa-test"}) as request:
             with self.assertRaisesRegex(RuntimeError, "indeterminate"):
-                self.run_node(**{"🌐 公网素材URL(JSON)": json.dumps({"images": ["asset://file-test"]})})
+                base.DapaoSeedanceRelayClient("offline", 60).prepare_asset("asset://file-test", "doubao-seedance-2.0")
             self.assertEqual(request.call_count, 1)
         runtime.submit_json_task.assert_not_called()
 
@@ -256,11 +271,11 @@ class Tests(unittest.TestCase):
         message = str(raised.exception)
         self.assertIn("生成服务找不到引用的上游素材", message)
         self.assertIn('"stage": "video_poll"', message)
-        self.assertIn('"registration_id": "sa-test"', message)
+        self.assertNotIn('"registration_id"', message)
         self.assertIn('"status": "failed"', message)
         self.assertIn("asset://file-test", message)
         self.assertEqual(runtime.submit_json_task.call_count, 1)
-        self.assertEqual(len(self.requests), 1)
+        self.assertFalse(self.requests)
         self.assertFalse(self.uploads)
 
     def test_seed_is_recovery_salt_not_request_field(self):

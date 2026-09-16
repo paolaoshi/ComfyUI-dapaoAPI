@@ -558,7 +558,8 @@ class DapaoSeedance20AllroundVideoNode:
     VERSION_LABEL = "Seedance2.0"
     HAS_FACE_MODE = False
     INCLUDE_BILLING_SECONDS = True
-    USE_ASSET_LIBRARY = True
+    # Miaobi 2026-09-16: standard 2.0 also uses uploaded file references directly.
+    USE_ASSET_LIBRARY = False
 
     def _log_info(self, message):
         _safe_print(f"[dapaoAPI-{self.VERSION_LABEL}全能视频] 信息：{message}")
@@ -569,8 +570,8 @@ class DapaoSeedance20AllroundVideoNode:
     @classmethod
     def INPUT_TYPES(cls):
         optional = {
-            "🎬 首帧图": ("IMAGE", {"tooltip": "首尾帧模式的首图，将自动登记并作为first_frame提交。"}),
-            "🏁 尾帧图": ("IMAGE", {"tooltip": "首尾帧模式的尾图，将自动登记并作为last_frame提交。"}),
+            "🎬 首帧图": ("IMAGE", {"tooltip": "首尾帧模式的首图，自动上传妙笔并作为first_frame直接引用，无需素材登记。"}),
+            "🏁 尾帧图": ("IMAGE", {"tooltip": "首尾帧模式的尾图，自动上传妙笔并作为last_frame直接引用，无需素材登记。"}),
             "🔁 最大轮询秒数": ("INT", {"default": 1800, "min": 60, "max": 7200, "step": 10}),
             "⏱️ 轮询间隔": ("INT", {"default": 5, "min": 2, "max": 30, "step": 1}),
             "⌛ 请求超时": ("INT", {"default": 120, "min": 30, "max": 600, "step": 10}),
