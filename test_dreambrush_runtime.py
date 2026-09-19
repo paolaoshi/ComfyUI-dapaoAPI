@@ -499,11 +499,10 @@ class DreamBrushRuntimeTests(unittest.TestCase):
             "gemini-3.7-flash",
             "gemini-3.1-pro-preview",
             "gemini-3.6-flash",
-            "deepseek-v4-flash-vision-exp",
             "deepseek-v4-pro",
-            "deepseek-v4-flash",
             "deepseek-flash",
         )
+        self.assertEqual({m for m in LLM_MODEL_OPTIONS if m.startswith("deepseek")}, {"deepseek-flash", "deepseek-v4-pro"})
         self.assertEqual(DEFAULT_LLM_MODEL, "gemini-3.7-flash")
         for model in expected:
             self.assertEqual(LLM_MODEL_OPTIONS.count(model), 1)

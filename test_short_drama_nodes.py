@@ -80,7 +80,7 @@ class DramaTests(unittest.TestCase):
         return b
 
     def test_deepseek_document_requests_reserve_budget_for_content(self):
-        for model in ('deepseek-v4-flash', 'deepseek-v4-pro'):
+        for model in ('deepseek-flash', 'deepseek-v4-pro'):
             self.run_stage(m.DapaoDramaImage, self.base(), **{'🤖 LLM模型': model})
             self.assertEqual(self.submit.call_args.kwargs['payload']['thinking'], {'type': 'disabled'})
         self.run_stage(m.DapaoDramaImage, self.base())

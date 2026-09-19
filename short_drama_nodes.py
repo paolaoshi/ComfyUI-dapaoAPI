@@ -197,7 +197,7 @@ class DramaStage:
             # V4 defaults to thinking; its reasoning can consume the entire
             # output budget before any deliverable text. These document stages
             # use the documented non-thinking mode rather than hiding reasoning.
-            if model in {"deepseek-v4-flash", "deepseek-v4-pro"}:
+            if model in {"deepseek-flash", "deepseek-v4-pro"}:
                 payload["thinking"] = {"type": "disabled"}
             return payload
 

@@ -157,7 +157,7 @@ API密钥可在每个LLM节点填写，也可在启动ComfyUI前设置`DAPAO_API
 
 ### DeepSeek V4 文档生成
 
-漫剧阶段对 deepseek-v4-flash / deepseek-v4-pro 显式发送 thinking.type=disabled，避免内部思考耗尽 max_tokens 后无正文。其他模型参数保持不变，不使用 reasoning_content 冒充交付提示词。依据：https://api-docs.deepseek.com/guides/thinking_mode/ 。已用用户当前剧本与视觉设定通过妙笔持久队列真实验证图片提示词阶段：3条提示词、1319字符、结构检查通过。
+当前候选仅保留 deepseek-flash / deepseek-v4-pro。漫剧阶段对这两个模型 显式发送 thinking.type=disabled，避免内部思考耗尽 max_tokens 后无正文。其他模型参数保持不变，不使用 reasoning_content 冒充交付提示词。依据：https://api-docs.deepseek.com/guides/thinking_mode/ 。历史版本已用用户当前剧本与视觉设定通过妙笔持久队列真实验证图片提示词阶段：3条提示词、1319字符、结构检查通过。
 
 ## 第二集及后续续写（2026-09-08）
 
