@@ -422,6 +422,9 @@ class DapaoGPTImage2AllroundNode:
     TASK_LABEL = "GPT-image-2"
     UNAVAILABLE_MODELS = ()
 
+    def _resolve_request_model(self, model_label, resolution_label):
+        return self.MODEL_ID_BY_LABEL.get(model_label, MODEL_BY_RESOLUTION[resolution_label])
+
     def _create_client(self, api_key, timeout, max_poll_seconds):
         return DapaoImage2RelayClient(api_key, timeout, max_poll_seconds)
 
@@ -539,7 +542,7 @@ class DapaoGPTImage2AllroundNode:
             if quality_label not in self.QUALITY_API_VALUES:
                 raise ValueError(f"不支持的画质：{quality_label}")
 
-            model_id = self.MODEL_ID_BY_LABEL.get(model_label, MODEL_BY_RESOLUTION[resolution_label])
+            model_id = self._resolve_request_model(model_label, resolution_label)
             resolution = RESOLUTION_API_VALUES[resolution_label]
             quality = self.QUALITY_API_VALUES[quality_label]
             # 后端以实际收到的 IMAGE 输入为准，避免前端连线状态与工作流参数不同步。

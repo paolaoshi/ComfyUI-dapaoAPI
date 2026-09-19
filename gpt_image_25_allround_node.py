@@ -50,6 +50,10 @@ class DapaoGPTImage25AllroundNode(DapaoGPTImage2AllroundNode):
         "Flare / Sunburst均可选择；价格以妙笔工坊实际计费为准。@炮老师的小课堂"
     )
 
+    def _resolve_request_model(self, model_label, resolution_label):
+        model_id = self.MODEL_ID_BY_LABEL[model_label]
+        return model_id if resolution_label == "1K" else f"{model_id}-{resolution_label.lower()}"
+
     def _create_client(self, api_key, timeout, max_poll_seconds):
         return DapaoImage25RelayClient(api_key, timeout, max_poll_seconds)
 

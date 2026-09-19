@@ -66,7 +66,7 @@ class Image25Tests(unittest.TestCase):
                     args = submit.call_args.kwargs
                     self.assertEqual(args["base_url"], "https://api.dapaoai.com")
                     self.assertEqual(args["endpoint"], "/v1/images/generations")
-                    self.assertEqual(args["payload"], {"model": module.MODEL_LABEL, "prompt": "测试图像", "quality": quality, "resolution": resolution.lower(), "n": 3, "size": "16:9", "response_format": "url"})
+                    self.assertEqual(args["payload"], {"model": module.MODEL_LABEL + ("" if resolution == "1K" else "-" + resolution.lower()), "prompt": "测试图像", "quality": quality, "resolution": resolution.lower(), "n": 3, "size": "16:9", "response_format": "url"})
                     self.assertEqual(tuple(output[0].shape), (1, 16, 16, 3))
                     self.assertEqual(output[1], "")
                     self.assertIn("妙笔工坊实际计费", output[2])
@@ -83,6 +83,25 @@ class Image25Tests(unittest.TestCase):
                 self.run_node(**args, **{"🖼️ 图像1": torch.zeros((1, 16, 16, 3))})
                 self.assertEqual(request.call_args.args, ("POST", "/v1/images/edits"))
                 self.assertEqual(request.call_args.kwargs["data"]["model"], "gpt-image-2.5-sunburst")
+
+    def test_resolution_routes_both_models_for_generation_and_edit(self):
+        for model in ("gpt-image-2.5-flare", "gpt-image-2.5-sunburst"):
+            for resolution, suffix in (("1K", ""), ("2K", "-2k"), ("4K", "-4k")):
+                args = {"🤖 模型": model, "🧩 清晰度": resolution}
+                with self.subTest(model=model, resolution=resolution):
+                    with patch.object(base, "submit_json_task", return_value=result()) as submit:
+                        output = self.run_node(**args)
+                        submit.assert_called_once()
+                        self.assertEqual(submit.call_args.kwargs["payload"]["model"], model + suffix)
+                        self.assertIn("界面模型：" + model, output[2])
+                        self.assertIn("实际模型ID：" + model + suffix, output[2])
+                    with patch.object(module.DapaoImage25RelayClient, "_request_json", return_value=result()) as request:
+                        self.run_node(**args, **{"🖼️ 图像1": torch.zeros((1, 16, 16, 3))})
+                        request.assert_called_once()
+                        self.assertEqual(request.call_args.args, ("POST", "/v1/images/edits"))
+                        self.assertEqual(request.call_args.kwargs["data"]["model"], model + suffix)
+                        self.assertEqual(request.call_args.kwargs["data"]["resolution"], resolution.lower())
+        self.assertEqual(Node.INPUT_TYPES()["required"]["🤖 模型"][0], ["gpt-image-2.5-flare", "gpt-image-2.5-sunburst"])
 
     def test_invalid_quality_never_submits(self):
         with patch.object(base, "submit_json_task") as submit, patch.object(base, "ensure_asset_references") as upload:
