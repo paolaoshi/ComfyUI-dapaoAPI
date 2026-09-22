@@ -1,7 +1,7 @@
 import { app } from "../../../scripts/app.js";
 import { api } from "../../../scripts/api.js";
 
-const NODE_TYPES = ["DapaoGPTImage2AllroundNode", "DapaoGPTImage25AllroundNode"];
+const NODE_TYPES = ["DapaoGPTImage2AllroundNode", "DapaoGPTImage25AllroundNode", "DapaoQwenImage3AllroundNode"];
 const REGISTER_URL = "https://api.dapaoai.com/sign-up?aff=vcOZ";
 const REGISTER_WIDGET_NAME = "👉点此注册API密钥👈";
 

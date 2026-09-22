@@ -1,10 +1,11 @@
 import { app } from "../../../scripts/app.js";
 import { api } from "../../../scripts/api.js";
 
-const NODE_TYPE = "DapaoWan30AllroundVideoNode";
+const NODE_TYPES = ["DapaoWan30AllroundVideoNode", "DapaoWan30OfficialAllroundVideoNode"];
 const REGISTER_URL = "https://api.dapaoai.com/sign-up?aff=vcOZ";
 const REGISTER_NAME = "👉点此注册API密钥👈";
 const VIDEO_MODEL = "wan3.0-video";
+const VIDEO_MODELS = new Set(["wan3.0-video", "wan3.0-video-official", "wan3.0-video-prime-official"]);
 
 function nodeType(node) { return node?.comfyClass || node?.type || ""; }
 function widget(node, name) { return node?.widgets?.find(item => item.name === name) || null; }
@@ -77,7 +78,7 @@ function ensurePriceLabel(node) {
 }
 
 function refresh(node) {
-    if (nodeType(node) !== NODE_TYPE) return;
+    if (!NODE_TYPES.includes(nodeType(node))) return;
     ensureRegisterButton(node); ensurePriceLabel(node);
     const mode = String(value(node, "🎛️ 生成模式", "文生视频"));
     const model = String(value(node, "🤖 模型", "wan3.0"));
@@ -89,7 +90,7 @@ function refresh(node) {
     for (let i = 1; i <= 10; i++) setInputHidden(node, `🖼️ 参考图${i}`, !referenceMode);
     for (let i = 1; i <= 5; i++) {
         setInputHidden(node, `🎵 参考音频${i}`, !referenceMode);
-        setInputHidden(node, `🎞️ 参考视频${i}`, !(referenceMode && model === VIDEO_MODEL));
+        setInputHidden(node, `🎞️ 参考视频${i}`, !(referenceMode && VIDEO_MODELS.has(model)));
     }
     if (node.computeSize) {
         const size = node.computeSize();
@@ -99,7 +100,7 @@ function refresh(node) {
 }
 
 function setup(node) {
-    if (!node?.widgets || nodeType(node) !== NODE_TYPE) return;
+    if (!node?.widgets || !NODE_TYPES.includes(nodeType(node))) return;
     for (const target of node.widgets) {
         if (target.__wan30Wrapped) continue;
         const original = target.callback;
@@ -122,15 +123,15 @@ function migrateWidgetValues(config) {
     return config;
 }
 
-function refreshAll() { app.graph?.findNodesByType(NODE_TYPE)?.forEach(setup); }
+function refreshAll() { NODE_TYPES.forEach(type => app.graph?.findNodesByType(type)?.forEach(setup)); }
 
 app.registerExtension({
     name: "Dapao.Wan30AllroundVideo.UI",
     async setup() { api.addEventListener("hot_reload_update", () => [50, 250, 1000].forEach(ms => setTimeout(refreshAll, ms))); },
-    nodeCreated(node) { if (nodeType(node) === NODE_TYPE) setTimeout(() => setup(node), 20); },
-    loadedGraphNode(node) { if (nodeType(node) === NODE_TYPE) setTimeout(() => setup(node), 50); },
+    nodeCreated(node) { if (NODE_TYPES.includes(nodeType(node))) setTimeout(() => setup(node), 20); },
+    loadedGraphNode(node) { if (NODE_TYPES.includes(nodeType(node))) setTimeout(() => setup(node), 50); },
     async beforeRegisterNodeDef(nodeTypeClass, nodeData) {
-        if (nodeData.name !== NODE_TYPE) return;
+        if (!NODE_TYPES.includes(nodeData.name)) return;
         for (const name of ["onNodeCreated", "onAdded", "onConfigure"]) {
             const original = nodeTypeClass.prototype[name];
             nodeTypeClass.prototype[name] = function () {
