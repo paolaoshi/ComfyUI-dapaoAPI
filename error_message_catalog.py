@@ -24,7 +24,7 @@ HTTP_ERROR_HINTS = {
     416: "请求下载的字节范围无效。请核查文件长度和Range参数，修正断点续传；无需重新生成。",
     417: "服务端不能满足Expect请求头要求。请核对HTTP客户端和代理的请求头配置。",
     421: "请求被发送到无法处理该目标的服务。请检查API域名、Host、代理路由与连接配置。",
-    422: "请求结构可读取，但参数或素材无法按要求处理。请检查具体字段值、参数组合和素材限制。",
+    422: "服务端能读取请求，但无法执行其内容。若原始错误没有指出具体字段或原因，仅凭422不能确定是参数、素材、内容限制还是上游处理问题。",
     425: "服务端拒绝可能被重放的过早请求。请检查客户端或代理的早期数据设置，并核查原请求状态。",
     426: "服务端要求升级通信协议。请检查接口要求、客户端版本和代理支持的协议。",
     428: "请求缺少服务端要求的前置条件。请按接口文档补齐版本或条件头，避免覆盖已变化的资源。",
@@ -52,6 +52,7 @@ HTTP_ERROR_HINTS = {
 
 # Match only actual failure messages, never prompts or successful model text.
 BUSINESS_ERROR_HINTS = [
+    ("upstream_generic_rejection", ("request rejected by the upstream model provider",), "上游模型提供方拒绝了本次请求，但没有返回具体原因。目前不能确定是参数组合、内容限制还是上游处理问题。请保留任务ID，对比实际请求与成功记录，并让服务商查询上游详细日志；不要仅凭此错误认定分辨率不支持或内容违规。"),
     ("token_rate", ("tokens per minute", "token rate limit", "tpm limit", "tpm exceeded"), "Token处理速率超过限制。请降低并发、减少同时发送的长文本和历史记录；这与单条上下文长度超限不同。"),
     ("concurrency", ("concurrency limit", "concurrent requests", "too many active tasks", "max concurrency"), "同时运行的任务超过并发限制。请等待已有任务结束，并减少同时提交的任务数。"),
     ("request_rate", ("requests per minute", "rpm limit", "rpm exceeded"), "单位时间内请求次数超过限制。请分散发送时间，检查多个页面或实例是否共用同一密钥。"),

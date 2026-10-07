@@ -44,9 +44,18 @@ DISPLAY_NAME = "🐠香蕉-banana全能图像@炮老师的小课堂"
 
 BANANA_PRO_OFFICIAL_LABEL = "香蕉pro官方稳定版"
 BANANA_2_OFFICIAL_LABEL = "香蕉2官方稳定版"
-MODEL_OPTIONS = ["bananaPRO", "bannana-2", BANANA_PRO_OFFICIAL_LABEL, BANANA_2_OFFICIAL_LABEL]
-PRICE_BY_MODEL = {"bananaPRO": 0.20, "bannana-2": 0.15}
+BANANA_21_LABEL = "香蕉Pro 2.1全分辨率"
+BANANA_21_MODEL_ID = "gemini-nano-banana-2.1"
+MAX_REFERENCE_IMAGES = 14
+THINKING_LEVELS = {"快速（minimal）": "minimal", "标准（medium）": "medium", "深入（high）": "high"}
+DEFAULT_THINKING = "标准（medium）"
+SEARCH_SCOPES = {"网页与图片": ("webSearch", "imageSearch"), "仅网页": ("webSearch",), "仅图片": ("imageSearch",)}
+OUTPUT_MODES = {"图片与文字": ["TEXT", "IMAGE"], "仅图片": ["IMAGE"]}
+MODEL_OPTIONS = [BANANA_21_LABEL, "bananaPRO", "bannana-2", BANANA_PRO_OFFICIAL_LABEL, BANANA_2_OFFICIAL_LABEL]
+# dapaoAI default-group pricing checked 2026-10-07; account billing is authoritative.
+PRICE_BY_MODEL = {"bananaPRO": 0.20, "bannana-2": 0.15, BANANA_21_LABEL: 0.18}
 MODEL_ID_BY_RESOLUTION = {
+    BANANA_21_LABEL: {size: BANANA_21_MODEL_ID for size in ("1K", "2K", "4K")},
     BANANA_PRO_OFFICIAL_LABEL: {
         "1K": "bananaPRO-official-1k",
         "2K": "bananaPRO-official-2k",
@@ -93,12 +102,14 @@ BANANA_2_ASPECT_RATIOS = [
     "8:1",
 ]
 ASPECT_RATIOS_BY_MODEL = {
+    BANANA_21_LABEL: BANANA_2_ASPECT_RATIOS,
     "bananaPRO": BANANA_PRO_ASPECT_RATIOS,
     "bannana-2": BANANA_2_ASPECT_RATIOS,
     BANANA_PRO_OFFICIAL_LABEL: BANANA_PRO_ASPECT_RATIOS,
     BANANA_2_OFFICIAL_LABEL: BANANA_2_ASPECT_RATIOS,
 }
 RESOLUTIONS_BY_MODEL = {
+    BANANA_21_LABEL: ["1K", "2K", "4K"],
     "bananaPRO": ["1K", "2K", "4K"],
     "bannana-2": ["1K", "2K", "4K"],
     BANANA_PRO_OFFICIAL_LABEL: ["1K", "2K", "4K"],
@@ -299,14 +310,49 @@ def _sanitized_result(value):
     return value
 
 
+def _readable_response_details(responses):
+    sections = []
+    for index, response in enumerate(responses, 1):
+        for candidate in response.get("candidates", []):
+            for part in candidate.get("content", {}).get("parts", []):
+                if part.get("text"):
+                    label = "模型返回的思考摘要" if part.get("thought") else "模型文字"
+                    sections.append(f"【结果{index}·{label}】\n{part['text']}")
+            grounding = candidate.get("groundingMetadata") or {}
+            queries = grounding.get("webSearchQueries") or []
+            if queries:
+                sections.append("【搜索词】\n" + "\n".join(str(q) for q in queries))
+            for chunk in grounding.get("groundingChunks", []):
+                web = chunk.get("web") or {}
+                uri = web.get("uri", "")
+                if uri.startswith(("https://", "http://")):
+                    sections.append(f"【搜索来源】{web.get('title', '')}\n{uri}")
+    return "\n\n".join(sections) + ("\n\n" if sections else "")
+
+
 class DapaoBananaAllroundNode:
     @classmethod
     def INPUT_TYPES(cls):
         optional = {
             "⌛ 请求超时": ("INT", {"default": 900, "min": 30, "max": 1800, "step": 10}),
         }
-        for index in range(1, 13):
-            optional[f"🖼️ 图像{index}"] = ("IMAGE", {"tooltip": "接入任意参考图后自动切换为图生图，最多12张。"})
+        for index in range(1, MAX_REFERENCE_IMAGES + 1):
+            optional[f"🖼️ 图像{index}"] = ("IMAGE", {"tooltip": "接入参考图后自动切换为图生图，所有端口及批次合计最多14张，每张上传前最长边限制为2048像素。"})
+        # Append widgets after the existing timeout to preserve saved widget positions.
+        optional["🧠 思考等级"] = (list(THINKING_LEVELS), {
+            "default": DEFAULT_THINKING,
+            "tooltip": f"仅{BANANA_21_LABEL}生效：快速优先响应速度，标准为模型默认，深入适合复杂构图。",
+        })
+        optional["🔎 联网搜索"] = ("BOOLEAN", {
+            "default": False,
+            "tooltip": f"仅{BANANA_21_LABEL}生效：允许模型使用Google网页和图片搜索辅助生成；是否实际搜索由模型决定，费用以中转站账单为准。",
+        })
+        optional["🧭 搜索范围"] = (list(SEARCH_SCOPES), {"default": "网页与图片"})
+        optional["⚙️ 高级设置"] = ("BOOLEAN", {"default": False, "tooltip": "展开或折叠专属设置；折叠后已设置的参数仍然生效。"})
+        optional["🖼️ 输出内容"] = (list(OUTPUT_MODES), {"default": "图片与文字", "tooltip": "文字输出取决于模型，结果保留在响应信息中。"})
+        optional["💭 返回思考摘要"] = ("BOOLEAN", {"default": False, "tooltip": "请求模型返回可用的思考摘要，在响应信息中查看；关闭不等于关闭模型思考。"})
+        optional["📏 输出Token上限"] = ("INT", {"default": 0, "min": 0, "max": 32768, "tooltip": "0使用模型默认；过小可能截断生成，通常保持0即可。"})
+        optional["🧾 系统指令"] = ("STRING", {"default": "", "multiline": True, "tooltip": "可选：指定整体风格、文字语言等规则，留空不发送。"})
         return {
             "required": {
                 "🔑 API密钥": (
@@ -357,19 +403,25 @@ class DapaoBananaAllroundNode:
 
     @staticmethod
     def _collect_reference_parts(kwargs):
+        total = sum(int(image.shape[0]) for index in range(1, MAX_REFERENCE_IMAGES + 1)
+                    if (image := kwargs.get(f"🖼️ 图像{index}")) is not None
+                    and hasattr(image, "shape") and len(image.shape) == 4)
+        if total > MAX_REFERENCE_IMAGES:
+            raise ValueError(f"参考图片合计{total}张，最多支持{MAX_REFERENCE_IMAGES}张；请减少端口或批次中的图片数量。")
         parts = []
-        for input_index in range(1, 13):
+        for input_index in range(1, MAX_REFERENCE_IMAGES + 1):
             image_tensor = kwargs.get(f"🖼️ 图像{input_index}")
             if image_tensor is None:
                 continue
             for part in _tensor_to_inline_parts(image_tensor):
-                if len(parts) >= 12:
-                    return parts
                 parts.append(part)
         return parts
 
     @staticmethod
-    def _make_payload(prompt, reference_parts, aspect_ratio, resolution):
+    def _make_payload(prompt, reference_parts, aspect_ratio, resolution, *,
+                      model_label=None, thinking=DEFAULT_THINKING, search=False,
+                      search_scope="网页与图片", output_mode="图片与文字",
+                      include_thoughts=False, max_tokens=0, system_instruction=""):
         parts = list(reference_parts)
         parts.append({"text": prompt})
         image_config = {"imageSize": resolution}
@@ -382,6 +434,26 @@ class DapaoBananaAllroundNode:
                 "imageConfig": image_config,
             },
         }
+        if model_label == BANANA_21_LABEL:
+            if thinking not in THINKING_LEVELS:
+                raise ValueError(f"{BANANA_21_LABEL}不支持思考等级：{thinking}")
+            payload["generationConfig"]["thinkingConfig"] = {"thinkingLevel": THINKING_LEVELS[thinking]}
+            config = payload["generationConfig"]
+            if output_mode not in OUTPUT_MODES:
+                raise ValueError(f"不支持的输出内容：{output_mode}")
+            config["responseModalities"] = list(OUTPUT_MODES[output_mode])
+            if include_thoughts:
+                config["thinkingConfig"]["includeThoughts"] = True
+            if isinstance(max_tokens, bool) or not isinstance(max_tokens, int) or not 0 <= max_tokens <= 32768:
+                raise ValueError("输出Token上限必须是0至32768的整数。")
+            if max_tokens:
+                config["maxOutputTokens"] = max_tokens
+            if system_instruction.strip():
+                payload["systemInstruction"] = {"parts": [{"text": system_instruction.strip()}]}
+            if search:
+                if search_scope not in SEARCH_SCOPES:
+                    raise ValueError(f"不支持的搜索范围：{search_scope}")
+                payload["tools"] = [{"googleSearch": {"searchTypes": {key: {} for key in SEARCH_SCOPES[search_scope]}}}]
         return payload
 
     @staticmethod
@@ -390,7 +462,11 @@ class DapaoBananaAllroundNode:
             return [client.generate_content(model_id, payload) for _ in range(count)]
         results = [None] * count
         with ThreadPoolExecutor(max_workers=min(count, 4), thread_name_prefix="dapao-banana") as executor:
-            futures = {executor.submit(client.generate_content, model_id, payload): index for index in range(count)}
+            futures = {
+                executor.submit(DapaoBananaRelayClient(client.api_key, client.timeout).generate_content,
+                                model_id, payload): index
+                for index in range(count)
+            }
             for future in as_completed(futures):
                 results[futures[future]] = future.result()
         return results
@@ -404,12 +480,16 @@ class DapaoBananaAllroundNode:
     def _generate_sync(self, **kwargs):
         api_key = (kwargs.get("🔑 API密钥") or "").strip()
         model_label = kwargs.get("🤖 模型", "bananaPRO")
+        if model_label == "香蕉2.1":
+            model_label = BANANA_21_LABEL
         prompt = (kwargs.get("📝 提示词") or "").strip()
         aspect_ratio = kwargs.get("📐 图片尺寸/比例", "1:1")
         resolution = kwargs.get("🧩 清晰度", "1K")
         count = min(max(int(kwargs.get("🖼️ 出图数量", 1)), 1), 10)
         concurrent = bool(kwargs.get("⚡ 异步模式", False))
         timeout = int(kwargs.get("⌛ 请求超时", 900))
+        thinking = kwargs.get("🧠 思考等级", DEFAULT_THINKING)
+        search = bool(kwargs.get("🔎 联网搜索", False))
         responses = []
         started = time.time()
 
@@ -427,9 +507,20 @@ class DapaoBananaAllroundNode:
             if resolution not in supported_resolutions:
                 raise ValueError(f"模型 {model_label} 不支持清晰度：{resolution}")
             model_id = MODEL_ID_BY_RESOLUTION.get(model_label, {}).get(resolution, model_label)
+            unit_price = PRICE_BY_MODEL_RESOLUTION.get(model_label, {}).get(
+                resolution, PRICE_BY_MODEL.get(model_label),
+            )
+            if unit_price is None:
+                raise ValueError(f"模型 {model_label} 的价格尚未配置。")
             reference_parts = self._collect_reference_parts(kwargs)
             mode = "图生图" if reference_parts else "文生图"
-            payload = self._make_payload(prompt, reference_parts, aspect_ratio, resolution)
+            payload = self._make_payload(prompt, reference_parts, aspect_ratio, resolution,
+                                         model_label=model_label, thinking=thinking, search=search,
+                                         search_scope=kwargs.get("🧭 搜索范围", "网页与图片"),
+                                         output_mode=kwargs.get("🖼️ 输出内容", "图片与文字"),
+                                         include_thoughts=bool(kwargs.get("💭 返回思考摘要", False)),
+                                         max_tokens=kwargs.get("📏 输出Token上限", 0),
+                                         system_instruction=kwargs.get("🧾 系统指令", ""))
             client = DapaoBananaRelayClient(api_key, timeout)
 
             _log_info(
@@ -464,13 +555,11 @@ class DapaoBananaAllroundNode:
             images = tensors[0] if len(tensors) == 1 else torch.cat(tensors, dim=0)
             urls = [value for kind, value, _ in image_items if kind == "url"]
             elapsed = time.time() - started
-            unit_price = PRICE_BY_MODEL_RESOLUTION.get(model_label, {}).get(
-                resolution,
-                PRICE_BY_MODEL.get(model_label),
-            )
-            if unit_price is None:
-                raise RuntimeError(f"模型 {model_label} 的价格尚未配置。")
             estimated_price = unit_price * count
+            special_info = (
+                f"🧠 思考等级：{thinking}\n🔎 联网搜索：{'开启（由模型决定是否调用）' if search else '关闭'}\n"
+                if model_label == BANANA_21_LABEL else ""
+            )
             info = (
                 "✅ 香蕉-banana 全能图像任务完成\n"
                 f"🌐 中转站：{API_BASE_URL}\n"
@@ -479,12 +568,14 @@ class DapaoBananaAllroundNode:
                 f"🔀 模式：{mode}\n"
                 f"📐 图片比例：{aspect_ratio}\n"
                 f"🧩 清晰度：{resolution}\n"
+                f"{special_info}"
                 f"🖼️ 参考图：{len(reference_parts)} 张\n"
                 f"🖼️ 请求数量：{count} 次，实际返回：{len(tensors)} 张\n"
                 f"📏 尺寸统一：{'已统一到首张图片' if resized_count else '无需处理'}\n"
                 f"⚡ 提交方式：{'并发' if concurrent and count > 1 else '顺序'}\n"
-                f"💰 单价：¥{unit_price:.2f}/张，预计价格：¥{estimated_price:.2f}\n"
+                f"💰 单价：¥{unit_price:.2f}/次，预计价格：¥{estimated_price:.2f}（以中转站实际账单为准）\n"
                 f"⏱️ 耗时：{elapsed:.2f} 秒\n\n"
+                + _readable_response_details(responses)
                 + json.dumps({"responses": _sanitized_result(responses)}, ensure_ascii=False, indent=2)
             )
             return images, "\n".join(urls), info

@@ -11,6 +11,14 @@ from error_message_catalog import HTTP_ERROR_HINTS, BUSINESS_ERROR_HINTS
 
 
 class ErrorContractTests(unittest.TestCase):
+    def test_generic_upstream_rejection_does_not_invent_a_cause(self):
+        raw = "任务 job-example 已failed：HTTP 422; Request rejected by the upstream model provider. Check the request content and try again."
+        result = format_node_error(raw, context="banana_allround_node")
+        self.assertIn("没有返回具体原因", result)
+        self.assertIn("job-example", result)
+        self.assertIn(raw, result)
+        self.assertNotIn("请求参数或素材不符合模型要求", result)
+
     def test_document_contains_every_shared_catalog_entry(self):
         guide = (Path(__file__).parent / "ERROR_HANDLING.md").read_text(encoding="utf-8")
         for code, hint in HTTP_ERROR_HINTS.items():

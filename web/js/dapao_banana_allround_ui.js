@@ -2,6 +2,7 @@ import { app } from "../../../scripts/app.js";
 import { api } from "../../../scripts/api.js";
 
 const NODE_TYPE = "DapaoBananaAllroundNode";
+const BANANA_21 = "香蕉Pro 2.1全分辨率";
 const ASPECT_RATIOS = {
     "bananaPRO": ["模型默认", "1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"],
     "bannana-2": ["模型默认", "16:9", "4:3", "4:5", "3:2", "1:1", "2:3", "3:4", "5:4", "9:16", "21:9", "1:4", "4:1", "1:8", "8:1"],
@@ -14,6 +15,8 @@ const RESOLUTIONS = {
     "香蕉pro官方稳定版": ["1K", "2K", "4K"],
     "香蕉2官方稳定版": ["1K", "2K", "4K"],
 };
+ASPECT_RATIOS[BANANA_21] = [...ASPECT_RATIOS["香蕉2官方稳定版"]];
+RESOLUTIONS[BANANA_21] = ["1K", "2K", "4K"];
 const REGISTER_URL = "https://api.dapaoai.com/sign-up?aff=vcOZ";
 const REGISTER_WIDGET_NAME = "👉点此注册API密钥👈";
 
@@ -107,8 +110,28 @@ function refreshNode(node) {
         const legacyIndex = node.widgets.indexOf(legacyQualityWidget);
         if (legacyIndex >= 0) node.widgets.splice(legacyIndex, 1);
     }
+    const modelWidget = widget(node, "🤖 模型");
+    if (modelWidget?.value === "香蕉2.1") modelWidget.value = BANANA_21;
     const model = String(value(node, "🤖 模型", "bananaPRO"));
+    const advanced = ["🖼️ 输出内容", "💭 返回思考摘要", "📏 输出Token上限", "🧾 系统指令"];
+    for (const name of ["🧠 思考等级", "🔎 联网搜索", "🧭 搜索范围", "⚙️ 高级设置", ...advanced]) {
+        const hidden = model !== BANANA_21 ||
+            (name === "🧭 搜索范围" && !value(node, "🔎 联网搜索", false)) ||
+            (advanced.includes(name) && !value(node, "⚙️ 高级设置", false));
+        const target = widget(node, name);
+        if (target) target.hidden = hidden;
+        // Also hide the optional widget input socket if converted to an input.
+        const input = node.inputs?.find((item) => item.name === name);
+        if (input) input.hidden = hidden;
+    }
+    if (modelWidget) modelWidget.tooltip = model === BANANA_21
+        ? "gemini-nano-banana-2.1 · 1K/2K/4K 默认分组约¥0.18/次，以实际账单为准"
+        : "选择妙笔中转支持的香蕉模型";
     setComboValues(widget(node, "📐 图片尺寸/比例"), ASPECT_RATIOS[model] || ASPECT_RATIOS.bananaPRO, "模型默认");
+    const ratioWidget = widget(node, "📐 图片尺寸/比例");
+    if (ratioWidget) ratioWidget.tooltip = model === BANANA_21
+        ? "14种固定比例；模型默认由模型决定。当前妙笔线路不支持9:21（上游实测返回400）。"
+        : "选择图片宽高比例";
     setComboValues(widget(node, "🧩 清晰度"), RESOLUTIONS[model] || RESOLUTIONS.bananaPRO, "1K");
     ensureRegisterButton(node);
     if (node.computeSize) {
@@ -175,6 +198,7 @@ app.registerExtension({
         nodeTypeClass.prototype.onConfigure = function () {
             const config = arguments[0];
             let values = Array.isArray(config?.widgets_values) ? [...config.widgets_values] : null;
+            if (values?.[1] === "香蕉2.1") values[1] = BANANA_21;
             const qualityValues = ["低画质", "标准画质", "高画质"];
             if (values && qualityValues.includes(String(values[5]))) {
                 values.splice(5, 1);
