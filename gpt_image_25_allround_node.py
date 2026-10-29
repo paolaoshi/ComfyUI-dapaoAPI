@@ -6,13 +6,15 @@ Relay-specific resolution and response_format fields follow image-2.
 Reference images go to /v1/images/edits, never image_urls on generations.
 """
 
-from .gpt_image_2_allround_node import DapaoGPTImage2AllroundNode, DapaoImage2RelayClient
+from .gpt_image_2_allround_node import DapaoGPTImage2AllroundNode, DapaoImage2RelayClient, OFFICE_SIZE_BY_RESOLUTION
 
 NODE_NAME = "DapaoGPTImage25AllroundNode"
 DISPLAY_NAME = "🦁GPT-image-2.5全能图像@炮老师的小课堂"
-MODEL_LABEL = "gpt-image-2.5-flare"
-SUNBURST_LABEL = "gpt-image-2.5-sunburst"
-MODEL_OPTIONS = [MODEL_LABEL, SUNBURST_LABEL]
+MODEL_LABEL = "Flare（普通丨低价丨全分辨率）"
+SUNBURST_LABEL = "Sunburst（高精丨低价丨全分辨率）"
+FLARE_NATIVE = "Flare（普通丨原生丨全分辨率）"
+SUNBURST_NATIVE = "Sunburst（高精丨原生丨全分辨率）"
+MODEL_OPTIONS = [MODEL_LABEL, SUNBURST_LABEL, FLARE_NATIVE, SUNBURST_NATIVE]
 QUALITY_API_VALUES = {
     "low(低质量)": "low",
     "medium(中质量)": "medium",
@@ -27,6 +29,14 @@ class DapaoImage25RelayClient(DapaoImage2RelayClient):
         # Explicit editing endpoint: generations may silently ignore image_urls.
         # Keep this synchronous; do not request the JSON-only persistent queue.
         data = {key: str(value) for key, value in payload.items() if key != "async"}
+        ratio = payload.get("size", "auto")
+        resolution = str(payload.get("resolution", "1k")).upper()
+        if ratio in OFFICE_SIZE_BY_RESOLUTION.get(resolution, {}):
+            data["size"] = OFFICE_SIZE_BY_RESOLUTION[resolution][ratio]
+            if resolution == "1K" and ratio in ("3:1", "1:3"):
+                data["size"] = "1536x512" if ratio == "3:1" else "512x1536"
+        elif ratio in ("auto", "模型默认"):
+            data["size"] = "auto"
         files = [
             ("image", (f"image_{index}.png", content, "image/png"))
             for index, content in enumerate(reference_images, 1)
@@ -40,7 +50,9 @@ class DapaoGPTImage25AllroundNode(DapaoGPTImage2AllroundNode):
     MAX_REFERENCE_IMAGES = 16
     MODEL_OPTIONS = MODEL_OPTIONS
     DEFAULT_MODEL = MODEL_LABEL
-    MODEL_ID_BY_LABEL = {MODEL_LABEL: MODEL_LABEL, SUNBURST_LABEL: SUNBURST_LABEL}
+    MODEL_ALIASES = {"gpt-image-2.5-flare": FLARE_NATIVE, "gpt-image-2.5-sunburst": SUNBURST_NATIVE}
+    MODEL_ID_BY_LABEL = {MODEL_LABEL: "gpt-image-2.5-flare", SUNBURST_LABEL: "gpt-image-2.5-sunburst",
+                         FLARE_NATIVE: "gpt-image-2.5-flare", SUNBURST_NATIVE: "gpt-image-2.5-sunburst"}
     QUALITY_API_VALUES = QUALITY_API_VALUES
     DEFAULT_QUALITY = "medium(中质量)"
     TASK_LABEL = "GPT-image-2.5"
@@ -52,7 +64,7 @@ class DapaoGPTImage25AllroundNode(DapaoGPTImage2AllroundNode):
 
     def _resolve_request_model(self, model_label, resolution_label):
         model_id = self.MODEL_ID_BY_LABEL[model_label]
-        return model_id if resolution_label == "1K" else f"{model_id}-{resolution_label.lower()}"
+        return model_id if model_label in (MODEL_LABEL, SUNBURST_LABEL) or resolution_label == "1K" else f"{model_id}-{resolution_label.lower()}"
 
     def _create_client(self, api_key, timeout, max_poll_seconds):
         return DapaoImage25RelayClient(api_key, timeout, max_poll_seconds)

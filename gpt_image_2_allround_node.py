@@ -40,10 +40,12 @@ NODE_CATEGORY = "🤖dapaoAPI/🍬大炮AI主力维护🍬"
 DISPLAY_NAME = "🐠GPT-image-2全能图像@炮老师的小课堂"
 MAX_REFERENCE_IMAGES = 9
 
-MODEL_LABEL = "image-2"
+MODEL_LABEL = "image-2（低价丨全分辨率）"
+NATIVE_MODEL_LABEL = "image-2（原生丨全分辨率）"
 OFFICIAL_STABLE_MODEL_LABEL = "image-2官方稳定全分辨率"
-MODEL_OPTIONS = [MODEL_LABEL, OFFICIAL_STABLE_MODEL_LABEL]
+MODEL_OPTIONS = [MODEL_LABEL, NATIVE_MODEL_LABEL, OFFICIAL_STABLE_MODEL_LABEL]
 MODEL_ID_BY_LABEL = {
+    MODEL_LABEL: "image-2-1k",
     OFFICIAL_STABLE_MODEL_LABEL: "image-2-office",
 }
 MODEL_BY_RESOLUTION = {
@@ -416,6 +418,7 @@ class DapaoGPTImage2AllroundNode:
     MAX_REFERENCE_IMAGES = MAX_REFERENCE_IMAGES
     MODEL_OPTIONS = MODEL_OPTIONS
     DEFAULT_MODEL = MODEL_LABEL
+    MODEL_ALIASES = {"image-2": NATIVE_MODEL_LABEL}
     MODEL_ID_BY_LABEL = MODEL_ID_BY_LABEL
     QUALITY_API_VALUES = QUALITY_API_VALUES
     DEFAULT_QUALITY = "标准画质"
@@ -429,6 +432,8 @@ class DapaoGPTImage2AllroundNode:
         return DapaoImage2RelayClient(api_key, timeout, max_poll_seconds)
 
     def _price_info(self, model_label, resolution_label, count):
+        if model_label != OFFICIAL_STABLE_MODEL_LABEL:
+            return "💰 价格：按所选渠道和请求参数结算，以妙笔工坊实际计费为准\n"
         unit_price = PRICE_BY_MODEL.get(model_label, PRICE_BY_RESOLUTION[resolution_label])
         return f"💰 单价：¥{unit_price:.2f}/张，预计价格：¥{unit_price * count:.2f}\n"
 
@@ -515,6 +520,7 @@ class DapaoGPTImage2AllroundNode:
     def _generate_sync(self, **kwargs):
         api_key = (kwargs.get("🔑 API密钥") or "").strip()
         model_label = kwargs.get("🤖 模型", self.DEFAULT_MODEL)
+        model_label = self.MODEL_ALIASES.get(model_label, model_label)
         prompt = (kwargs.get("📝 提示词") or "").strip()
         size = kwargs.get("📐 图片尺寸/比例", "模型默认")
         resolution_label = kwargs.get("🧩 清晰度", "1K")

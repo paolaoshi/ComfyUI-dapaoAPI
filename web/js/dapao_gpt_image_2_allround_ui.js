@@ -4,6 +4,13 @@ import { api } from "../../../scripts/api.js";
 const NODE_TYPES = ["DapaoGPTImage2AllroundNode", "DapaoGPTImage25AllroundNode", "DapaoQwenImage3AllroundNode"];
 const REGISTER_URL = "https://api.dapaoai.com/sign-up?aff=vcOZ";
 const REGISTER_WIDGET_NAME = "👉点此注册API密钥👈";
+const MODEL_MIGRATIONS = {
+    DapaoGPTImage2AllroundNode: {"image-2": "image-2（原生丨全分辨率）"},
+    DapaoGPTImage25AllroundNode: {
+        "gpt-image-2.5-flare": "Flare（普通丨原生丨全分辨率）",
+        "gpt-image-2.5-sunburst": "Sunburst（高精丨原生丨全分辨率）",
+    },
+};
 
 function nodeType(node) {
     return node?.comfyClass || node?.type || "";
@@ -86,6 +93,12 @@ function ensureRegisterButton(node) {
 
 function refreshNode(node) {
     if (!NODE_TYPES.includes(nodeType(node))) return;
+    const model = widget(node, "🤖 模型");
+    const aliases = MODEL_MIGRATIONS[nodeType(node)];
+    if (model && aliases) {
+        model.value = aliases[model.value] || model.value;
+        model.tooltip = "先选择低价或原生渠道，再选择清晰度；两种渠道均支持1K/2K/4K，切换清晰度不会改变所选渠道。旧工作流保留原生路由。费用以妙笔账单为准。";
+    }
     const asyncMode = Boolean(value(node, "⚡ 异步模式", false));
 
     // 新版本已移除“模式”控件，模式只由实际图像连线自动决定。
@@ -161,6 +174,9 @@ app.registerExtension({
         nodeTypeClass.prototype.onConfigure = function () {
             const config = arguments[0];
             let values = Array.isArray(config?.widgets_values) ? [...config.widgets_values] : null;
+            if (values && MODEL_MIGRATIONS[nodeData.name]?.[values[1]]) {
+                values[1] = MODEL_MIGRATIONS[nodeData.name][values[1]];
+            }
             if (values && ["文生图", "图生图"].includes(String(values[2]))) {
                 values.splice(2, 1);
             }

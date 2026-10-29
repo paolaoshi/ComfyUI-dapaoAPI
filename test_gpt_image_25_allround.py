@@ -66,13 +66,13 @@ class Image25Tests(unittest.TestCase):
                     args = submit.call_args.kwargs
                     self.assertEqual(args["base_url"], "https://api.dapaoai.com")
                     self.assertEqual(args["endpoint"], "/v1/images/generations")
-                    self.assertEqual(args["payload"], {"model": module.MODEL_LABEL + ("" if resolution == "1K" else "-" + resolution.lower()), "prompt": "测试图像", "quality": quality, "resolution": resolution.lower(), "n": 3, "size": "16:9", "response_format": "url"})
+                    self.assertEqual(args["payload"], {"model": "gpt-image-2.5-flare", "prompt": "测试图像", "quality": quality, "resolution": resolution.lower(), "n": 3, "size": "16:9", "response_format": "url"})
                     self.assertEqual(tuple(output[0].shape), (1, 16, 16, 3))
                     self.assertEqual(output[1], "")
                     self.assertIn("妙笔工坊实际计费", output[2])
 
     def test_sunburst_generation_and_edit_use_exact_model(self):
-        self.assertIn("gpt-image-2.5-sunburst", Node.INPUT_TYPES()["required"]["🤖 模型"][0])
+        self.assertIn(module.SUNBURST_LABEL, Node.INPUT_TYPES()["required"]["🤖 模型"][0])
         for quality in module.QUALITY_API_VALUES:
             args = {"🤖 模型": "gpt-image-2.5-sunburst", "🎨 画质": quality}
             with patch.object(base, "submit_json_task", return_value=result()) as submit:
@@ -93,7 +93,7 @@ class Image25Tests(unittest.TestCase):
                         output = self.run_node(**args)
                         submit.assert_called_once()
                         self.assertEqual(submit.call_args.kwargs["payload"]["model"], model + suffix)
-                        self.assertIn("界面模型：" + model, output[2])
+                        self.assertIn("界面模型：" + Node.MODEL_ALIASES[model], output[2])
                         self.assertIn("实际模型ID：" + model + suffix, output[2])
                     with patch.object(module.DapaoImage25RelayClient, "_request_json", return_value=result()) as request:
                         self.run_node(**args, **{"🖼️ 图像1": torch.zeros((1, 16, 16, 3))})
@@ -101,7 +101,7 @@ class Image25Tests(unittest.TestCase):
                         self.assertEqual(request.call_args.args, ("POST", "/v1/images/edits"))
                         self.assertEqual(request.call_args.kwargs["data"]["model"], model + suffix)
                         self.assertEqual(request.call_args.kwargs["data"]["resolution"], resolution.lower())
-        self.assertEqual(Node.INPUT_TYPES()["required"]["🤖 模型"][0], ["gpt-image-2.5-flare", "gpt-image-2.5-sunburst"])
+        self.assertEqual(Node.INPUT_TYPES()["required"]["🤖 模型"][0], module.MODEL_OPTIONS)
 
     def test_invalid_quality_never_submits(self):
         with patch.object(base, "submit_json_task") as submit, patch.object(base, "ensure_asset_references") as upload:
@@ -109,6 +109,25 @@ class Image25Tests(unittest.TestCase):
                 self.run_node(**{"🎨 画质": "invalid"})
             submit.assert_not_called()
             upload.assert_not_called()
+
+    def test_channel_resolution_matrix_and_edit_pixels(self):
+        cases = [(base.DapaoGPTImage2AllroundNode(), base.MODEL_LABEL, 'image-2-1k', False),
+                 (base.DapaoGPTImage2AllroundNode(), base.NATIVE_MODEL_LABEL, 'image-2', True)]
+        cases += [(Node(), label, route, label in (module.FLARE_NATIVE, module.SUNBURST_NATIVE))
+                  for label, route in Node.MODEL_ID_BY_LABEL.items()]
+        for node, label, route, native in cases:
+            for res in ['1K', '2K', '4K']:
+                expected = (base.MODEL_BY_RESOLUTION[res] if route == 'image-2' else
+                            route + ('-' + res.lower() if native and res != '1K' else ''))
+                with self.subTest(label=label, res=res), patch.object(base, 'submit_json_task', return_value=result()) as submit:
+                    self.run_node(node=node, **{'🤖 模型':label, '🧩 清晰度':res})
+                    self.assertEqual(submit.call_args.kwargs['payload']['model'], expected)
+                    self.assertEqual(submit.call_args.kwargs['payload']['resolution'], res.lower())
+                if isinstance(node, Node):
+                    with patch.object(module.DapaoImage25RelayClient, '_request_json', return_value=result()) as req:
+                        self.run_node(node=node, **{'🤖 模型':label, '🧩 清晰度':res, '📐 图片尺寸/比例':'16:9', '🖼️ 图像1':torch.zeros(1,16,16,3)})
+                        self.assertEqual(req.call_args.kwargs['data']['model'], expected)
+                        self.assertEqual(req.call_args.kwargs['data']['size'], base.OFFICE_SIZE_BY_RESOLUTION[res]['16:9'])
 
     def test_reference_batch_preprocessed_at_upload_boundary(self):
         images = torch.zeros((2, 64, 4096, 3))
@@ -206,7 +225,7 @@ class Image25Tests(unittest.TestCase):
                 self.assertEqual(payload["model"], model)
                 self.assertEqual(payload["size"], size)
                 self.assertEqual(payload["quality"], "medium")
-                self.assertIn(f"¥{price}/张", output[2])
+                self.assertIn(f"¥{price}/张" if label == base.OFFICIAL_STABLE_MODEL_LABEL else "以妙笔工坊实际计费为准", output[2])
 
     def test_async_task_poll_and_url_output(self):
         with patch.object(base, "submit_json_task", return_value={"task_id": "task-test", "status": "processing"}) as submit, patch.object(base.DapaoImage2RelayClient, "poll", return_value={"data": [{"url": "https://example.com/a.png"}]}) as poll, patch.object(base.DapaoImage2RelayClient, "download", return_value=base64.b64decode(result()["data"][0]["b64_json"])):
