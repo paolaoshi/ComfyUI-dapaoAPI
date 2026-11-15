@@ -80,7 +80,7 @@ class DapaoGPTImage25AllroundNode(DapaoGPTImage2AllroundNode):
 
     def _price_info(self, model_label, resolution_label, count):
         # No confirmed relay tariff: never reuse image-2's per-image prices.
-        return "💰 价格：以妙笔工坊实际计费为准（暂未配置2.5价格）\n"
+        return "💰 价格：以妙笔工坊实际计费为准（按当前模型路由、分辨率和账户分组结算）\n"
 
 
 NODE_CLASS_MAPPINGS = {NODE_NAME: DapaoGPTImage25AllroundNode}

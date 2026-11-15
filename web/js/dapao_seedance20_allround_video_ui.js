@@ -2,6 +2,18 @@ import { app } from "../../../scripts/app.js";
 import { api } from "../../../scripts/api.js";
 
 const NODE_CONFIGS = {
+    DapaoGeminiOmniVideoNode: {
+        imageCount: 3, videoCount: 0, audioCount: 0,
+        defaultModel: "gemini-omni-1.2-flash", supportedModels: new Set(["gemini-omni-1.2-flash"]),
+        resolutions: ["720P"], faceMode: false, legacyLayout: false,
+        billingText: "按请求秒数计费，基础0.08元/秒；4/6/8/10秒，以账户账单为准",
+    },
+    DapaoMuseVideoNode: {
+        imageCount: 1, videoCount: 0, audioCount: 0,
+        defaultModel: "muse-video", supportedModels: new Set(["muse-video"]),
+        resolutions: ["720P"], faceMode: false, legacyLayout: false,
+        billingText: "按请求秒数计费，基础0.3元/秒；成片略长不补收，以账户账单为准",
+    },
     DapaoSeedance25GlobalSPVideoNode: {
         imageCount: 9, videoCount: 0, audioCount: 0,
         defaultModel: "seedance-2.5-sp", supportedModels: new Set(["seedance-2.5-sp"]),
@@ -153,9 +165,9 @@ function refreshNode(node, sourceName = "") {
         badge.disabled = true;
         node.__dapaoSeedancePrice = badge;
     }
-    if (node.__dapaoSeedancePrice) node.__dapaoSeedancePrice.value = config.globalSP ? "固定30秒，按妙笔当前模型及用户分组实际结算" : value(node, "🤖 模型") === "seedance-2.0"
+    if (node.__dapaoSeedancePrice) node.__dapaoSeedancePrice.value = config.billingText || (config.globalSP ? "固定30秒，按妙笔当前模型及用户分组实际结算" : value(node, "🤖 模型") === "seedance-2.0"
         ? "SP按秒计费，以妙笔实际结算为准"
-        : "标准版按计费用量结算，以妙笔账单为准";
+        : "标准版按计费用量结算，以妙笔账单为准");
     if (node.computeSize) {
         const computed = node.computeSize();
         const currentWidth = Number(node.size?.[0]) || computed[0];
@@ -219,7 +231,7 @@ app.registerExtension({
         // LiteGraph applies saved values to the current widget list.
         const configure = nodeTypeClass.prototype.configure;
         nodeTypeClass.prototype.configure = function (info) {
-            if (!NODE_CONFIGS[nodeData.name].globalSP && Array.isArray(info?.widgets_values)) {
+            if (!NODE_CONFIGS[nodeData.name].globalSP && NODE_CONFIGS[nodeData.name].legacyLayout !== false && Array.isArray(info?.widgets_values)) {
                 const saved = [...info.widgets_values];
                 if (["SD2-face", "SD2.0-mini", "SD2-fast"].includes(saved[1])) {
                     saved[1] = "doubao-seedance-2.0";

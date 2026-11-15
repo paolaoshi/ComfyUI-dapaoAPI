@@ -1,5 +1,7 @@
 # 🤖 dapaoAPI - ComfyUI 多功能 API 节点集合
 
+2026-11-15 更新：新增 Muse / Gemini Omni 视频节点与 GPT Image 2.6 图像节点，复核保留已有 GPT Image 2.5。均复用现有上传、队列、错误处理与结果输出。使用方式、模型参数、真实测试及未验证范围见 [本轮接入交接](docs/MEDIA_MODELS_2026-11-15.md)。源码按用户要求提交到Git；未打包，图片按用户要求只做离线验证。
+
 <div align="center">
 
 **一套强大的 ComfyUI 自定义节点，集成多个主流 AI 服务 API**

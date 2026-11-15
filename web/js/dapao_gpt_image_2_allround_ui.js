@@ -1,10 +1,14 @@
 import { app } from "../../../scripts/app.js";
 import { api } from "../../../scripts/api.js";
 
-const NODE_TYPES = ["DapaoGPTImage2AllroundNode", "DapaoGPTImage25AllroundNode", "DapaoQwenImage3AllroundNode"];
+const NODE_TYPES = ["DapaoGPTImage2AllroundNode", "DapaoGPTImage25AllroundNode", "DapaoGPTImage26AllroundNode", "DapaoQwenImage3AllroundNode"];
 const REGISTER_URL = "https://api.dapaoai.com/sign-up?aff=vcOZ";
 const REGISTER_WIDGET_NAME = "👉点此注册API密钥👈";
 const MODEL_MIGRATIONS = {
+    DapaoGPTImage26AllroundNode: {
+        "gpt-image-2.6-flare": "Flare（普通丨低价丨全分辨率）",
+        "gpt-image-2.6-sunburst": "Sunburst（高精丨低价丨全分辨率）",
+    },
     DapaoGPTImage2AllroundNode: {"image-2": "image-2（原生丨全分辨率）"},
     DapaoGPTImage25AllroundNode: {
         "gpt-image-2.5-flare": "Flare（普通丨原生丨全分辨率）",
@@ -97,7 +101,9 @@ function refreshNode(node) {
     const aliases = MODEL_MIGRATIONS[nodeType(node)];
     if (model && aliases) {
         model.value = aliases[model.value] || model.value;
-        model.tooltip = "先选择低价或原生渠道，再选择清晰度；两种渠道均支持1K/2K/4K，切换清晰度不会改变所选渠道。旧工作流保留原生路由。费用以妙笔账单为准。";
+        model.tooltip = nodeType(node) === "DapaoGPTImage26AllroundNode"
+            ? "选择Flare或Sunburst，再选择1K/2K/4K；最多3张参考图。此节点输出静态图片，价格以妙笔当前模型及账户分组实际结算为准。"
+            : "先选择低价或原生渠道，再选择清晰度；两种渠道均支持1K/2K/4K，切换清晰度不会改变所选渠道。旧工作流保留原生路由。费用以妙笔账单为准。";
     }
     const asyncMode = Boolean(value(node, "⚡ 异步模式", false));
 
