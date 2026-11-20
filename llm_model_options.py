@@ -10,6 +10,8 @@ LLM_MODEL_OPTIONS = (
     "gpt-5.6-terra",
     "gpt-5.6-sol",
     "gpt-6-astra",
+    "gpt-6.2-astra",
+    "gpt-6.2-sol",
     "claude-fable-5",
     "claude-opus-4-8",
     "claude-opus-5",
@@ -32,7 +34,7 @@ LLM_MODEL_CAPABILITIES = {
     model: {
         "context_limit": 200_000 if model.startswith("claude-") else 1_048_576 if model.startswith("gemini-") else 128_000,
         "max_output": 65_536,
-        "supports_images": True,
+        "supports_images": model not in ("gpt-6.2-astra", "gpt-6.2-sol"),
         # The relay currently exposes chat-completions semantics.  Native
         # video parts are therefore kept disabled and the chat material node
         # sends uniformly sampled 2K PNG frames instead.  Gemini mappings are

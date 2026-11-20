@@ -146,6 +146,19 @@ class APIMultiTurnChatTests(unittest.TestCase):
         self.assertEqual(context["usage_source"], "api")
         self.assertEqual(context["api_calls"], 1)
 
+    def test_gpt62_config_reaches_chat_with_the_selected_model(self):
+        node = chat_module.DapaoAPILLMConfigNode()
+        choices, options = node.INPUT_TYPES()["required"]["🤖 LLM模型"]
+        self.assertEqual(options["default"], "gemini-3.7-flash")
+        for model in ("gpt-6.2-astra", "gpt-6.2-sol"):
+            with self.subTest(model=model):
+                self.assertEqual(choices.count(model), 1)
+                values = self.kwargs()
+                values["🤖API模型"], = node.build_config(**{"🤖 LLM模型": model, "🔑 API密钥": "test-only"})
+                result = asyncio.run(chat_module.DapaoAPIMultiTurnChatNode().chat(**values))
+                self.assertEqual(FakeClient.payloads[-1]["model"], model)
+                self.assertEqual(result["result"][0], "模拟回复：你好")
+
     def test_empty_global_run_replays_latest_outputs_without_an_api_call(self):
         class ForbiddenClient:
             def __init__(self, *args, **kwargs):
